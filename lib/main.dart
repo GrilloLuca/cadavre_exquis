@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
@@ -19,11 +20,13 @@ class CadavreExquisiteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cadavre Exquisite',
-      theme: ThemeData.dark().copyWith(
+      theme: ThemeData.light().copyWith(
         textTheme: TextTheme(
           bodyLarge: TextStyle(color: Colors.black54),
         ),
       ),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const AuthWrapper(),
       routes: {
         WelcomeScreen.id: (context) => WelcomeScreen(),

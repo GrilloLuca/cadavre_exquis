@@ -1,0 +1,56 @@
+{
+  "@@locale": "it",
+
+  "loginButton": "Accedi",
+  "registerButton": "Registrati",
+  "emailHint": "Inserisci la tua email",
+  "passwordHint": "Inserisci la tua password",
+  "loginFailed": "Accesso non riuscito. Riprova.",
+  "registrationFailed": "Registrazione non riuscita. Riprova.",
+
+  "homeTabIncomplete": "Incomplete",
+  "homeTabComplete": "Complete",
+  "homeTabProfile": "Profilo",
+  "titleIncompleteStories": "Storie incomplete",
+  "titleCompleteStories": "Storie complete",
+  "titleProfile": "Profilo",
+
+  "noIncompleteStories": "Nessuna storia da continuare al momento.\nCreane una nuova con il pulsante +.",
+  "noCompleteStories": "Nessuna storia completata, per ora.",
+  "storyNotStarted": "Nessuno ha ancora iniziato questa storia.",
+  "storyBeingWritten": "Qualcuno sta scrivendo il prossimo capitolo...",
+  "newStoryTooltip": "Nuova storia",
+  "authorsCount": "{count, plural, one{1 autore} other{{count} autori}}",
+  "@authorsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "storyCompleteTitle": "Storia completa",
+  "positionIntroduction": "Introduzione",
+  "positionDevelopment1": "Sviluppo (1/2)",
+  "positionDevelopment2": "Sviluppo (2/2)",
+  "positionEpilogue": "Epilogo",
+
+  "chatFirstWriterHint": "Sei il primo: scrivi tu l'introduzione della storia!",
+  "storySoFarLabel": "Finora è stato scritto...",
+  "chatMessageHint": "Scrivi qui: {position}...",
+  "@chatMessageHint": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "sendButton": "Invia",
+  "logoutButton": "Logout",
+
+  "errorStoryAlreadyCompleted": "Questa storia è già stata completata.",
+  "errorStoryPositionTaken": "Qualcun altro ha già scritto questo pezzo.",
+  "errorStoryLockedByOther": "Questa storia è bloccata da un altro utente.",
+  "errorAlreadyParticipated": "Hai già contribuito a questa storia.",
+  "genericError": "Si è verificato un errore. Riprova."
+}

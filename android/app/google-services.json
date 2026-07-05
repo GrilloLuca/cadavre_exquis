@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:93982339881:android:f3fd6978f432b7a6e9fd38",
+        "mobilesdk_app_id": "1:93982339881:android:1867059181b58cbfe9fd38",
         "android_client_info": {
-          "package_name": "co.appbrewery.flash_chat"
+          "package_name": "com.lucagrillo.cadavreexquis"
         }
       },
       "oauth_client": [],

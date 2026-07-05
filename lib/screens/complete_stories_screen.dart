@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
@@ -9,6 +10,7 @@ class CompleteStoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final storyService = StoryService();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
@@ -20,10 +22,10 @@ class CompleteStoriesScreen extends StatelessWidget {
 
           final stories = snapshot.data!;
           if (stories.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'Nessuna storia completata, per ora.',
-                style: TextStyle(color: Colors.black54),
+                l10n.noCompleteStories,
+                style: const TextStyle(color: Colors.black54),
               ),
             );
           }
@@ -43,7 +45,7 @@ class CompleteStoriesScreen extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                subtitle: Text('${story.parts.length} autori'),
+                subtitle: Text(l10n.authorsCount(story.parts.length)),
                 onTap: () {
                   Navigator.push(
                     context,

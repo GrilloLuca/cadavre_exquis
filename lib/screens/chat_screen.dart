@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/constants.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/message_bubble.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
@@ -41,9 +42,10 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      final message = _errorMessage(context, e);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
+        SnackBar(content: Text(message)),
       );
     }
   }
@@ -78,15 +80,33 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
       setState(() => _isSending = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
+        SnackBar(content: Text(_errorMessage(context, e))),
       );
     }
+  }
+
+  String _errorMessage(BuildContext context, Object error) {
+    final l10n = AppLocalizations.of(context)!;
+    if (error is StoryServiceException) {
+      switch (error.code) {
+        case StoryServiceErrorCode.alreadyCompleted:
+          return l10n.errorStoryAlreadyCompleted;
+        case StoryServiceErrorCode.positionTaken:
+          return l10n.errorStoryPositionTaken;
+        case StoryServiceErrorCode.lockedByOther:
+          return l10n.errorStoryLockedByOther;
+        case StoryServiceErrorCode.alreadyParticipated:
+          return l10n.errorAlreadyParticipated;
+      }
+    }
+    return l10n.genericError;
   }
 
   @override
   Widget build(BuildContext context) {
     final story = widget.story;
-    final position = positionLabel(story.currentPosition);
+    final l10n = AppLocalizations.of(context)!;
+    final position = positionLabel(context, story.currentPosition);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -108,12 +128,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: story.parts.isEmpty
-                      ? const Text(
-                          'Sei il primo: scrivi tu l\'introduzione della storia!',
-                          style: TextStyle(color: Colors.black54, fontSize: 15.0),
+                      ? Text(
+                          l10n.chatFirstWriterHint,
+                          style: const TextStyle(color: Colors.black54, fontSize: 15.0),
                         )
                       : MessageBubble(
-                          sender: 'Finora è stato scritto...',
+                          sender: l10n.storySoFarLabel,
                           text: '"...${story.lastFiveWords}"',
                           isMe: false,
                         ),
@@ -131,13 +151,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           maxLines: 5,
                           onChanged: (value) => _messageText = value,
                           decoration: kMessageTextFieldDecoration.copyWith(
-                            hintText: 'Scrivi qui: ${position.toLowerCase()}...',
+                            hintText: l10n.chatMessageHint(position.toLowerCase()),
                           ),
                         ),
                       ),
                       TextButton(
                         onPressed: (_isSending || !_lockAcquired) ? null : _submit,
-                        child: Text('Invia', style: kSendButtonTextStyle),
+                        child: Text(l10n.sendButton, style: kSendButtonTextStyle),
                       ),
                     ],
                   ),

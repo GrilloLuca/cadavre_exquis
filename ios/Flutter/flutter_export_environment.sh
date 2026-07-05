@@ -1,10 +1,10 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
 export "FLUTTER_ROOT=/Users/luca.grillo/DEV/flutter"
-export "FLUTTER_APPLICATION_PATH=/Users/luca.grillo/DEV/flash-chat-flutter"
-export "FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH=/Users/luca.grillo/DEV/flash-chat-flutter/ios/Flutter/ephemeral/Packages/.packages/FlutterFramework"
+export "FLUTTER_APPLICATION_PATH=/Users/luca.grillo/DEV/cadavre-exquisite-flutter"
+export "FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH=/Users/luca.grillo/DEV/cadavre-exquisite-flutter/ios/Flutter/ephemeral/Packages/.packages/FlutterFramework"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
-export "FLUTTER_TARGET=/Users/luca.grillo/DEV/flash-chat-flutter/lib/main.dart"
+export "FLUTTER_TARGET=/Users/luca.grillo/DEV/cadavre-exquisite-flutter/lib/main.dart"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.0.0"
 export "FLUTTER_BUILD_NUMBER=1"
@@ -12,4 +12,4 @@ export "DART_DEFINES=Zmx1dHRlci5pbnNwZWN0b3Iuc3RydWN0dXJlZEVycm9ycz10cnVl,RkxVVF
 export "DART_OBFUSCATION=false"
 export "TRACK_WIDGET_CREATION=true"
 export "TREE_SHAKE_ICONS=false"
-export "PACKAGE_CONFIG=/Users/luca.grillo/DEV/flash-chat-flutter/.dart_tool/package_config.json"
+export "PACKAGE_CONFIG=/Users/luca.grillo/DEV/cadavre-exquisite-flutter/.dart_tool/package_config.json"

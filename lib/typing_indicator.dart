@@ -45,7 +45,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                 offset: Offset(0, -4.0 * bounce),
                 child: const CircleAvatar(
                   radius: 3.5,
-                  backgroundColor: Colors.white,
+                  backgroundColor: Colors.black45,
                 ),
               );
             }),

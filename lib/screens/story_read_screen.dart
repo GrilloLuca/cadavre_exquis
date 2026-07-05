@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 
 class StoryReadScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class StoryReadScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Storia completa'),
+        title: Text(AppLocalizations.of(context)!.storyCompleteTitle),
         backgroundColor: Colors.lightBlueAccent,
       ),
       body: SafeArea(
@@ -24,14 +25,14 @@ class StoryReadScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  positionLabel(part.position),
+                  positionLabel(context, part.position),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.black54,
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                Text(part.text, style: const TextStyle(fontSize: 16.0)),
+                Text(part.text, style: const TextStyle(fontSize: 16.0, color: Colors.black54)),
                 const SizedBox(height: 4.0),
                 Text(
                   '— ${part.author}',

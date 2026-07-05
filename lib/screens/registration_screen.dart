@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/constants.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -44,7 +46,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     email = value;
                   },
                   decoration: kTextFieldDecoration.copyWith(
-                    hintText: 'Enter your email'
+                    hintText: l10n.emailHint
                   ),
                 ),
                 SizedBox(
@@ -56,14 +58,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     password = value;
                   },
                   decoration: kTextFieldDecoration.copyWith(
-                    hintText: 'Enter your password',
+                    hintText: l10n.passwordHint,
                   ),
                 ),
                 SizedBox(
                   height: 24.0,
                 ),
                 ChatButton(
-                  text: 'Register',
+                  text: l10n.registerButton,
                   color: Colors.blueAccent,
                   onPressed: () async {
                     setState(() {
@@ -82,14 +84,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     } on FirebaseAuthException catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(e.message ?? 'Registration failed. Please try again.'),
+                          content: Text(e.message ?? l10n.registrationFailed),
                           backgroundColor: Colors.red,
                         ),
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Registration failed. Please try again.'),
+                          content: Text(l10n.registrationFailed),
                           backgroundColor: Colors.red,
                         ),
                       );

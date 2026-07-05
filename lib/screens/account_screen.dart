@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -24,7 +25,7 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(height: 16.0),
               Text(
                 email,
-                style: const TextStyle(fontSize: 18.0, color: Colors.white),
+                style: const TextStyle(fontSize: 18.0, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32.0),
@@ -39,7 +40,7 @@ class AccountScreen extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.logout),
-                label: const Text('Logout'),
+                label: Text(AppLocalizations.of(context)!.logoutButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,

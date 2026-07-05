@@ -1,6 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 
+enum StoryServiceErrorCode {
+  alreadyCompleted,
+  positionTaken,
+  lockedByOther,
+  alreadyParticipated,
+}
+
+/// Thrown by [StoryService] operations on invalid story state. The UI layer
+/// maps [code] to a localized message, so no user-facing text lives here.
+class StoryServiceException implements Exception {
+  final StoryServiceErrorCode code;
+
+  const StoryServiceException(this.code);
+}
+
 class StoryService {
   final _firestore = FirebaseFirestore.instance;
 
@@ -32,9 +47,9 @@ class StoryService {
   }
 
   /// Exclusively locks the story for [authorEmail] so no one else can open
-  /// or edit it while they're writing their part. Throws a [StateError] if
-  /// the story was completed, already has a lock held by someone else, or
-  /// the author already contributed to it.
+  /// or edit it while they're writing their part. Throws a
+  /// [StoryServiceException] if the story was completed, already has a lock
+  /// held by someone else, or the author already contributed to it.
   Future<void> lockStory({
     required String storyId,
     required String authorEmail,
@@ -45,13 +60,13 @@ class StoryService {
       final story = Story.fromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw StateError('Questa storia è già stata completata.');
+        throw const StoryServiceException(StoryServiceErrorCode.alreadyCompleted);
       }
       if (story.hasParticipated(authorEmail)) {
-        throw StateError('Hai già contribuito a questa storia.');
+        throw const StoryServiceException(StoryServiceErrorCode.alreadyParticipated);
       }
       if (story.isLockedFor(authorEmail)) {
-        throw StateError('Questa storia è al momento bloccata da un altro utente.');
+        throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
 
       transaction.update(docRef, {'lockedBy': authorEmail});
@@ -77,9 +92,9 @@ class StoryService {
   }
 
   /// Appends the next part of the story inside a transaction, so two players
-  /// submitting at the same time can't both write the same position.
-  /// Throws a [StateError] if the story moved on, was completed, the story
-  /// is locked by someone else, or the author already wrote a part for it.
+  /// submitting at the same time can't both write the same position. Throws
+  /// a [StoryServiceException] if the story moved on, was completed, is
+  /// locked by someone else, or the author already wrote a part for it.
   Future<void> submitPart({
     required String storyId,
     required String expectedPosition,
@@ -92,16 +107,16 @@ class StoryService {
       final story = Story.fromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw StateError('Questa storia è già stata completata.');
+        throw const StoryServiceException(StoryServiceErrorCode.alreadyCompleted);
       }
       if (story.currentPosition != expectedPosition) {
-        throw StateError('Qualcun altro ha già scritto questo pezzo.');
+        throw const StoryServiceException(StoryServiceErrorCode.positionTaken);
       }
       if (story.isLockedFor(authorEmail)) {
-        throw StateError('Questa storia è bloccata da un altro utente.');
+        throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
       if (story.hasParticipated(authorEmail)) {
-        throw StateError('Hai già contribuito a questa storia.');
+        throw const StoryServiceException(StoryServiceErrorCode.alreadyParticipated);
       }
 
       final newPart = StoryPart(

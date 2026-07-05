@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/widgets.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 
 const List<String> kStoryPositions = [
   'introduzione',
@@ -7,16 +9,17 @@ const List<String> kStoryPositions = [
   'epilogo',
 ];
 
-String positionLabel(String position) {
+String positionLabel(BuildContext context, String position) {
+  final l10n = AppLocalizations.of(context)!;
   switch (position) {
     case 'introduzione':
-      return 'Introduzione';
+      return l10n.positionIntroduction;
     case 'sviluppo1':
-      return 'Sviluppo (1/2)';
+      return l10n.positionDevelopment1;
     case 'sviluppo2':
-      return 'Sviluppo (2/2)';
+      return l10n.positionDevelopment2;
     case 'epilogo':
-      return 'Epilogo';
+      return l10n.positionEpilogue;
     default:
       return position;
   }

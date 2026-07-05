@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 import 'package:cadavre_exquisite/screens/chat_screen.dart';
@@ -19,6 +20,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
@@ -34,13 +36,13 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
             ..sort((a, b) => a.parts.length.compareTo(b.parts.length));
 
           if (stories.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  'Nessuna storia da continuare al momento.\nCreane una nuova con il pulsante +.',
+                  l10n.noIncompleteStories,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54),
+                  style: const TextStyle(color: Colors.black54),
                 ),
               ),
             );
@@ -56,12 +58,12 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
               return ListTile(
                 leading:
                     isLocked ? const TypingIndicator() : const Icon(Icons.edit_note),
-                title: Text(positionLabel(story.currentPosition)),
+                title: Text(positionLabel(context, story.currentPosition)),
                 subtitle: Text(
                   isLocked
-                      ? 'Qualcuno sta scrivendo il prossimo capitolo...'
+                      ? l10n.storyBeingWritten
                       : story.parts.isEmpty
-                          ? 'Nessuno ha ancora iniziato questa storia.'
+                          ? l10n.storyNotStarted
                           : '"...${story.lastFiveWords}"',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -84,7 +86,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _storyService.createStory(),
-        tooltip: 'Nuova storia',
+        tooltip: l10n.newStoryTooltip,
         child: const Icon(Icons.add),
       ),
     );

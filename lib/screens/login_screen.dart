@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/constants.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -45,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     email = value;
                   },
                   decoration: kTextFieldDecoration.copyWith(
-                    hintText: 'Enter your email'
+                    hintText: l10n.emailHint
                   ),
                 ),
                 SizedBox(
@@ -57,14 +59,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     password = value;
                   },
                   decoration: kTextFieldDecoration.copyWith(
-                    hintText: 'Enter your password.'
+                    hintText: l10n.passwordHint
                   ),
                 ),
                 SizedBox(
                   height: 24.0,
                 ),
                 ChatButton(
-                  text: 'Log In',
+                  text: l10n.loginButton,
                   color: Colors.lightBlueAccent,
                   onPressed: () async {
                     setState(() {
@@ -83,14 +85,14 @@ class _LoginScreenState extends State<LoginScreen> {
                      } on FirebaseAuthException catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(e.message ?? 'Login failed. Please try again.'),
+                          content: Text(e.message ?? l10n.loginFailed),
                           backgroundColor: Colors.red,
                         ),
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Login failed. Please try again.'),
+                          content: Text(l10n.loginFailed),
                           backgroundColor: Colors.red,
                         ),
                       );

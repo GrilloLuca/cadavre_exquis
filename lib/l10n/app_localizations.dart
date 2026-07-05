@@ -1,0 +1,331 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_it.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('it')
+  ];
+
+  /// No description provided for @loginButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Accedi'**
+  String get loginButton;
+
+  /// No description provided for @registerButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Registrati'**
+  String get registerButton;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la tua email'**
+  String get emailHint;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la tua password'**
+  String get passwordHint;
+
+  /// No description provided for @loginFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Accesso non riuscito. Riprova.'**
+  String get loginFailed;
+
+  /// No description provided for @registrationFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Registrazione non riuscita. Riprova.'**
+  String get registrationFailed;
+
+  /// No description provided for @homeTabIncomplete.
+  ///
+  /// In it, this message translates to:
+  /// **'Incomplete'**
+  String get homeTabIncomplete;
+
+  /// No description provided for @homeTabComplete.
+  ///
+  /// In it, this message translates to:
+  /// **'Complete'**
+  String get homeTabComplete;
+
+  /// No description provided for @homeTabProfile.
+  ///
+  /// In it, this message translates to:
+  /// **'Profilo'**
+  String get homeTabProfile;
+
+  /// No description provided for @titleIncompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Storie incomplete'**
+  String get titleIncompleteStories;
+
+  /// No description provided for @titleCompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Storie complete'**
+  String get titleCompleteStories;
+
+  /// No description provided for @titleProfile.
+  ///
+  /// In it, this message translates to:
+  /// **'Profilo'**
+  String get titleProfile;
+
+  /// No description provided for @noIncompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia da continuare al momento.\nCreane una nuova con il pulsante +.'**
+  String get noIncompleteStories;
+
+  /// No description provided for @noCompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia completata, per ora.'**
+  String get noCompleteStories;
+
+  /// No description provided for @storyNotStarted.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno ha ancora iniziato questa storia.'**
+  String get storyNotStarted;
+
+  /// No description provided for @storyBeingWritten.
+  ///
+  /// In it, this message translates to:
+  /// **'Qualcuno sta scrivendo il prossimo capitolo...'**
+  String get storyBeingWritten;
+
+  /// No description provided for @newStoryTooltip.
+  ///
+  /// In it, this message translates to:
+  /// **'Nuova storia'**
+  String get newStoryTooltip;
+
+  /// No description provided for @authorsCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{1 autore} other{{count} autori}}'**
+  String authorsCount(int count);
+
+  /// No description provided for @storyCompleteTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Storia completa'**
+  String get storyCompleteTitle;
+
+  /// No description provided for @positionIntroduction.
+  ///
+  /// In it, this message translates to:
+  /// **'Introduzione'**
+  String get positionIntroduction;
+
+  /// No description provided for @positionDevelopment1.
+  ///
+  /// In it, this message translates to:
+  /// **'Sviluppo (1/2)'**
+  String get positionDevelopment1;
+
+  /// No description provided for @positionDevelopment2.
+  ///
+  /// In it, this message translates to:
+  /// **'Sviluppo (2/2)'**
+  String get positionDevelopment2;
+
+  /// No description provided for @positionEpilogue.
+  ///
+  /// In it, this message translates to:
+  /// **'Epilogo'**
+  String get positionEpilogue;
+
+  /// No description provided for @chatFirstWriterHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei il primo: scrivi tu l\'introduzione della storia!'**
+  String get chatFirstWriterHint;
+
+  /// No description provided for @storySoFarLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Finora è stato scritto...'**
+  String get storySoFarLabel;
+
+  /// No description provided for @chatMessageHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Scrivi qui: {position}...'**
+  String chatMessageHint(String position);
+
+  /// No description provided for @sendButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Invia'**
+  String get sendButton;
+
+  /// No description provided for @logoutButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Logout'**
+  String get logoutButton;
+
+  /// No description provided for @errorStoryAlreadyCompleted.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa storia è già stata completata.'**
+  String get errorStoryAlreadyCompleted;
+
+  /// No description provided for @errorStoryPositionTaken.
+  ///
+  /// In it, this message translates to:
+  /// **'Qualcun altro ha già scritto questo pezzo.'**
+  String get errorStoryPositionTaken;
+
+  /// No description provided for @errorStoryLockedByOther.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa storia è bloccata da un altro utente.'**
+  String get errorStoryLockedByOther;
+
+  /// No description provided for @errorAlreadyParticipated.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai già contribuito a questa storia.'**
+  String get errorAlreadyParticipated;
+
+  /// No description provided for @genericError.
+  ///
+  /// In it, this message translates to:
+  /// **'Si è verificato un errore. Riprova.'**
+  String get genericError;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'it'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'it':
+      return AppLocalizationsIt();
+  }
+
+  throw FlutterError(
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
+}

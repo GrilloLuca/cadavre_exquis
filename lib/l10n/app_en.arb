@@ -1,0 +1,42 @@
+{
+  "@@locale": "en",
+
+  "loginButton": "Log In",
+  "registerButton": "Register",
+  "emailHint": "Enter your email",
+  "passwordHint": "Enter your password",
+  "loginFailed": "Login failed. Please try again.",
+  "registrationFailed": "Registration failed. Please try again.",
+
+  "homeTabIncomplete": "Incomplete",
+  "homeTabComplete": "Complete",
+  "homeTabProfile": "Profile",
+  "titleIncompleteStories": "Incomplete stories",
+  "titleCompleteStories": "Complete stories",
+  "titleProfile": "Profile",
+
+  "noIncompleteStories": "No stories to continue right now.\nCreate a new one with the + button.",
+  "noCompleteStories": "No completed stories yet.",
+  "storyNotStarted": "No one has started this story yet.",
+  "storyBeingWritten": "Someone is writing the next chapter...",
+  "newStoryTooltip": "New story",
+  "authorsCount": "{count, plural, one{1 author} other{{count} authors}}",
+
+  "storyCompleteTitle": "Complete story",
+  "positionIntroduction": "Introduction",
+  "positionDevelopment1": "Development (1/2)",
+  "positionDevelopment2": "Development (2/2)",
+  "positionEpilogue": "Epilogue",
+
+  "chatFirstWriterHint": "You're first: write the introduction of the story!",
+  "storySoFarLabel": "So far it reads...",
+  "chatMessageHint": "Write here: {position}...",
+  "sendButton": "Send",
+  "logoutButton": "Logout",
+
+  "errorStoryAlreadyCompleted": "This story has already been completed.",
+  "errorStoryPositionTaken": "Someone else has already written this part.",
+  "errorStoryLockedByOther": "This story is currently locked by another user.",
+  "errorAlreadyParticipated": "You have already contributed to this story.",
+  "genericError": "Something went wrong. Please try again."
+}

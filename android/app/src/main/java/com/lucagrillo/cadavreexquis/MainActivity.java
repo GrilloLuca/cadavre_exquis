@@ -1,4 +1,4 @@
-package co.appbrewery.flash_chat;
+package com.lucagrillo.cadavreexquis;
 
 import io.flutter.embedding.android.FlutterActivity;
 

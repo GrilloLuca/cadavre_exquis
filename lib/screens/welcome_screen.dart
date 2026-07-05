@@ -1,4 +1,5 @@
 import 'package:cadavre_exquisite/button.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
 import 'package:flutter/material.dart';
@@ -74,14 +75,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               height: 48.0,
             ),
             ChatButton(
-              text: 'Log In',
+              text: AppLocalizations.of(context)!.loginButton,
               color: Colors.lightBlueAccent,
               onPressed: () {
                 Navigator.pushNamed(context, LoginScreen.id);
               },
             ),
             ChatButton(
-              text: 'Register',
+              text: AppLocalizations.of(context)!.registerButton,
               color: Colors.blueAccent,
               onPressed: () {
                 Navigator.pushNamed(context, RegistrationScreen.id);
