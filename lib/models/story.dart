@@ -1,0 +1,114 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+const List<String> kStoryPositions = [
+  'introduzione',
+  'sviluppo1',
+  'sviluppo2',
+  'epilogo',
+];
+
+String positionLabel(String position) {
+  switch (position) {
+    case 'introduzione':
+      return 'Introduzione';
+    case 'sviluppo1':
+      return 'Sviluppo (1/2)';
+    case 'sviluppo2':
+      return 'Sviluppo (2/2)';
+    case 'epilogo':
+      return 'Epilogo';
+    default:
+      return position;
+  }
+}
+
+/// Returns the position that follows [position], or null if [position] is the last one.
+String? nextPosition(String position) {
+  final index = kStoryPositions.indexOf(position);
+  if (index == -1 || index == kStoryPositions.length - 1) return null;
+  return kStoryPositions[index + 1];
+}
+
+class StoryPart {
+  final String position;
+  final String text;
+  final String author;
+  final Timestamp timestamp;
+
+  StoryPart({
+    required this.position,
+    required this.text,
+    required this.author,
+    required this.timestamp,
+  });
+
+  factory StoryPart.fromMap(Map<String, dynamic> map) {
+    return StoryPart(
+      position: map['position'] as String,
+      text: map['text'] as String,
+      author: map['author'] as String,
+      timestamp: map['timestamp'] as Timestamp,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'position': position,
+      'text': text,
+      'author': author,
+      'timestamp': timestamp,
+    };
+  }
+}
+
+class Story {
+  final String id;
+  final String status;
+  final String currentPosition;
+  final List<StoryPart> parts;
+  final List<String> participants;
+  final String? lockedBy;
+
+  Story({
+    required this.id,
+    required this.status,
+    required this.currentPosition,
+    required this.parts,
+    required this.participants,
+    this.lockedBy,
+  });
+
+  factory Story.fromSnapshot(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Story(
+      id: doc.id,
+      status: data['status'] as String,
+      currentPosition: data['currentPosition'] as String,
+      parts: (data['parts'] as List<dynamic>? ?? [])
+          .map((p) => StoryPart.fromMap(p as Map<String, dynamic>))
+          .toList(),
+      participants:
+          List<String>.from(data['participants'] as List<dynamic>? ?? []),
+      lockedBy: data['lockedBy'] as String?,
+    );
+  }
+
+  bool get isComplete => status == 'complete';
+
+  bool hasParticipated(String? email) =>
+      email != null && participants.contains(email);
+
+  /// Whether the story is currently locked by a different user than [email].
+  bool isLockedFor(String? email) => lockedBy != null && lockedBy != email;
+
+  /// Last 5 words of the most recently written part, shown as a preview
+  /// to the next player. Empty if no part has been written yet.
+  String get lastFiveWords {
+    if (parts.isEmpty) return '';
+    final words = parts.last.text.trim().split(RegExp(r'\s+'));
+    final lastWords = words.length <= 5 ? words : words.sublist(words.length - 5);
+    return lastWords.join(' ');
+  }
+
+  String get fullText => parts.map((p) => p.text).join('\n\n');
+}

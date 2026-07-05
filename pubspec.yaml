@@ -1,18 +1,22 @@
-name: flash_chat
-description: A new Flutter application.
+name: cadavre_exquisite
+description: Un gioco di scrittura collaborativa a turni, ispirato al cadavre exquis.
 
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.1.0<3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^0.1.2
+  cupertino_icons: ^1.0.2
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
+  cloud_firestore: ^6.6.0
 
 dev_dependencies:
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
 
