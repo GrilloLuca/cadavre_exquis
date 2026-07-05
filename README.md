@@ -1,32 +1,65 @@
-![App Brewery Banner](https://github.com/londonappbrewery/Images/blob/master/AppBreweryBanner.png)
+# 📝 Exquisite Corpse (Cadavre Exquis) – Creative Writing App
 
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=flat&logo=Dart&logoColor=white)](https://dart.dev)
+[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-brightgreen.svg)](https://opensource.org/)
 
-# Flash Chat ⚡️
+A cross-platform (iOS, Android, Web) application for **collaborative creative writing**, inspired by the famous surrealist game *Cadavre Exquis* (Exquisite Corpse). 
 
-## Our Goal
+This project adapts the historical turn-based "blind" drawing dynamic into the realm of narrative fiction. It allows users to co-create unique stories consisting of an **Introduction, Development, and Epilogue**, without knowing the details of the segments written by other participants, except for small continuity hints.
 
-The objective of this tutorial is to learn how to incorporate Firebase into our Flutter apps. We'll be using Firebase Cloud Firestore as well as the Firebase authentication package to equip our app with a cloud-based NoSQL database and secure authentication methods. 
+---
 
+## 🎲 The Concept
 
-## What you will create
+In the original paper game, each player draws a section of a creature (head, torso, legs), folding the paper to hide their contribution before passing it to the next person. 
 
-We’re going to build a modern messaging app where users can sign up and log in to chat.
+This app translates that mechanic into text, establishing a pact of "creative blindness" between users to generate unpredictable, humorous, or surreal literary experiments.
 
-![Finished App](https://github.com/londonappbrewery/Images/blob/master/flash_chat_flutter_demo.gif)
+### The Gameplay Loop (Story Flow)
+The process unfolds across **3 main turns**:
 
-## What you will learn
+1. **Phase 1: The Introduction (Author A)** The first player writes the opening of the story, setting up the characters or the initial context. They optionally leave a very short "hook phrase" visible for the next turn.
+2. **Phase 2: The Development (Author B)** The second player, reading only the final line or the hint from the introduction, develops the core body of the story, building the action to its climax.
+3. **Phase 3: The Epilogue (Author C)** The third player concludes the narrative, knowing only the final line of the development phase.
+4. **The Reveal:** The complete story is assembled, displayed in its entirety to all participants, and saved to the community archive.
 
-- How to incorporate Firebase into your Flutter projects.
-- How to use Firebase authentication to register and sign in users.
-- How to create beautiful animations using the Flutter Hero widget.
-- How to create custom aniamtions using Flutter's animation controller. 
-- Learn all about mixins and how they differ from superclasses.
-- Learn about Streams and how they work.
-- Learn to use ListViews to build scrolling views.
-- How to use Firebase Cloud Firestore to store and retrieve data on the fly.
+---
 
+## 🛠️ Tech Stack & Architecture
 
+The application is built using a modern, scalable, and performance-oriented ecosystem:
 
->This is a companion project to The App Brewery's Complete Flutter Development Bootcamp, check out the full course at [www.appbrewery.co](https://www.appbrewery.co/)
+* **Framework:** [Flutter](https://flutter.dev) (Single codebase for Android, iOS, and Web).
+* **Language:** [Dart](https://dart.dev) (Leveraging strong typing and asynchronous programming).
+* **State Management:** *[e.g., Riverpod / BLoC]* For a reactive, predictable, and clean turn-management state.
+* **Architecture:** Clean Architecture / Layered Architecture (Data, Domain, Presentation) to guarantee high maintainability and straightforward testing workflows.
 
-![End Banner](https://github.com/londonappbrewery/Images/blob/master/readme-end-banner.png)
+---
+
+## 🚀 Key Features (Roadmap)
+
+- [ ] **Public & Private Lobbies:** Create custom rooms to play with friends via code, or join random matchmaking.
+- [ ] **Minimalist Text Editor:** A distraction-free writing interface with an optional timer to stimulate flow of consciousness.
+- [ ] **"Folded Paper" Logic:** Text obfuscation system that only displays the final words or tokens of the previous turn to guarantee a minimal logical link.
+- [ ] **Story Showcase Feed:** A public wall to read, rate, and share the most successful and absurd "Exquisite Corpses".
+- [ ] **Pass-and-Play (Local Offline Mode):** Play locally with friends using a single mobile device passed around.
+
+---
+
+## 🤝 Contributing
+
+This project is fully **Open Source** and warmly welcomes contributions of any kind: feature development, code refactoring, UI/UX improvements, bug fixes, or documentation.
+
+To get started:
+1. **Fork** the repository.
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`).
+3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`).
+4. **Push** to the branch (`git push origin feature/AmazingFeature`).
+5. Open a **Pull Request**.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the `LICENSE` file for details.

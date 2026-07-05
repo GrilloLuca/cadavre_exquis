@@ -27,6 +27,10 @@
 .pub/
 /build/
 
+# Firebase config (contains project-specific API keys)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # Android related
 **/android/**/gradle-wrapper.jar
 **/android/.gradle
@@ -61,6 +65,7 @@
 **/ios/Flutter/flutter_assets/
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Flutter/ephemeral/
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3

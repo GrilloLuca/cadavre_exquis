@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E '\\\\.\\(dart|yaml\\)$')"
+      "Bash(grep -E '\\\\.\\(dart|yaml\\)$')",
+      "Bash(grep -iE '\\\\.\\(env|jks|keystore|p12|pem|key|cer|crt|pfx\\)$|google-services\\\\.json|GoogleService-Info\\\\.plist|firebase.*\\\\.json|secrets?|credentials|\\\\.pgpass|id_rsa|id_ed25519')",
+      "Bash(git rm *)"
     ]
   }
 }
