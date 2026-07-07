@@ -32,6 +32,7 @@ class CadavreExquisiteApp extends StatelessWidget {
         WelcomeScreen.id: (context) => WelcomeScreen(),
         HomeScreen.id: (context) => const HomeScreen(),
         LoginScreen.id: (context) => LoginScreen(),
+
         RegistrationScreen.id: (context) => RegistrationScreen(),
       },
     );

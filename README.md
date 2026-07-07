@@ -10,6 +10,46 @@ Each story is written turn-by-turn by different, anonymous authors who only ever
 
 ---
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+* [Flutter SDK](https://docs.flutter.dev/get-started/install) (>=3.0.0) with the Android/iOS toolchains set up.
+* A [Firebase](https://firebase.google.com/) account.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/<your-username>/cadavre-exquisite-flutter.git
+cd cadavre-exquisite-flutter
+flutter pub get
+```
+
+### 2. Set up a Firebase project
+
+1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (or use an existing one).
+2. Enable **Authentication** → sign-in method **Email/Password**.
+3. Enable **Cloud Firestore** (start in test mode, then apply your own security rules).
+4. Register an **Android app** with the package name `com.lucagrillo.cadavreexquis`.
+5. Register an **iOS app** with the bundle ID `com.lucagrillo.cadavreexquis`.
+
+### 3. Add the Firebase config files
+
+The app reads its Firebase configuration from the native platform files rather than a generated `firebase_options.dart`, so after registering each app in the Firebase console, download and place its config file exactly here (both are already git-ignored since they contain project-specific keys):
+
+* **Android:** download `google-services.json` → `android/app/google-services.json`
+* **iOS:** download `GoogleService-Info.plist` → `ios/Runner/GoogleService-Info.plist`
+
+For iOS, make sure `GoogleService-Info.plist` is added to the `Runner` target in Xcode (open `ios/Runner.xcworkspace`, drag the file into the `Runner` folder, and check "Copy items if needed" + the `Runner` target membership).
+
+### 4. Run the app
+
+```bash
+flutter run
+```
+
+---
+
 ## 🎲 The Concept
 
 In the original paper game, each player draws a section of a creature (head, torso, legs), folding the paper to hide their contribution before passing it to the next person.
