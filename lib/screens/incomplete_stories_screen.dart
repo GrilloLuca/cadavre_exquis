@@ -30,9 +30,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final stories = snapshot.data!
-              .where((story) => !story.hasParticipated(currentUserEmail))
-              .toList()
+          final stories = snapshot.data!.toList()
             ..sort((a, b) => a.parts.length.compareTo(b.parts.length));
 
           if (stories.isEmpty) {
@@ -55,21 +53,29 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
             itemBuilder: (context, index) {
               final story = stories[index];
               final isLocked = story.isLockedFor(currentUserEmail);
+              final isWaitingForOthers =
+                  story.wasLastWrittenBy(currentUserEmail);
+              final isDisabled = isLocked || isWaitingForOthers;
               return ListTile(
-                leading:
-                    isLocked ? const TypingIndicator() : const Icon(Icons.edit_note),
+                leading: isLocked
+                    ? const TypingIndicator()
+                    : Icon(isWaitingForOthers
+                        ? Icons.hourglass_empty
+                        : Icons.edit_note),
                 title: Text(positionLabel(context, story.currentPosition)),
                 subtitle: Text(
                   isLocked
                       ? l10n.storyBeingWritten
-                      : story.parts.isEmpty
-                          ? l10n.storyNotStarted
-                          : '"...${story.lastFiveWords}"',
+                      : isWaitingForOthers
+                          ? l10n.storyWaitingForOthers
+                          : story.parts.isEmpty
+                              ? l10n.storyNotStarted
+                              : '"...${story.lastFiveWords}"',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                enabled: !isLocked,
-                onTap: isLocked
+                enabled: !isDisabled,
+                onTap: isDisabled
                     ? null
                     : () {
                         Navigator.push(

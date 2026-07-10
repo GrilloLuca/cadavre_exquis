@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Qualcuno sta scrivendo il prossimo capitolo...'**
   String get storyBeingWritten;
 
+  /// No description provided for @storyWaitingForOthers.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai scritto l\'ultimo capitolo: aspetta un altro giocatore.'**
+  String get storyWaitingForOthers;
+
   /// No description provided for @newStoryTooltip.
   ///
   /// In it, this message translates to:
@@ -284,11 +290,11 @@ abstract class AppLocalizations {
   /// **'Questa storia è bloccata da un altro utente.'**
   String get errorStoryLockedByOther;
 
-  /// No description provided for @errorAlreadyParticipated.
+  /// No description provided for @errorConsecutiveTurnNotAllowed.
   ///
   /// In it, this message translates to:
-  /// **'Hai già contribuito a questa storia.'**
-  String get errorAlreadyParticipated;
+  /// **'Non puoi scrivere due capitoli di fila: aspetta che qualcun altro scriva il prossimo.'**
+  String get errorConsecutiveTurnNotAllowed;
 
   /// No description provided for @genericError.
   ///

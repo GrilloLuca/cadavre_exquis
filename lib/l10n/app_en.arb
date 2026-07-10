@@ -19,6 +19,7 @@
   "noCompleteStories": "No completed stories yet.",
   "storyNotStarted": "No one has started this story yet.",
   "storyBeingWritten": "Someone is writing the next chapter...",
+  "storyWaitingForOthers": "You wrote the last chapter — waiting for another player.",
   "newStoryTooltip": "New story",
   "authorsCount": "{count, plural, one{1 author} other{{count} authors}}",
 
@@ -37,6 +38,6 @@
   "errorStoryAlreadyCompleted": "This story has already been completed.",
   "errorStoryPositionTaken": "Someone else has already written this part.",
   "errorStoryLockedByOther": "This story is currently locked by another user.",
-  "errorAlreadyParticipated": "You have already contributed to this story.",
+  "errorConsecutiveTurnNotAllowed": "You can't write two parts in a row — wait for someone else to write the next one.",
   "genericError": "Something went wrong. Please try again."
 }

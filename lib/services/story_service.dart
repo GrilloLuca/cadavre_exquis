@@ -5,7 +5,7 @@ enum StoryServiceErrorCode {
   alreadyCompleted,
   positionTaken,
   lockedByOther,
-  alreadyParticipated,
+  consecutiveTurnNotAllowed,
 }
 
 /// Thrown by [StoryService] operations on invalid story state. The UI layer
@@ -39,7 +39,6 @@ class StoryService {
       'status': 'incomplete',
       'currentPosition': kStoryPositions.first,
       'parts': [],
-      'participants': [],
       'lockedBy': null,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -49,7 +48,8 @@ class StoryService {
   /// Exclusively locks the story for [authorEmail] so no one else can open
   /// or edit it while they're writing their part. Throws a
   /// [StoryServiceException] if the story was completed, already has a lock
-  /// held by someone else, or the author already contributed to it.
+  /// held by someone else, or the author wrote the immediately preceding
+  /// part (two consecutive turns by the same author aren't allowed).
   Future<void> lockStory({
     required String storyId,
     required String authorEmail,
@@ -62,8 +62,8 @@ class StoryService {
       if (story.status != 'incomplete') {
         throw const StoryServiceException(StoryServiceErrorCode.alreadyCompleted);
       }
-      if (story.hasParticipated(authorEmail)) {
-        throw const StoryServiceException(StoryServiceErrorCode.alreadyParticipated);
+      if (story.wasLastWrittenBy(authorEmail)) {
+        throw const StoryServiceException(StoryServiceErrorCode.consecutiveTurnNotAllowed);
       }
       if (story.isLockedFor(authorEmail)) {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
@@ -94,7 +94,8 @@ class StoryService {
   /// Appends the next part of the story inside a transaction, so two players
   /// submitting at the same time can't both write the same position. Throws
   /// a [StoryServiceException] if the story moved on, was completed, is
-  /// locked by someone else, or the author already wrote a part for it.
+  /// locked by someone else, or the author wrote the immediately preceding
+  /// part (two consecutive turns by the same author aren't allowed).
   Future<void> submitPart({
     required String storyId,
     required String expectedPosition,
@@ -115,8 +116,8 @@ class StoryService {
       if (story.isLockedFor(authorEmail)) {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
-      if (story.hasParticipated(authorEmail)) {
-        throw const StoryServiceException(StoryServiceErrorCode.alreadyParticipated);
+      if (story.wasLastWrittenBy(authorEmail)) {
+        throw const StoryServiceException(StoryServiceErrorCode.consecutiveTurnNotAllowed);
       }
 
       final newPart = StoryPart(
@@ -130,7 +131,6 @@ class StoryService {
 
       transaction.update(docRef, {
         'parts': updatedParts.map((p) => p.toMap()).toList(),
-        'participants': FieldValue.arrayUnion([authorEmail]),
         'currentPosition': next ?? expectedPosition,
         'status': next == null ? 'complete' : 'incomplete',
         'lockedBy': null,

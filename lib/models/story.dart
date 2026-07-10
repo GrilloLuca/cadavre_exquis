@@ -69,7 +69,6 @@ class Story {
   final String status;
   final String currentPosition;
   final List<StoryPart> parts;
-  final List<String> participants;
   final String? lockedBy;
 
   Story({
@@ -77,7 +76,6 @@ class Story {
     required this.status,
     required this.currentPosition,
     required this.parts,
-    required this.participants,
     this.lockedBy,
   });
 
@@ -90,16 +88,17 @@ class Story {
       parts: (data['parts'] as List<dynamic>? ?? [])
           .map((p) => StoryPart.fromMap(p as Map<String, dynamic>))
           .toList(),
-      participants:
-          List<String>.from(data['participants'] as List<dynamic>? ?? []),
       lockedBy: data['lockedBy'] as String?,
     );
   }
 
   bool get isComplete => status == 'complete';
 
-  bool hasParticipated(String? email) =>
-      email != null && participants.contains(email);
+  /// Whether [email] wrote the most recent part, which would make this
+  /// their second consecutive turn. A user may write several parts of the
+  /// same story, just not two in a row.
+  bool wasLastWrittenBy(String? email) =>
+      email != null && parts.isNotEmpty && parts.last.author == email;
 
   /// Whether the story is currently locked by a different user than [email].
   bool isLockedFor(String? email) => lockedBy != null && lockedBy != email;
