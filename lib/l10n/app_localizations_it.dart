@@ -59,6 +59,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Qualcuno sta scrivendo il prossimo capitolo...';
 
   @override
+  String get storyWaitingForOthers =>
+      'Hai scritto l\'ultimo capitolo: aspetta un altro giocatore.';
+
+  @override
   String get newStoryTooltip => 'Nuova storia';
 
   @override
@@ -118,7 +122,8 @@ class AppLocalizationsIt extends AppLocalizations {
       'Questa storia è bloccata da un altro utente.';
 
   @override
-  String get errorAlreadyParticipated => 'Hai già contribuito a questa storia.';
+  String get errorConsecutiveTurnNotAllowed =>
+      'Non puoi scrivere due capitoli di fila: aspetta che qualcun altro scriva il prossimo.';
 
   @override
   String get genericError => 'Si è verificato un errore. Riprova.';

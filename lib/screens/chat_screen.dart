@@ -95,8 +95,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return l10n.errorStoryPositionTaken;
         case StoryServiceErrorCode.lockedByOther:
           return l10n.errorStoryLockedByOther;
-        case StoryServiceErrorCode.alreadyParticipated:
-          return l10n.errorAlreadyParticipated;
+        case StoryServiceErrorCode.consecutiveTurnNotAllowed:
+          return l10n.errorConsecutiveTurnNotAllowed;
       }
     }
     return l10n.genericError;

@@ -19,6 +19,7 @@
   "noCompleteStories": "Nessuna storia completata, per ora.",
   "storyNotStarted": "Nessuno ha ancora iniziato questa storia.",
   "storyBeingWritten": "Qualcuno sta scrivendo il prossimo capitolo...",
+  "storyWaitingForOthers": "Hai scritto l'ultimo capitolo: aspetta un altro giocatore.",
   "newStoryTooltip": "Nuova storia",
   "authorsCount": "{count, plural, one{1 autore} other{{count} autori}}",
   "@authorsCount": {
@@ -51,6 +52,6 @@
   "errorStoryAlreadyCompleted": "Questa storia è già stata completata.",
   "errorStoryPositionTaken": "Qualcun altro ha già scritto questo pezzo.",
   "errorStoryLockedByOther": "Questa storia è bloccata da un altro utente.",
-  "errorAlreadyParticipated": "Hai già contribuito a questa storia.",
+  "errorConsecutiveTurnNotAllowed": "Non puoi scrivere due capitoli di fila: aspetta che qualcun altro scriva il prossimo.",
   "genericError": "Si è verificato un errore. Riprova."
 }
