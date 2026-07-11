@@ -110,7 +110,7 @@ lib/
 ## 🚀 Roadmap
 
 - [ ] **Public & Private Lobbies:** dedicated rooms via invite code instead of a single shared pool of stories.
-- [ ] **Language-based Rooms:** join rooms filtered by language, so a story is written entirely by authors sharing the same language.
+- [ ] **Language-based Rooms:** join rooms filtered by language.
 - [ ] **Story Showcase Feed:** rating and sharing for completed stories.
 - [ ] **Pass-and-Play (Local Offline Mode):** play locally with friends on a single device.
 - [ ] **Writing timer:** optional time limit per phase to encourage stream-of-consciousness writing.
