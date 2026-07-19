@@ -82,6 +82,7 @@ A story can only be written by one author at a time: while someone has it open, 
 lib/
 ├── main.dart                 # App entry point, Firebase init, auth-based routing
 ├── models/story.dart         # Story / StoryPart models and phase helpers
+├── models/story_language.dart   # Languages available as story rooms
 ├── services/story_service.dart  # Firestore streams, locking & submission transactions
 ├── screens/
 │   ├── welcome_screen.dart
@@ -105,12 +106,13 @@ lib/
 - **Turn-based writing** across the 4 phases described above, with only the last 5 words of the previous phase shown as a hint.
 - **Exclusive locking** so a story can only be written by one author at a time, with a live "being written" indicator for everyone else.
 - **Completed story archive** — read any finished story in full, part by part, with author attribution.
+- **Language-based rooms** — every story belongs to a language room (🇮🇹 🇬🇧 🇪🇸 🇫🇷 🇩🇪); pick a room from the home screen and you only see, continue, and read stories in that language, so each story is written entirely by authors sharing it. New stories are created in the room you're in, and the app starts you in the room matching your device language.
 - **English and Italian localization.**
 
 ## 🚀 Roadmap
 
+- [x] **Language-based Rooms:** join rooms filtered by language, so a story is written entirely by authors sharing the same language.
 - [ ] **Public & Private Lobbies:** dedicated rooms via invite code instead of a single shared pool of stories.
-- [ ] **Language-based Rooms:** join rooms filtered by language, so a story is written entirely by authors sharing the same language.
 - [ ] **Story Showcase Feed:** rating and sharing for completed stories.
 - [ ] **Pass-and-Play (Local Offline Mode):** play locally with friends on a single device.
 - [ ] **Writing timer:** optional time limit per phase to encourage stream-of-consciousness writing.

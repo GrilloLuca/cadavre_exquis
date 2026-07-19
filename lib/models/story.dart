@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/models/story_language.dart';
 
 const List<String> kStoryPositions = [
   'introduzione',
@@ -70,6 +71,7 @@ class Story {
   final String currentPosition;
   final List<StoryPart> parts;
   final String? lockedBy;
+  final String language;
 
   Story({
     required this.id,
@@ -77,6 +79,7 @@ class Story {
     required this.currentPosition,
     required this.parts,
     this.lockedBy,
+    this.language = kDefaultStoryLanguage,
   });
 
   factory Story.fromSnapshot(DocumentSnapshot doc) {
@@ -89,6 +92,7 @@ class Story {
           .map((p) => StoryPart.fromMap(p as Map<String, dynamic>))
           .toList(),
       lockedBy: data['lockedBy'] as String?,
+      language: data['language'] as String? ?? kDefaultStoryLanguage,
     );
   }
 

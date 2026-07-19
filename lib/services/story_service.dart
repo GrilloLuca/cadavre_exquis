@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/models/story_language.dart';
 
 enum StoryServiceErrorCode {
   alreadyCompleted,
@@ -22,24 +23,35 @@ class StoryService {
   CollectionReference<Map<String, dynamic>> get _stories =>
       _firestore.collection('stories');
 
-  Stream<List<Story>> incompleteStoriesStream() {
+  /// Stories in the [language] room. Filtered client-side rather than with a
+  /// `where('language', ...)` clause so stories created before language rooms
+  /// existed (no `language` field, defaulted to [kDefaultStoryLanguage] by the
+  /// model) still show up in their room.
+  Stream<List<Story>> incompleteStoriesStream({required String language}) {
     return _stories.where('status', isEqualTo: 'incomplete').snapshots().map(
-          (snapshot) => snapshot.docs.map(Story.fromSnapshot).toList(),
+          (snapshot) => snapshot.docs
+              .map(Story.fromSnapshot)
+              .where((story) => story.language == language)
+              .toList(),
         );
   }
 
-  Stream<List<Story>> completeStoriesStream() {
+  Stream<List<Story>> completeStoriesStream({required String language}) {
     return _stories.where('status', isEqualTo: 'complete').snapshots().map(
-          (snapshot) => snapshot.docs.map(Story.fromSnapshot).toList(),
+          (snapshot) => snapshot.docs
+              .map(Story.fromSnapshot)
+              .where((story) => story.language == language)
+              .toList(),
         );
   }
 
-  Future<void> createStory() {
+  Future<void> createStory({required String language}) {
     return _stories.add({
       'status': 'incomplete',
       'currentPosition': kStoryPositions.first,
       'parts': [],
       'lockedBy': null,
+      'language': language,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
