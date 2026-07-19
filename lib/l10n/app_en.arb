@@ -8,6 +8,8 @@
   "loginFailed": "Login failed. Please try again.",
   "registrationFailed": "Registration failed. Please try again.",
 
+  "languageRoomTooltip": "Choose the language room",
+
   "homeTabIncomplete": "Incomplete",
   "homeTabComplete": "Complete",
   "homeTabProfile": "Profile",

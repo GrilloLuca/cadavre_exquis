@@ -7,7 +7,11 @@ import 'package:cadavre_exquisite/screens/chat_screen.dart';
 import 'package:cadavre_exquisite/typing_indicator.dart';
 
 class IncompleteStoriesScreen extends StatefulWidget {
-  const IncompleteStoriesScreen({super.key});
+  /// Language code of the room the user has joined: only stories in this
+  /// language are listed, and new stories are created in it.
+  final String language;
+
+  const IncompleteStoriesScreen({super.key, required this.language});
 
   @override
   State<IncompleteStoriesScreen> createState() =>
@@ -24,7 +28,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
-        stream: _storyService.incompleteStoriesStream(),
+        stream: _storyService.incompleteStoriesStream(language: widget.language),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -91,7 +95,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _storyService.createStory(),
+        onPressed: () => _storyService.createStory(language: widget.language),
         tooltip: l10n.newStoryTooltip,
         child: const Icon(Icons.add),
       ),

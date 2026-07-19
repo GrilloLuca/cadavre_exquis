@@ -27,6 +27,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get registrationFailed => 'Registrazione non riuscita. Riprova.';
 
   @override
+  String get languageRoomTooltip => 'Scegli la stanza della lingua';
+
+  @override
   String get homeTabIncomplete => 'Incomplete';
 
   @override

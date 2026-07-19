@@ -8,6 +8,8 @@
   "loginFailed": "Accesso non riuscito. Riprova.",
   "registrationFailed": "Registrazione non riuscita. Riprova.",
 
+  "languageRoomTooltip": "Scegli la stanza della lingua",
+
   "homeTabIncomplete": "Incomplete",
   "homeTabComplete": "Complete",
   "homeTabProfile": "Profilo",

@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Registrazione non riuscita. Riprova.'**
   String get registrationFailed;
 
+  /// No description provided for @languageRoomTooltip.
+  ///
+  /// In it, this message translates to:
+  /// **'Scegli la stanza della lingua'**
+  String get languageRoomTooltip;
+
   /// No description provided for @homeTabIncomplete.
   ///
   /// In it, this message translates to:

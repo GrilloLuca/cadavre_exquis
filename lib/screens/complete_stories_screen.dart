@@ -5,7 +5,11 @@ import 'package:cadavre_exquisite/services/story_service.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 
 class CompleteStoriesScreen extends StatelessWidget {
-  const CompleteStoriesScreen({super.key});
+  /// Language code of the room the user has joined: only stories in this
+  /// language are listed.
+  final String language;
+
+  const CompleteStoriesScreen({super.key, required this.language});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +18,7 @@ class CompleteStoriesScreen extends StatelessWidget {
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
-        stream: storyService.completeStoriesStream(),
+        stream: storyService.completeStoriesStream(language: language),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

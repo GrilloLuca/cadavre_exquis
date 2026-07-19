@@ -28,4 +28,4 @@ flutter:
   generate: true
 
   assets:
-  - images/
+    - images/
