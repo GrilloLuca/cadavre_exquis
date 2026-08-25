@@ -55,5 +55,23 @@
   "errorStoryPositionTaken": "Qualcun altro ha già scritto questo pezzo.",
   "errorStoryLockedByOther": "Questa storia è bloccata da un altro utente.",
   "errorConsecutiveTurnNotAllowed": "Non puoi scrivere due capitoli di fila: aspetta che qualcun altro scriva il prossimo.",
-  "genericError": "Si è verificato un errore. Riprova."
+  "genericError": "Si è verificato un errore. Riprova.",
+
+  "privateRoomMenuItem": "Stanza privata",
+  "leavePrivateRoomMenuItem": "Esci dalla stanza privata",
+  "privateRoomTitle": "Stanza privata",
+  "privateRoomDescription": "Crea una stanza privata per te e i tuoi amici, oppure unisciti a una stanza esistente con nome e password.",
+  "createRoomButton": "Crea una stanza",
+  "joinRoomButton": "Unisciti a una stanza",
+  "createRoomTitle": "Crea stanza privata",
+  "joinRoomTitle": "Unisciti a una stanza privata",
+  "roomNameHint": "Nome della stanza",
+  "roomPasswordHint": "Password della stanza",
+  "roomPasswordConfirmHint": "Conferma password",
+  "roomNameRequired": "Inserisci il nome della stanza.",
+  "roomNameInvalid": "Il nome della stanza non può contenere \"/\" e deve avere al massimo 40 caratteri.",
+  "roomPasswordTooShort": "La password deve avere almeno 4 caratteri.",
+  "roomPasswordMismatch": "Le password non coincidono.",
+  "errorRoomNameTaken": "Esiste già una stanza con questo nome. Prova un altro nome.",
+  "errorRoomJoinFailed": "Stanza non trovata o password errata."
 }

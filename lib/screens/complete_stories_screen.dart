@@ -9,7 +9,15 @@ class CompleteStoriesScreen extends StatelessWidget {
   /// language are listed.
   final String language;
 
-  const CompleteStoriesScreen({super.key, required this.language});
+  /// Id of the private room the user has joined, if any. When set, this
+  /// takes precedence over [language]: only stories in this room are listed.
+  final String? roomId;
+
+  const CompleteStoriesScreen({
+    super.key,
+    required this.language,
+    this.roomId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +26,10 @@ class CompleteStoriesScreen extends StatelessWidget {
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
-        stream: storyService.completeStoriesStream(language: language),
+        stream: storyService.completeStoriesStream(
+          language: language,
+          roomId: roomId,
+        ),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

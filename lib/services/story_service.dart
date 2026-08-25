@@ -23,35 +23,54 @@ class StoryService {
   CollectionReference<Map<String, dynamic>> get _stories =>
       _firestore.collection('stories');
 
-  /// Stories in the [language] room. Filtered client-side rather than with a
-  /// `where('language', ...)` clause so stories created before language rooms
-  /// existed (no `language` field, defaulted to [kDefaultStoryLanguage] by the
-  /// model) still show up in their room.
-  Stream<List<Story>> incompleteStoriesStream({required String language}) {
+  /// Whether [story] belongs to the room identified by [language]/[roomId]:
+  /// stories in a private room ([roomId] set) when [roomId] is given, or
+  /// stories in the public [language] room (and not in any private room)
+  /// otherwise.
+  bool _isInRoom(Story story, {required String language, String? roomId}) {
+    if (roomId != null) return story.roomId == roomId;
+    return story.roomId == null && story.language == language;
+  }
+
+  /// Stories in the [language] room, or in the private room [roomId] if
+  /// given. Filtered client-side rather than with a `where(...)` clause so
+  /// stories created before language rooms existed (no `language` field,
+  /// defaulted to [kDefaultStoryLanguage] by the model) still show up in
+  /// their room.
+  Stream<List<Story>> incompleteStoriesStream({
+    required String language,
+    String? roomId,
+  }) {
     return _stories.where('status', isEqualTo: 'incomplete').snapshots().map(
           (snapshot) => snapshot.docs
               .map(Story.fromSnapshot)
-              .where((story) => story.language == language)
+              .where((story) =>
+                  _isInRoom(story, language: language, roomId: roomId))
               .toList(),
         );
   }
 
-  Stream<List<Story>> completeStoriesStream({required String language}) {
+  Stream<List<Story>> completeStoriesStream({
+    required String language,
+    String? roomId,
+  }) {
     return _stories.where('status', isEqualTo: 'complete').snapshots().map(
           (snapshot) => snapshot.docs
               .map(Story.fromSnapshot)
-              .where((story) => story.language == language)
+              .where((story) =>
+                  _isInRoom(story, language: language, roomId: roomId))
               .toList(),
         );
   }
 
-  Future<void> createStory({required String language}) {
+  Future<void> createStory({required String language, String? roomId}) {
     return _stories.add({
       'status': 'incomplete',
       'currentPosition': kStoryPositions.first,
       'parts': [],
       'lockedBy': null,
       'language': language,
+      if (roomId != null) 'roomId': roomId,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
