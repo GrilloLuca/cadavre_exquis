@@ -73,6 +73,10 @@ class Story {
   final String? lockedBy;
   final String language;
 
+  /// Id of the private room this story belongs to, or null for a story in
+  /// one of the public language rooms.
+  final String? roomId;
+
   Story({
     required this.id,
     required this.status,
@@ -80,6 +84,7 @@ class Story {
     required this.parts,
     this.lockedBy,
     this.language = kDefaultStoryLanguage,
+    this.roomId,
   });
 
   factory Story.fromSnapshot(DocumentSnapshot doc) {
@@ -93,6 +98,7 @@ class Story {
           .toList(),
       lockedBy: data['lockedBy'] as String?,
       language: data['language'] as String? ?? kDefaultStoryLanguage,
+      roomId: data['roomId'] as String?,
     );
   }
 

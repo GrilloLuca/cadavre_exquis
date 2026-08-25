@@ -11,7 +11,16 @@ class IncompleteStoriesScreen extends StatefulWidget {
   /// language are listed, and new stories are created in it.
   final String language;
 
-  const IncompleteStoriesScreen({super.key, required this.language});
+  /// Id of the private room the user has joined, if any. When set, this
+  /// takes precedence over [language]: only stories in this room are listed
+  /// and created.
+  final String? roomId;
+
+  const IncompleteStoriesScreen({
+    super.key,
+    required this.language,
+    this.roomId,
+  });
 
   @override
   State<IncompleteStoriesScreen> createState() =>
@@ -28,7 +37,10 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
 
     return Scaffold(
       body: StreamBuilder<List<Story>>(
-        stream: _storyService.incompleteStoriesStream(language: widget.language),
+        stream: _storyService.incompleteStoriesStream(
+          language: widget.language,
+          roomId: widget.roomId,
+        ),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -95,7 +107,10 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _storyService.createStory(language: widget.language),
+        onPressed: () => _storyService.createStory(
+          language: widget.language,
+          roomId: widget.roomId,
+        ),
         tooltip: l10n.newStoryTooltip,
         child: const Icon(Icons.add),
       ),

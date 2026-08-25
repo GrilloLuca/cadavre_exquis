@@ -130,4 +130,59 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get genericError => 'Si è verificato un errore. Riprova.';
+
+  @override
+  String get privateRoomMenuItem => 'Stanza privata';
+
+  @override
+  String get leavePrivateRoomMenuItem => 'Esci dalla stanza privata';
+
+  @override
+  String get privateRoomTitle => 'Stanza privata';
+
+  @override
+  String get privateRoomDescription =>
+      'Crea una stanza privata per te e i tuoi amici, oppure unisciti a una stanza esistente con nome e password.';
+
+  @override
+  String get createRoomButton => 'Crea una stanza';
+
+  @override
+  String get joinRoomButton => 'Unisciti a una stanza';
+
+  @override
+  String get createRoomTitle => 'Crea stanza privata';
+
+  @override
+  String get joinRoomTitle => 'Unisciti a una stanza privata';
+
+  @override
+  String get roomNameHint => 'Nome della stanza';
+
+  @override
+  String get roomPasswordHint => 'Password della stanza';
+
+  @override
+  String get roomPasswordConfirmHint => 'Conferma password';
+
+  @override
+  String get roomNameRequired => 'Inserisci il nome della stanza.';
+
+  @override
+  String get roomNameInvalid =>
+      'Il nome della stanza non può contenere \"/\" e deve avere al massimo 40 caratteri.';
+
+  @override
+  String get roomPasswordTooShort =>
+      'La password deve avere almeno 4 caratteri.';
+
+  @override
+  String get roomPasswordMismatch => 'Le password non coincidono.';
+
+  @override
+  String get errorRoomNameTaken =>
+      'Esiste già una stanza con questo nome. Prova un altro nome.';
+
+  @override
+  String get errorRoomJoinFailed => 'Stanza non trovata o password errata.';
 }

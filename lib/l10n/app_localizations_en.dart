@@ -129,4 +129,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get genericError => 'Something went wrong. Please try again.';
+
+  @override
+  String get privateRoomMenuItem => 'Private room';
+
+  @override
+  String get leavePrivateRoomMenuItem => 'Leave private room';
+
+  @override
+  String get privateRoomTitle => 'Private room';
+
+  @override
+  String get privateRoomDescription =>
+      'Create a private room for you and your friends, or join one with its name and password.';
+
+  @override
+  String get createRoomButton => 'Create a room';
+
+  @override
+  String get joinRoomButton => 'Join a room';
+
+  @override
+  String get createRoomTitle => 'Create private room';
+
+  @override
+  String get joinRoomTitle => 'Join private room';
+
+  @override
+  String get roomNameHint => 'Room name';
+
+  @override
+  String get roomPasswordHint => 'Room password';
+
+  @override
+  String get roomPasswordConfirmHint => 'Confirm password';
+
+  @override
+  String get roomNameRequired => 'Enter a room name.';
+
+  @override
+  String get roomNameInvalid =>
+      'Room name can\'t contain \"/\" and must be 40 characters or fewer.';
+
+  @override
+  String get roomPasswordTooShort => 'Password must be at least 4 characters.';
+
+  @override
+  String get roomPasswordMismatch => 'Passwords don\'t match.';
+
+  @override
+  String get errorRoomNameTaken =>
+      'A room with this name already exists. Try another name.';
+
+  @override
+  String get errorRoomJoinFailed => 'Room not found or password incorrect.';
 }

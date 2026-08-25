@@ -41,5 +41,23 @@
   "errorStoryPositionTaken": "Someone else has already written this part.",
   "errorStoryLockedByOther": "This story is currently locked by another user.",
   "errorConsecutiveTurnNotAllowed": "You can't write two parts in a row — wait for someone else to write the next one.",
-  "genericError": "Something went wrong. Please try again."
+  "genericError": "Something went wrong. Please try again.",
+
+  "privateRoomMenuItem": "Private room",
+  "leavePrivateRoomMenuItem": "Leave private room",
+  "privateRoomTitle": "Private room",
+  "privateRoomDescription": "Create a private room for you and your friends, or join one with its name and password.",
+  "createRoomButton": "Create a room",
+  "joinRoomButton": "Join a room",
+  "createRoomTitle": "Create private room",
+  "joinRoomTitle": "Join private room",
+  "roomNameHint": "Room name",
+  "roomPasswordHint": "Room password",
+  "roomPasswordConfirmHint": "Confirm password",
+  "roomNameRequired": "Enter a room name.",
+  "roomNameInvalid": "Room name can't contain \"/\" and must be 40 characters or fewer.",
+  "roomPasswordTooShort": "Password must be at least 4 characters.",
+  "roomPasswordMismatch": "Passwords don't match.",
+  "errorRoomNameTaken": "A room with this name already exists. Try another name.",
+  "errorRoomJoinFailed": "Room not found or password incorrect."
 }

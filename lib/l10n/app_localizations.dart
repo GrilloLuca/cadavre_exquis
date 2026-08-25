@@ -307,6 +307,108 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Si è verificato un errore. Riprova.'**
   String get genericError;
+
+  /// No description provided for @privateRoomMenuItem.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza privata'**
+  String get privateRoomMenuItem;
+
+  /// No description provided for @leavePrivateRoomMenuItem.
+  ///
+  /// In it, this message translates to:
+  /// **'Esci dalla stanza privata'**
+  String get leavePrivateRoomMenuItem;
+
+  /// No description provided for @privateRoomTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza privata'**
+  String get privateRoomTitle;
+
+  /// No description provided for @privateRoomDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea una stanza privata per te e i tuoi amici, oppure unisciti a una stanza esistente con nome e password.'**
+  String get privateRoomDescription;
+
+  /// No description provided for @createRoomButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea una stanza'**
+  String get createRoomButton;
+
+  /// No description provided for @joinRoomButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Unisciti a una stanza'**
+  String get joinRoomButton;
+
+  /// No description provided for @createRoomTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea stanza privata'**
+  String get createRoomTitle;
+
+  /// No description provided for @joinRoomTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Unisciti a una stanza privata'**
+  String get joinRoomTitle;
+
+  /// No description provided for @roomNameHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Nome della stanza'**
+  String get roomNameHint;
+
+  /// No description provided for @roomPasswordHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Password della stanza'**
+  String get roomPasswordHint;
+
+  /// No description provided for @roomPasswordConfirmHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma password'**
+  String get roomPasswordConfirmHint;
+
+  /// No description provided for @roomNameRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci il nome della stanza.'**
+  String get roomNameRequired;
+
+  /// No description provided for @roomNameInvalid.
+  ///
+  /// In it, this message translates to:
+  /// **'Il nome della stanza non può contenere \"/\" e deve avere al massimo 40 caratteri.'**
+  String get roomNameInvalid;
+
+  /// No description provided for @roomPasswordTooShort.
+  ///
+  /// In it, this message translates to:
+  /// **'La password deve avere almeno 4 caratteri.'**
+  String get roomPasswordTooShort;
+
+  /// No description provided for @roomPasswordMismatch.
+  ///
+  /// In it, this message translates to:
+  /// **'Le password non coincidono.'**
+  String get roomPasswordMismatch;
+
+  /// No description provided for @errorRoomNameTaken.
+  ///
+  /// In it, this message translates to:
+  /// **'Esiste già una stanza con questo nome. Prova un altro nome.'**
+  String get errorRoomNameTaken;
+
+  /// No description provided for @errorRoomJoinFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza non trovata o password errata.'**
+  String get errorRoomJoinFailed;
 }
 
 class _AppLocalizationsDelegate
