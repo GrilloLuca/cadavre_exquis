@@ -128,11 +128,23 @@ abstract class AppLocalizations {
   /// **'Accesso non riuscito. Riprova.'**
   String get loginFailed;
 
+  /// No description provided for @loginInvalidCredentials.
+  ///
+  /// In it, this message translates to:
+  /// **'Email o password errati.'**
+  String get loginInvalidCredentials;
+
   /// No description provided for @registrationFailed.
   ///
   /// In it, this message translates to:
   /// **'Registrazione non riuscita. Riprova.'**
   String get registrationFailed;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In it, this message translates to:
+  /// **'La password deve avere almeno 6 caratteri.'**
+  String get passwordTooShort;
 
   /// No description provided for @languageRoomTooltip.
   ///
