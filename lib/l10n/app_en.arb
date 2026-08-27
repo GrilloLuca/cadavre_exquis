@@ -6,7 +6,9 @@
   "emailHint": "Enter your email",
   "passwordHint": "Enter your password",
   "loginFailed": "Login failed. Please try again.",
+  "loginInvalidCredentials": "Incorrect email or password.",
   "registrationFailed": "Registration failed. Please try again.",
+  "passwordTooShort": "Password must be at least 6 characters.",
 
   "languageRoomTooltip": "Choose the language room",
 

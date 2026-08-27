@@ -83,9 +83,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         (route) => false,
                       );
                      } on FirebaseAuthException catch (e) {
+                      const wrongCredentialsCodes = {
+                        'invalid-credential',
+                        'wrong-password',
+                        'user-not-found',
+                      };
+                      final message = wrongCredentialsCodes.contains(e.code)
+                          ? l10n.loginInvalidCredentials
+                          : (e.message ?? l10n.loginFailed);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(e.message ?? l10n.loginFailed),
+                          content: Text(message),
                           backgroundColor: Colors.red,
                         ),
                       );
