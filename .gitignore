@@ -76,3 +76,8 @@ ios/Runner/GoogleService-Info.plist
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Google Play upload credentials and signing
+android/fastlane/play-store-credentials.json
+android/key.properties
+*.jks

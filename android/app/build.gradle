@@ -22,6 +22,14 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withReader("UTF-8") { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
 android {
     namespace "com.lucagrillo.cadavreexquis"
     compileSdk flutter.compileSdkVersion
@@ -41,9 +49,21 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+                storeFile file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            // Falls back to debug signing when key.properties is missing (e.g. local `flutter run --release`)
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
