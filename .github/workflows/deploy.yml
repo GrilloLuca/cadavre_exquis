@@ -49,6 +49,10 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
           printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" > android/key.properties
+          # sanity checks — fail early with a readable error
+          python3 -m json.tool android/fastlane/play-store-credentials.json > /dev/null || { echo "::error::PLAY_STORE_JSON_KEY is empty or not valid JSON"; exit 1; }
+          python3 -m json.tool android/app/google-services.json > /dev/null || { echo "::error::GOOGLE_SERVICES_JSON is empty or not valid JSON"; exit 1; }
+          [ -s android/app/upload-keystore.jks ] || { echo "::error::ANDROID_KEYSTORE_BASE64 is empty or not valid base64"; exit 1; }
       - run: flutter pub get
       - name: Build & upload to Play internal track
         working-directory: android

@@ -8,6 +8,41 @@
 default_platform(:android)
 
 platform :android do
+  PROJECT_ROOT = File.expand_path("../..", __dir__)
+  AAB_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/release/app-release.aab")
+
+  # Helper methods used by the lanes below — keep them.
+
+  # "1.2.3+4" -> "1.2.3"
+  def version_name
+    File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*([^+\s]+)/, 1]
+  end
+
+  # Fail fast with a clear message if the Play service account key is missing or invalid.
+  def check_play_credentials!
+    path = File.expand_path("play-store-credentials.json", __dir__)
+    UI.user_error!("Missing #{path} — set the PLAY_STORE_JSON_KEY secret") unless File.exist?(path)
+    JSON.parse(File.read(path))
+  rescue JSON::ParserError
+    UI.user_error!("play-store-credentials.json is not valid JSON — paste the raw service account JSON into PLAY_STORE_JSON_KEY")
+  end
+
+  # Highest version code found on any Play track, + 1.
+  def next_version_code
+    codes = %w[internal alpha beta production].flat_map do |track|
+      google_play_track_version_codes(track: track)
+    rescue StandardError
+      []
+    end
+    (codes.map(&:to_i).max || 0) + 1
+  end
+
+  # Writes the built version for later CI steps.
+  def export_build_env(values)
+    File.write(File.join(PROJECT_ROOT, "android_build.env"),
+               values.map { |k, v| "#{k}=#{v}" }.join("\n") + "\n")
+  end
+
   desc "Runs all the tests"
   lane :test do
     sh("cd #{PROJECT_ROOT} && flutter test")
@@ -15,6 +50,7 @@ platform :android do
 
   desc "Build a signed AAB and upload it to the Play internal testing track"
   lane :internal do
+    check_play_credentials!
     code = (ENV["BUILD_NUMBER"] || next_version_code).to_i
     name = version_name
     UI.message("Building #{name} (#{code})")
@@ -38,6 +74,7 @@ platform :android do
   desc "Promote a build already on the internal track to production (no rebuild)"
   desc "Pass ANDROID_VERSION_CODE to choose the build; defaults to the latest internal build"
   lane :production do
+    check_play_credentials!
     code = (ENV["ANDROID_VERSION_CODE"] || google_play_track_version_codes(track: "internal").max).to_i
     UI.user_error!("No build found on the internal track") if code.zero?
     UI.message("Promoting version code #{code}: internal -> production")
