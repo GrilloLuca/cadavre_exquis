@@ -24,10 +24,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailed => 'Login failed. Please try again.';
 
   @override
+  String get loginInvalidCredentials => 'Incorrect email or password.';
+
+  @override
   String get registrationFailed => 'Registration failed. Please try again.';
 
   @override
   String get googleSignInButton => 'Continue with Google';
+  String get passwordTooShort => 'Password must be at least 6 characters.';
 
   @override
   String get languageRoomTooltip => 'Choose the language room';
