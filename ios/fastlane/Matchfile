@@ -1,0 +1,7 @@
+# Certificates & provisioning profiles are stored encrypted in a private git repo.
+# Set MATCH_GIT_URL (and MATCH_PASSWORD) in your environment / GitLab CI variables.
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+type("appstore")
+app_identifier(["com.lucagrillo.cadavreexquis"])
+team_id("9YK3KADAHF")

@@ -1,0 +1,75 @@
+# Manual promotion to production — no rebuild.
+# Android: promotes a build from the internal track to production.
+# iOS: submits a TestFlight build for App Store review.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which store(s) to release to
+        type: choice
+        options: [both, android, ios]
+        default: both
+      android_version_code:
+        description: Android version code to promote (empty = latest internal build)
+        required: false
+      ios_build_number:
+        description: iOS build number to submit (empty = latest TestFlight build)
+        required: false
+      play_rollout:
+        description: Play staged rollout fraction, e.g. 0.1 (empty = 100%)
+        required: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  android-production:
+    if: inputs.platform != 'ios'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: android
+      - name: Write Play credentials
+        env:
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+        run: printf '%s' "$PLAY_STORE_JSON_KEY" > android/fastlane/play-store-credentials.json
+      - name: Promote internal -> production
+        working-directory: android
+        env:
+          ANDROID_VERSION_CODE: ${{ inputs.android_version_code }}
+          PLAY_ROLLOUT: ${{ inputs.play_rollout }}
+        run: |
+          [ -z "$ANDROID_VERSION_CODE" ] && unset ANDROID_VERSION_CODE
+          [ -z "$PLAY_ROLLOUT" ] && unset PLAY_ROLLOUT
+          bundle exec fastlane android production
+
+  ios-app-store:
+    if: inputs.platform != 'android'
+    runs-on: ubuntu-latest   # only API calls, no Mac needed
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: ios
+      - name: Submit for App Store review
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          IOS_BUILD_NUMBER: ${{ inputs.ios_build_number }}
+          IOS_AUTOMATIC_RELEASE: ${{ vars.IOS_AUTOMATIC_RELEASE || 'false' }}
+        run: |
+          [ -z "$IOS_BUILD_NUMBER" ] && unset IOS_BUILD_NUMBER
+          bundle exec fastlane ios release
