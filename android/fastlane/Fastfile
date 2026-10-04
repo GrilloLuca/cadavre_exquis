@@ -1,51 +1,82 @@
-# This file contains the fastlane.tools configuration
-# You can find the documentation at https://docs.fastlane.tools
+# Android lanes for cadavre_exquisite.
+# Run from the android/ folder: `bundle exec fastlane android <lane>`
 #
-# For a list of all available actions, check out
-#
-#     https://docs.fastlane.tools/actions
-#
-# For a list of all available plugins, check out
-#
-#     https://docs.fastlane.tools/plugins/available-plugins
-#
-
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
+# Required (CI provides these, see docs/CI_CD.md):
+#   play-store-credentials.json  -> Google Play service account key (path set in Appfile)
+#   android/key.properties + keystore -> release signing
 
 default_platform(:android)
 
 platform :android do
-  desc "Runs all the tests"
+  PROJECT_ROOT = File.expand_path("../..", __dir__)
+  AAB_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/release/app-release.aab")
+
+  # "1.2.3+4" -> "1.2.3"
+  def version_name
+    File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*([^+\s]+)/, 1]
+  end
+
+  # Highest version code found on any Play track, + 1.
+  def next_version_code
+    codes = %w[internal alpha beta production].flat_map do |track|
+      google_play_track_version_codes(track: track)
+    rescue StandardError
+      []
+    end
+    (codes.map(&:to_i).max || 0) + 1
+  end
+
+  # Writes values for later CI jobs (GitLab dotenv artifact).
+  def export_build_env(values)
+    File.write(File.join(PROJECT_ROOT, "android_build.env"),
+               values.map { |k, v| "#{k}=#{v}" }.join("\n") + "\n")
+  end
+
+  desc "Run Flutter unit tests"
   lane :test do
-    gradle(task: "test")
+    sh("cd #{PROJECT_ROOT} && flutter test")
   end
 
-  desc "Submit a new Beta Build to Crashlytics Beta"
-  lane :beta do
-    gradle(task: "clean assembleRelease")
-    crashlytics
-  
-    # sh "your_script.sh"
-    # You can also use other beta testing services here
-  end
+  desc "Build a signed AAB and upload it to the Play internal testing track"
+  lane :internal do
+    code = (ENV["BUILD_NUMBER"] || next_version_code).to_i
+    name = version_name
+    UI.message("Building #{name} (#{code})")
 
-  desc "Build the Flutter app bundle and upload it to the Google Play alpha track"
-  lane :alpha do
-    sh("cd ../.. && flutter build appbundle --release")
+    sh("cd #{PROJECT_ROOT} && flutter build appbundle --release " \
+       "--build-name=#{name} --build-number=#{code}")
+
     upload_to_play_store(
-      track: "alpha",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      track: "internal",
+      aab: AAB_PATH,
+      release_status: ENV.fetch("PLAY_RELEASE_STATUS", "completed"), # use "draft" while the app is still a draft in Play Console
       skip_upload_metadata: true,
       skip_upload_changelogs: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
+
+    export_build_env(ANDROID_VERSION_CODE: code, ANDROID_VERSION_NAME: name)
   end
 
-  desc "Deploy a new version to the Google Play"
-  lane :deploy do
-    gradle(task: "clean assembleRelease")
-    upload_to_play_store
+  desc "Promote a build already on the internal track to production (no rebuild)"
+  desc "Pass ANDROID_VERSION_CODE to choose the build; defaults to the latest internal build"
+  lane :production do
+    code = (ENV["ANDROID_VERSION_CODE"] || google_play_track_version_codes(track: "internal").max).to_i
+    UI.user_error!("No build found on the internal track") if code.zero?
+    UI.message("Promoting version code #{code}: internal -> production")
+
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      version_code: code,
+      rollout: ENV["PLAY_ROLLOUT"], # e.g. "0.1" for a 10% staged rollout; nil = full
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
   end
 end

@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Registrazione non riuscita. Riprova.'**
   String get registrationFailed;
 
+  /// No description provided for @googleSignInButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Continua con Google'**
+  String get googleSignInButton;
+
   /// No description provided for @languageRoomTooltip.
   ///
   /// In it, this message translates to:

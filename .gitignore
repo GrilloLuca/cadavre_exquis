@@ -90,3 +90,9 @@ android/key.properties
 **/fastlane/README.md
 **/fastlane/*.ipa
 **/fastlane/*.dSYM.zip
+
+# CI
+android/app/upload-keystore.jks
+**/vendor/bundle/
+android_build.env
+ios_build.env

@@ -1,24 +1,111 @@
-# This file contains the fastlane.tools configuration
-# You can find the documentation at https://docs.fastlane.tools
+# iOS lanes for cadavre_exquisite.
+# Run from the ios/ folder: `bundle exec fastlane ios <lane>`
 #
-# For a list of all available actions, check out
-#
-#     https://docs.fastlane.tools/actions
-#
-# For a list of all available plugins, check out
-#
-#     https://docs.fastlane.tools/plugins/available-plugins
-#
-
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
+# Auth uses an App Store Connect API key (no 2FA prompts on CI):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT (base64 of the .p8 file)
+# Signing uses fastlane match: MATCH_GIT_URL, MATCH_PASSWORD
+#   (+ MATCH_GIT_BASIC_AUTHORIZATION on CI). See docs/CI_CD.md.
 
 default_platform(:ios)
 
 platform :ios do
-  desc "Push a new beta build to TestFlight"
+  BUNDLE_ID = "com.lucagrillo.cadavreexquis"
+  TEAM_ID = "9YK3KADAHF"
+  PROJECT_ROOT = File.expand_path("../..", __dir__)
+
+  before_all do
+    setup_ci if ENV["CI"] # temporary keychain + match readonly mode
+  end
+
+  def version_name
+    File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*([^+\s]+)/, 1]
+  end
+
+  def asc_api_key
+    return nil unless ENV["ASC_KEY_ID"]
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
+
+  def export_build_env(values)
+    File.write(File.join(PROJECT_ROOT, "ios_build.env"),
+               values.map { |k, v| "#{k}=#{v}" }.join("\n") + "\n")
+  end
+
+  desc "Download (or locally create) App Store signing certs & profiles via match"
+  lane :certs do
+    asc_api_key
+    match(type: "appstore", readonly: is_ci)
+  end
+
+  desc "Build a signed IPA and upload it to TestFlight"
   lane :beta do
-    build_app(workspace: "Runner.xcworkspace", scheme: "Runner")
-    upload_to_testflight
+    api_key = asc_api_key
+    match(type: "appstore", readonly: is_ci, api_key: api_key)
+
+    name = version_name
+    build = (ENV["BUILD_NUMBER"] ||
+             latest_testflight_build_number(api_key: api_key, initial_build_number: 0) + 1).to_i
+    UI.message("Building #{name} (#{build})")
+
+    # Generate Flutter config (version, build number) without building; Xcode builds below.
+    sh("cd #{PROJECT_ROOT} && flutter build ios --release --config-only " \
+       "--build-name=#{name} --build-number=#{build}")
+
+    profile = ENV["sigh_#{BUNDLE_ID}_appstore_profile-name"]
+    # Switch to manual signing with the match profile (CI-only change, not committed).
+    update_code_signing_settings(
+      path: "Runner.xcodeproj",
+      use_automatic_signing: false,
+      team_id: TEAM_ID,
+      targets: ["Runner"],
+      build_configurations: ["Release"],
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile
+    )
+
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: File.join(PROJECT_ROOT, "build/ios/fastlane"),
+      export_options: { provisioningProfiles: { BUNDLE_ID => profile } }
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+
+    export_build_env(IOS_BUILD_NUMBER: build, IOS_VERSION_NAME: name)
+  end
+
+  desc "Submit a build already on TestFlight to App Store review (no rebuild)"
+  desc "Pass IOS_BUILD_NUMBER to choose the build; defaults to the latest TestFlight build"
+  lane :release do
+    api_key = asc_api_key
+    name = ENV["IOS_VERSION_NAME"] || version_name
+    build = ENV["IOS_BUILD_NUMBER"] ||
+            latest_testflight_build_number(api_key: api_key, version: name).to_s
+
+    upload_to_app_store(
+      api_key: api_key,
+      app_version: name,
+      build_number: build,
+      skip_binary_upload: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: true,
+      automatic_release: ENV["IOS_AUTOMATIC_RELEASE"] == "true", # default: release manually after approval
+      force: true, # skip the HTML preview prompt
+      run_precheck_before_submit: false,
+      submission_information: { add_id_info_uses_idfa: false }
+    )
   end
 end

@@ -1,7 +1,9 @@
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';
+import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
+import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   late AnimationController controller;
   late Animation animation;
+  bool showSpinner = false;
 
   @override
   void initState() {
@@ -88,9 +91,49 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                 Navigator.pushNamed(context, RegistrationScreen.id);
               },
             ),
+            showSpinner
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : ChatButton(
+                    text: AppLocalizations.of(context)!.googleSignInButton,
+                    color: Colors.white,
+                    onPressed: _signInWithGoogle,
+                  ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      showSpinner = true;
+    });
+    try {
+      final result = await AuthService.signInWithGoogle();
+      if (!mounted) return;
+      if (result != null) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          HomeScreen.id,
+          (route) => false,
+        );
+        return;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.loginFailed),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    setState(() {
+      showSpinner = false;
+    });
   }
 }

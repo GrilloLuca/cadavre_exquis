@@ -6,10 +6,12 @@ import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
+import 'package:cadavre_exquisite/services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await AuthService.initialize();
   runApp(const CadavreExquisiteApp());
 }
 

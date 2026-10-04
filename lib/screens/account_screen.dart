@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
+import 'package:cadavre_exquisite/services/auth_service.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -31,7 +32,7 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(height: 32.0),
               ElevatedButton.icon(
                 onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
+                  await AuthService.signOut();
                   if (!context.mounted) return;
                   Navigator.pushNamedAndRemoveUntil(
                     context,

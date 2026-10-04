@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registrationFailed => 'Registration failed. Please try again.';
 
   @override
+  String get googleSignInButton => 'Continue with Google';
+
+  @override
   String get languageRoomTooltip => 'Choose the language room';
 
   @override
