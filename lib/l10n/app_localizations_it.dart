@@ -30,6 +30,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get registrationFailed => 'Registrazione non riuscita. Riprova.';
 
   @override
+  String get googleSignInButton => 'Continua con Google';
   String get passwordTooShort => 'La password deve avere almeno 6 caratteri.';
 
   @override

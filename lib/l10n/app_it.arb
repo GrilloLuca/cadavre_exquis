@@ -8,6 +8,7 @@
   "loginFailed": "Accesso non riuscito. Riprova.",
   "loginInvalidCredentials": "Email o password errati.",
   "registrationFailed": "Registrazione non riuscita. Riprova.",
+  "googleSignInButton": "Continua con Google",
   "passwordTooShort": "La password deve avere almeno 6 caratteri.",
 
   "languageRoomTooltip": "Scegli la stanza della lingua",
