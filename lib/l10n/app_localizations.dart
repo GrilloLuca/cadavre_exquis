@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'Accesso non riuscito. Riprova.'**
   String get loginFailed;
 
+  /// No description provided for @loginInvalidCredentials.
+  ///
+  /// In it, this message translates to:
+  /// **'Email o password errati.'**
+  String get loginInvalidCredentials;
+
   /// No description provided for @registrationFailed.
   ///
   /// In it, this message translates to:
@@ -139,6 +145,11 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Continua con Google'**
   String get googleSignInButton;
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In it, this message translates to:
+  /// **'La password deve avere almeno 6 caratteri.'**
+  String get passwordTooShort;
 
   /// No description provided for @languageRoomTooltip.
   ///
