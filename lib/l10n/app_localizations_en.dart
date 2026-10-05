@@ -31,6 +31,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get googleSignInButton => 'Continue with Google';
+
+  @override
   String get passwordTooShort => 'Password must be at least 6 characters.';
 
   @override

@@ -5,6 +5,7 @@ import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
   static String id = "welcome_screen";
@@ -77,20 +78,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             SizedBox(
               height: 48.0,
             ),
-            ChatButton(
-              text: AppLocalizations.of(context)!.loginButton,
-              color: Colors.lightBlueAccent,
-              onPressed: () {
-                Navigator.pushNamed(context, LoginScreen.id);
-              },
-            ),
-            ChatButton(
-              text: AppLocalizations.of(context)!.registerButton,
-              color: Colors.blueAccent,
-              onPressed: () {
-                Navigator.pushNamed(context, RegistrationScreen.id);
-              },
-            ),
+            // ChatButton(
+            //   text: AppLocalizations.of(context)!.loginButton,
+            //   color: Colors.lightBlueAccent,
+            //   onPressed: () {
+            //     Navigator.pushNamed(context, LoginScreen.id);
+            //   },
+            // ),
+            // ChatButton(
+            //   text: AppLocalizations.of(context)!.registerButton,
+            //   color: Colors.blueAccent,
+            //   onPressed: () {
+            //     Navigator.pushNamed(context, RegistrationScreen.id);
+            //   },
+            // ),
             showSpinner
                 ? const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -99,6 +100,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                 : ChatButton(
                     text: AppLocalizations.of(context)!.googleSignInButton,
                     color: Colors.white,
+                    icon: SvgPicture.asset(
+                      'images/google_g.svg',
+                      height: 20.0,
+                      width: 20.0,
+                    ),
                     onPressed: _signInWithGoogle,
                   ),
           ],

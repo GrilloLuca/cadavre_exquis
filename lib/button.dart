@@ -5,8 +5,9 @@ class ChatButton extends StatelessWidget {
   final String? text;
   final Color? color;
   final dynamic onPressed;
+  final Widget? icon;
 
-  ChatButton({this.text, this.color, this.onPressed});
+  ChatButton({this.text, this.color, this.onPressed, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,16 @@ class ChatButton extends StatelessWidget {
           onPressed: onPressed,
           minWidth: 200.0,
           height: 42.0,
-          child: Text(text!),
+          child: icon == null
+              ? Text(text!)
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    icon!,
+                    SizedBox(width: 12.0),
+                    Text(text!),
+                  ],
+                ),
         ),
       ),
     );

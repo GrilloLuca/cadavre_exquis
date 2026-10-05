@@ -18,26 +18,26 @@ class StoryReadScreen extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.all(20.0),
           itemCount: story.parts.length,
-          separatorBuilder: (_, __) => const Divider(height: 32.0),
+          separatorBuilder: (_, __) => const Divider(height: 16.0, color: Colors.transparent,),
           itemBuilder: (context, index) {
             final part = story.parts[index];
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  positionLabel(context, part.position),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                  ),
-                ),
+                // Text(
+                //   positionLabel(context, part.position),
+                //   style: const TextStyle(
+                //     fontWeight: FontWeight.bold,
+                //     color: Colors.black54,
+                //   ),
+                // ),
                 const SizedBox(height: 8.0),
                 Text(part.text, style: const TextStyle(fontSize: 16.0, color: Colors.black54)),
                 const SizedBox(height: 4.0),
-                Text(
-                  '— ${part.author}',
-                  style: const TextStyle(fontSize: 12.0, color: Colors.black38),
-                ),
+                // Text(
+                //   '— ${part.author}',
+                //   style: const TextStyle(fontSize: 12.0, color: Colors.black38),
+                // ),
               ],
             );
           },
