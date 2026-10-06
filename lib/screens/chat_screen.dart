@@ -1,3 +1,5 @@
+import 'package:cadavre_exquisite/app_colors.dart';
+import 'package:cadavre_exquisite/background.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/constants.dart';
@@ -34,7 +36,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final email = FirebaseAuth.instance.currentUser?.email;
     if (email == null) return;
     try {
-      await _storyService.lockStory(storyId: widget.story.id, authorEmail: email);
+      await _storyService.lockStory(
+          storyId: widget.story.id, authorEmail: email);
       if (!mounted) return;
       setState(() {
         _lockAcquired = true;
@@ -109,63 +112,88 @@ class _ChatScreenState extends State<ChatScreen> {
     final position = positionLabel(context, story.currentPosition);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(position),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: AppColors.primary,
       ),
-      body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: story.parts.isEmpty
-                      ? Text(
-                          l10n.chatFirstWriterHint,
-                          style: const TextStyle(color: Colors.black54, fontSize: 15.0),
-                        )
-                      : MessageBubble(
-                          sender: l10n.storySoFarLabel,
-                          text: '"...${story.lastFiveWords}"',
-                          isMe: false,
-                        ),
-                ),
-                Container(
-                  decoration: kMessageContainerDecoration,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Expanded(
-                        child: TextField(
-                          controller: _messageTextController,
-                          enabled: !_isSending && _lockAcquired,
-                          minLines: 1,
-                          maxLines: 5,
-                          onChanged: (value) => _messageText = value,
-                          decoration: kMessageTextFieldDecoration.copyWith(
-                            hintText: l10n.chatMessageHint(position.toLowerCase()),
+      body: Background(
+        opacity: 0.2,
+        child: SafeArea(
+          // The input bar handles the bottom inset itself so its cream
+          // background reaches the bottom edge of the screen.
+          bottom: false,
+          child: Stack(
+            children: <Widget>[
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: story.parts.isEmpty
+                        ? Material(
+                            color: AppColors.cream,
+                            elevation: 5.0,
+                            borderRadius: BorderRadius.circular(20.0),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20.0,
+                                vertical: 12.0,
+                              ),
+                              child: Text(
+                                l10n.chatFirstWriterHint,
+                                style: const TextStyle(
+                                    color: AppColors.ink, fontSize: 15.0),
+                              ),
+                            ),
+                          )
+                        : MessageBubble(
+                            sender: l10n.storySoFarLabel,
+                            text: '"...${story.lastFiveWords}"',
+                            isMe: false,
                           ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: (_isSending || !_lockAcquired) ? null : _submit,
-                        child: Text(l10n.sendButton, style: kSendButtonTextStyle),
-                      ),
-                    ],
                   ),
-                ),
-              ],
-            ),
-            if (_isLocking) const Center(child: CircularProgressIndicator()),
-          ],
+                  Container(
+                    decoration: kMessageContainerDecoration.copyWith(
+                      color: AppColors.cream,
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: _messageTextController,
+                              enabled: !_isSending && _lockAcquired,
+                              minLines: 1,
+                              maxLines: 5,
+                              onChanged: (value) => _messageText = value,
+                              decoration: kMessageTextFieldDecoration.copyWith(
+                                hintText: l10n
+                                    .chatMessageHint(position.toLowerCase()),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed:
+                                (_isSending || !_lockAcquired) ? null : _submit,
+                            child: Text(l10n.sendButton,
+                                style: kSendButtonTextStyle),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_isLocking) const Center(child: CircularProgressIndicator()),
+            ],
+          ),
         ),
       ),
     );

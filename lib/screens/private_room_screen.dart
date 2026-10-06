@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -19,7 +20,7 @@ class PrivateRoomScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.privateRoomTitle),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: AppColors.primary,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -30,7 +31,7 @@ class PrivateRoomScreen extends StatelessWidget {
             const Icon(
               Icons.lock_outline,
               size: 64.0,
-              color: Colors.lightBlueAccent,
+              color: AppColors.primary,
             ),
             const SizedBox(height: 16.0),
             Text(
@@ -41,7 +42,7 @@ class PrivateRoomScreen extends StatelessWidget {
             const SizedBox(height: 32.0),
             ChatButton(
               text: l10n.createRoomButton,
-              color: Colors.lightBlueAccent,
+              color: AppColors.primary,
               onPressed: () async {
                 final room = await Navigator.push<PrivateRoom>(
                   context,
@@ -56,7 +57,7 @@ class PrivateRoomScreen extends StatelessWidget {
             ),
             ChatButton(
               text: l10n.joinRoomButton,
-              color: Colors.blueAccent,
+              color: AppColors.primaryDark,
               onPressed: () async {
                 final room = await Navigator.push<PrivateRoom>(
                   context,

@@ -1,5 +1,5 @@
 // Basic smoke test: the welcome screen should show the app name and the
-// Log In / Register entry points.
+// Google sign-in button.
 //
 // Pumps WelcomeScreen directly rather than CadavreExquisiteApp, because the
 // app's AuthWrapper requires an initialized Firebase app.
@@ -11,7 +11,7 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 
 void main() {
-  testWidgets('Welcome screen shows app name and auth buttons',
+  testWidgets('Welcome screen shows app name and Google sign-in button',
       (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -22,7 +22,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cadavre Exquisite'), findsOneWidget);
-    expect(find.text('Log In'), findsOneWidget);
-    expect(find.text('Register'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
   });
 }

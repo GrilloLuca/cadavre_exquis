@@ -145,6 +145,7 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Continua con Google'**
   String get googleSignInButton;
+
   /// No description provided for @passwordTooShort.
   ///
   /// In it, this message translates to:

@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -27,7 +28,7 @@ class MessageBubble extends StatelessWidget {
               bottomRight: Radius.circular(isMe ? 0.0 : 30.0),
             ),
             elevation: 5.0,
-            color: isMe ? Colors.lightBlueAccent : Colors.white,
+            color: isMe ? AppColors.primary : AppColors.cream,
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 20.0,
@@ -36,7 +37,7 @@ class MessageBubble extends StatelessWidget {
               child: Text(
                 text,
                 style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black54,
+                  color: isMe ? Colors.white : AppColors.ink,
                   fontSize: 15.0,
                 ),
               ),

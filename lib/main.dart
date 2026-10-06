@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,21 @@ class CadavreExquisiteApp extends StatelessWidget {
     return MaterialApp(
       title: 'Cadavre Exquisite',
       theme: ThemeData.light().copyWith(
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        scaffoldBackgroundColor: AppColors.sage,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: AppColors.cream,
+          selectedItemColor: AppColors.primaryDark,
+          unselectedItemColor: AppColors.ink,
+        ),
         textTheme: TextTheme(
           bodyLarge: TextStyle(color: Colors.black54),
         ),
@@ -51,7 +67,6 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            backgroundColor: Colors.white,
             body: Center(child: CircularProgressIndicator()),
           );
         }
