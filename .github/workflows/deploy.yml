@@ -58,10 +58,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
           git commit -am "Bump version to $VERSION"
-          git push -u origin "$branch"
-          gh pr create --base "${{ github.ref_name }}" --head "$branch" \
-            --title "Bump version to $VERSION" \
-            --body "Automatic version bump (${{ inputs.bump }}) from Deploy beta run ${{ github.run_id }}."
+          # The branch may be left over from an earlier attempt: it is generated, so overwrite it
+          git push --force -u origin "$branch"
+          if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" = "OPEN" ]; then
+            echo "Reusing the open PR for $branch"
+          else
+            gh pr create --base "${{ github.ref_name }}" --head "$branch" \
+              --title "Bump version to $VERSION" \
+              --body "Automatic version bump (${{ inputs.bump }}) from Deploy beta run ${{ github.run_id }}."
+          fi
           # GitHub may need a few seconds to compute mergeability
           for i in 1 2 3 4 5 6; do
             gh pr merge "$branch" --squash --delete-branch && break
