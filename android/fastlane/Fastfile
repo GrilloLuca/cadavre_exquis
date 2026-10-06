@@ -27,14 +27,29 @@ platform :android do
     UI.user_error!("play-store-credentials.json is not valid JSON — paste the raw service account JSON into PLAY_STORE_JSON_KEY")
   end
 
-  # Highest version code found on any Play track, + 1.
-  def next_version_code
-    codes = %w[internal alpha beta production].flat_map do |track|
-      google_play_track_version_codes(track: track)
-    rescue StandardError
-      []
+
+  # Version codes on EVERY Play track (incl. custom closed-testing tracks), by track name.
+  def play_version_codes_by_track
+    require "supply"
+    require "supply/client"
+    Supply.config = FastlaneCore::Configuration.create(
+      Fastlane::Actions::GooglePlayTrackVersionCodesAction.available_options,
+      { json_key: File.expand_path("play-store-credentials.json", __dir__) }
+    )
+    client = Supply::Client.make_from_config
+    client.begin_edit(package_name: Supply.config[:package_name])
+    result = client.tracks.to_h do |t|
+      [t.track, (t.releases || []).flat_map { |r| r.version_codes || [] }.map(&:to_i)]
     end
-    (codes.map(&:to_i).max || 0) + 1
+    client.abort_current_edit
+    result
+  end
+
+  # Highest version code on any track, + 1. Fails loudly instead of guessing.
+  def next_version_code
+    by_track = play_version_codes_by_track
+    by_track.each { |track, codes| UI.message("Play track '#{track}': #{codes.empty? ? '-' : codes.join(', ')}") }
+    (by_track.values.flatten.max || 0) + 1
   end
 
   # Writes the built version for later CI steps.
