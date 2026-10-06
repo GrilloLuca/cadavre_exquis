@@ -1,4 +1,6 @@
 # Push to master -> test -> Play internal track + TestFlight.
+# Manual run (Actions -> Deploy beta -> Run workflow) can also bump the version name first:
+#   bump = patch|minor|major -> bumps pubspec.yaml, opens + merges a PR to master, then builds that commit.
 # Promote to production with the "Release" workflow (Actions tab -> Release -> Run workflow).
 name: Deploy beta
 
@@ -6,6 +8,12 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Bump the version name before building (x.y.z)
+        type: choice
+        options: [none, patch, minor, major]
+        default: none
 
 concurrency:
   group: deploy-beta
@@ -16,14 +24,64 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   version:
-    uses: ./.github/workflows/bump-version.yml
+    # Only on a manual run with bump != none. Merging with GITHUB_TOKEN does NOT trigger
+    # another "Deploy beta" run, so there is no loop and no duplicate build.
+    if: github.event_name == 'workflow_dispatch' && inputs.bump != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      sha: ${{ steps.merge.outputs.sha }}
+      version: ${{ steps.bump.outputs.version }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: android
+      - name: Bump version in pubspec.yaml
+        id: bump
+        working-directory: android
+        run: bundle exec fastlane android bump type:${{ inputs.bump }}
+      - name: Commit, open and merge PR
+        id: merge
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          branch="release/v$VERSION"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "Bump version to $VERSION"
+          git push -u origin "$branch"
+          gh pr create --base "${{ github.ref_name }}" --head "$branch" \
+            --title "Bump version to $VERSION" \
+            --body "Automatic version bump (${{ inputs.bump }}) from Deploy beta run ${{ github.run_id }}."
+          # GitHub may need a few seconds to compute mergeability
+          for i in 1 2 3 4 5 6; do
+            gh pr merge "$branch" --squash --delete-branch && break
+            [ "$i" = 6 ] && { echo "::error::Could not merge the version PR automatically. If master requires approvals, approve and merge it manually, then re-run Deploy beta with bump=none."; exit 1; }
+            sleep 10
+          done
+          sha=$(gh pr view "$branch" --json mergeCommit -q .mergeCommit.oid)
+          echo "Merged as $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
   android-internal:
-    needs: test
+    needs: [test, version]
+    # run when tests passed and the version job either succeeded or was skipped
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.version.result != 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha || github.sha }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -69,11 +127,15 @@ jobs:
           retention-days: 30
 
   ios-testflight:
-    needs: test
+    needs: [test, version]
+    # run when tests passed and the version job either succeeded or was skipped
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.version.result != 'failure' }}
     runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha || github.sha }}
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable   # App Store uploads require the current Xcode SDK
