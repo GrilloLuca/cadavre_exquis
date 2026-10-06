@@ -1,0 +1,44 @@
+# Manual: bump the version name in pubspec.yaml and open a PR.
+# Merging the PR to master triggers "Deploy beta" with the new version.
+name: Bump version
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: Which part of the version to bump (x.y.z)
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: android
+      - name: Bump version in pubspec.yaml
+        id: bump
+        working-directory: android
+        run: bundle exec fastlane android bump type:${{ inputs.type }}
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: pubspec.yaml
+          branch: release/v${{ steps.bump.outputs.version }}
+          delete-branch: true
+          commit-message: "Bump version to ${{ steps.bump.outputs.version }}"
+          title: "Bump version to ${{ steps.bump.outputs.version }}"
+          body: |
+            Version bumped (${{ inputs.type }}) to **${{ steps.bump.outputs.version }}**.
+            Merging this PR into `master` starts **Deploy beta**, which uploads builds with the new version
+            to the Play internal track and TestFlight.
