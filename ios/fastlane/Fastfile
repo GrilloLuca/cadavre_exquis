@@ -21,13 +21,25 @@ platform :ios do
     File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*([^+\s]+)/, 1]
   end
 
+  # ASC_KEY_CONTENT may be the raw .p8 file (with BEGIN/END lines) or its base64.
+  def asc_key_pem
+    raw = ENV["ASC_KEY_CONTENT"].to_s.strip.gsub('\\n', "\n")
+    UI.user_error!("ASC_KEY_CONTENT is empty — set it to your AuthKey_XXXX.p8 contents") if raw.empty?
+    pem = raw.include?("BEGIN PRIVATE KEY") ? raw : raw.unpack1("m")
+    OpenSSL::PKey::EC.new(pem) # validate before calling Apple
+    pem
+  rescue OpenSSL::PKey::PKeyError
+    UI.user_error!("ASC_KEY_CONTENT is not a valid App Store Connect key. Paste the whole AuthKey_XXXX.p8 " \
+                   "file (including the BEGIN/END PRIVATE KEY lines), or its base64 from `base64 -i AuthKey_XXXX.p8`.")
+  end
+
   def asc_api_key
     return nil unless ENV["ASC_KEY_ID"]
     app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
-      key_content: ENV["ASC_KEY_CONTENT"],
-      is_key_content_base64: true,
+      key_content: asc_key_pem,
+      is_key_content_base64: false,
       in_house: false
     )
   end

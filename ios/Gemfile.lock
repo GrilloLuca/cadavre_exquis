@@ -30,7 +30,7 @@ GEM
     babosa (1.0.4)
     base64 (0.3.0)
     benchmark (0.5.0)
-    bigdecimal (4.0.1)
+    bigdecimal (4.1.3)
     cgi (0.5.2)
     claide (1.1.0)
     colored (1.2)
@@ -38,7 +38,6 @@ GEM
     commander (4.6.0)
       highline (~> 2.0.0)
     csv (3.3.6)
-    date (3.5.1)
     declarative (0.0.20)
     digest-crc (0.7.0)
       rake (>= 12.0.0, < 14.0.0)
@@ -172,7 +171,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jmespath (1.6.2)
-    json (2.18.0)
+    json (2.21.2)
     jwt (3.3.0)
       base64
     logger (1.7.0)
@@ -195,14 +194,16 @@ GEM
     prettyprint (0.2.0)
     prism (1.9.0)
     pstore (0.2.1)
-    psych (5.3.1)
-      date
-      stringio
     public_suffix (7.0.5)
     rake (13.4.2)
-    rdoc (7.0.4)
+    rbs (4.2.0)
+      logger
+      prism (>= 1.6.0)
+      tsort
+    rdoc (8.1.0)
       erb
-      psych (>= 4.0.0)
+      prism (>= 1.6.0)
+      rbs (>= 4.0.0)
       tsort
     reline (0.7.0)
       io-console (~> 0.5)
@@ -222,7 +223,6 @@ GEM
     simctl (1.6.10)
       CFPropertyList
       naturally
-    stringio (3.2.0)
     terminal-notifier (2.0.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
@@ -274,7 +274,7 @@ CHECKSUMS
   babosa (1.0.4) sha256=18dea450f595462ed7cb80595abd76b2e535db8c91b350f6c4b3d73986c5bc99
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   benchmark (0.5.0) sha256=465df122341aedcb81a2a24b4d3bd19b6c67c1530713fd533f3ff034e419236c
-  bigdecimal (4.0.1) sha256=8b07d3d065a9f921c80ceaea7c9d4ae596697295b584c296fe599dd0ad01c4a7
+  bigdecimal (4.1.3) sha256=61ebe1e5e559bdc3cc6f2c0ee7f427321fc838f59611c294356eb04d6e21cf66
   cgi (0.5.2) sha256=61ca30298171190fd4fa0d8018e57ada456eae9b7a2b78526debf7f0a0e6f8bb
   claide (1.1.0) sha256=6d3c5c089dde904d96aa30e73306d0d4bd444b1accb9b3125ce14a3c0183f82e
   colored (1.2) sha256=9d82b47ac589ce7f6cab64b1f194a2009e9fd00c326a5357321f44afab2c1d2c
