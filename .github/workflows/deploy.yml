@@ -15,6 +15,9 @@ jobs:
   test:
     uses: ./.github/workflows/ci.yml
 
+  version:
+    uses: ./.github/workflows/bump-version.yml
+
   android-internal:
     needs: test
     runs-on: ubuntu-latest
