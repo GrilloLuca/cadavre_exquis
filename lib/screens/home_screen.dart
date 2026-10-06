@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/private_room.dart';
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ? '${titles[_selectedIndex]} · ${privateRoom.name}'
               : titles[_selectedIndex],
         ),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: AppColors.primary,
         actions: [
           if (_selectedIndex != 2)
             PopupMenuButton<String>(
@@ -140,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.lightBlueAccent,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(

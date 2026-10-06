@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/button.dart';
@@ -65,7 +66,7 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.createRoomTitle),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: AppColors.primary,
       ),
       body: Stack(
         children: <Widget>[
@@ -113,7 +114,7 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
                   const SizedBox(height: 24.0),
                   ChatButton(
                     text: l10n.createRoomButton,
-                    color: Colors.lightBlueAccent,
+                    color: AppColors.primary,
                     onPressed: _isSubmitting ? null : _submit,
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -20,7 +21,7 @@ class AccountScreen extends StatelessWidget {
             children: <Widget>[
               const CircleAvatar(
                 radius: 40.0,
-                backgroundColor: Colors.lightBlueAccent,
+                backgroundColor: AppColors.primary,
                 child: Icon(Icons.person, size: 40.0, color: Colors.white),
               ),
               const SizedBox(height: 16.0),

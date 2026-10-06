@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/constants.dart';
@@ -54,7 +55,7 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.joinRoomTitle),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: AppColors.primary,
       ),
       body: Stack(
         children: <Widget>[
@@ -88,7 +89,7 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
                   const SizedBox(height: 24.0),
                   ChatButton(
                     text: l10n.joinRoomButton,
-                    color: Colors.blueAccent,
+                    color: AppColors.primaryDark,
                     onPressed: _isSubmitting ? null : _submit,
                   ),
                 ],

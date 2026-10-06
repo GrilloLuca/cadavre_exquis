@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/constants.dart';
@@ -67,7 +68,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: <Widget>[
           Padding(
@@ -118,7 +118,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   ChatButton(
                     text: l10n.registerButton,
-                    color: Colors.blueAccent,
+                    color: AppColors.primaryDark,
                     onPressed: showSpinner ? null : _register,
                   ),
                 ],
