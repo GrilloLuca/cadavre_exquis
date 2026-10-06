@@ -58,6 +58,34 @@ platform :android do
                values.map { |k, v| "#{k}=#{v}" }.join("\n") + "\n")
   end
 
+  desc "Bump the app version name in pubspec.yaml: fastlane android bump type:patch|minor|major"
+  desc "Only the name (x.y.z) changes; the build number after '+' is managed by the deploy lanes"
+  lane :bump do |options|
+    type = (options[:type] || "patch").to_s
+    UI.user_error!("type must be patch, minor or major (got '#{type}')") unless %w[patch minor major].include?(type)
+
+    pubspec = File.join(PROJECT_ROOT, "pubspec.yaml")
+    content = File.read(pubspec)
+    match = content.match(/^version:\s*(\d+)\.(\d+)\.(\d+)(\+\d+)?[ \t]*$/)
+    UI.user_error!("Could not find a 'version: x.y.z+n' line in pubspec.yaml") unless match
+
+    major, minor, patch = match[1].to_i, match[2].to_i, match[3].to_i
+    case type
+    when "major" then major, minor, patch = major + 1, 0, 0
+    when "minor" then minor, patch = minor + 1, 0
+    else patch += 1
+    end
+    old_version = "#{match[1]}.#{match[2]}.#{match[3]}"
+    new_version = "#{major}.#{minor}.#{patch}"
+
+    File.write(pubspec, content.sub(match[0], "version: #{new_version}#{match[4]}"))
+    UI.success("Version bumped (#{type}): #{old_version} -> #{new_version}")
+
+    # Expose the new version to GitHub Actions
+    File.open(ENV["GITHUB_OUTPUT"], "a") { |f| f.puts("version=#{new_version}") } if ENV["GITHUB_OUTPUT"]
+    new_version
+  end
+
   desc "Runs all the tests"
   lane :test do
     sh("cd #{PROJECT_ROOT} && flutter test")

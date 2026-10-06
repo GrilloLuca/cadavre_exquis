@@ -7,6 +7,7 @@
 | `ci.yml` — **CI** | every pull request | `flutter analyze` + `flutter test` |
 | `deploy.yml` — **Deploy beta** | push to `master` (or run manually) | test → **Play internal track** + **TestFlight** |
 | `release.yml` — **Release** | manual: Actions ▸ Release ▸ *Run workflow* | promotes internal → **Play production** and/or submits the TestFlight build for **App Store review** (no rebuild) |
+| `bump-version.yml` — **Bump version** | manual: Actions ▸ Bump version ▸ *Run workflow* | bumps the version name in `pubspec.yaml` (patch / minor / major) and opens a PR; merging it deploys the new version to beta |
 
 Watch runs in the **Actions** tab of the GitHub repo. Build numbers are automatic (latest in store + 1);
 the version name comes from `pubspec.yaml` (`version: 1.0.0+1` → `1.0.0`) — bump it for each store release.
@@ -63,3 +64,12 @@ cd ios     && bundle exec fastlane ios beta              # or: release, certs
 - Run **Release** for iOS after the TestFlight build has finished processing (usually 10–30 min).
 - Cost: free for public repos. Private repos get 2,000 free minutes/month, and macOS minutes count 10×, so an iOS build (~15–20 min) uses ~150–200 of them.
 - Pin Flutter: replace `channel: stable` with `flutter-version: <your version>` in the workflows for reproducible builds.
+
+## Releasing a new version
+1. **Actions ▸ Bump version ▸ Run workflow**, choose `patch` (1.0.0 → 1.0.1), `minor` (→ 1.1.0) or `major` (→ 2.0.0).
+2. Review and merge the PR it opens → **Deploy beta** uploads the new version to Play internal + TestFlight.
+3. Test, then **Actions ▸ Release ▸ Run workflow** to send it to production / App Store review.
+
+Locally: `cd android && bundle exec fastlane android bump type:minor` (edits `pubspec.yaml`, no commit).
+One-time setting needed for the PR step: repo **Settings ▸ Actions ▸ General ▸ Workflow permissions** →
+tick **"Allow GitHub Actions to create and approve pull requests"**.
