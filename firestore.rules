@@ -1,0 +1,145 @@
+rules_version = '2';
+
+// Mirrors the checks in lib/services/*_service.dart so they can't be skipped
+// by a modified client. Players are identified by their auth email, which is
+// what the app stores in `lockedBy`, `parts[].author` and `createdBy`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email is string;
+    }
+
+    function myEmail() {
+      return request.auth.token.email;
+    }
+
+    // ---------------------------------------------------------------------
+    // stories/{storyId}  (StoryService)
+    // ---------------------------------------------------------------------
+    match /stories/{storyId} {
+      // Must match kStoryPositions in lib/models/story.dart.
+      function positions() {
+        return ['introduzione', 'sviluppo1', 'sviluppo2', 'epilogo'];
+      }
+
+      function wroteLastPart(parts) {
+        return parts.size() > 0 && parts[parts.size() - 1].author == myEmail();
+      }
+
+      function freeForMe() {
+        return resource.data.get('lockedBy', null) == null
+          || resource.data.lockedBy == myEmail();
+      }
+
+      // createStory
+      function isValidCreate() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['status', 'currentPosition', 'parts',
+              'lockedBy', 'language', 'roomId', 'createdAt', 'updatedAt'])
+          && d.status == 'incomplete'
+          && d.currentPosition == positions()[0]
+          && d.parts == []
+          && d.lockedBy == null
+          && d.language is string
+          && (!('roomId' in d) || exists(/databases/$(database)/documents/privateRooms/$(d.roomId)))
+          && d.createdAt == request.time
+          && d.updatedAt == request.time;
+      }
+
+      // lockStory / unlockStory: only `lockedBy` changes.
+      function isValidLockChange() {
+        let newLock = request.resource.data.lockedBy;
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lockedBy'])
+          && (
+            // lock: story still open, not held by someone else, not my second turn in a row
+            (newLock == myEmail()
+              && resource.data.status == 'incomplete'
+              && freeForMe()
+              && !wroteLastPart(resource.data.parts))
+            // unlock: only the holder can release it
+            || (newLock == null && resource.data.get('lockedBy', null) == myEmail())
+          );
+      }
+
+      // submitPart: appends exactly one part by me at the current position
+      // and advances (or completes) the story.
+      function isValidSubmit() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let n = before.parts.size();
+        let part = after.parts[n];
+        let isLast = n == positions().size() - 1;
+        return after.diff(before).affectedKeys()
+              .hasOnly(['parts', 'currentPosition', 'status', 'lockedBy', 'updatedAt'])
+          && before.status == 'incomplete'
+          && n < positions().size()
+          && before.currentPosition == positions()[n]
+          && freeForMe()
+          && !wroteLastPart(before.parts)
+          && after.parts.size() == n + 1
+          && after.parts[0:n] == before.parts
+          && part.keys().hasOnly(['position', 'text', 'author', 'timestamp'])
+          && part.position == before.currentPosition
+          && part.author == myEmail()
+          && part.text is string
+          && part.text.size() > 0
+          && part.text.size() <= 5000
+          && part.timestamp is timestamp
+          && after.currentPosition == (isLast ? positions()[n] : positions()[n + 1])
+          && after.status == (isLast ? 'complete' : 'incomplete')
+          && after.lockedBy == null
+          && after.updatedAt == request.time;
+      }
+
+      // Lists are queried by `status` and filtered client-side by
+      // language/room, so every signed-in player needs read access.
+      allow read: if signedIn();
+      allow create: if signedIn() && isValidCreate();
+      allow update: if signedIn() && (isValidLockChange() || isValidSubmit());
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // privateRooms/{roomId}  (PrivateRoomService)
+    // ---------------------------------------------------------------------
+    match /privateRooms/{roomId} {
+      // Rooms are only ever fetched by id (the normalized name): joining
+      // needs the salt and hash, and createRoom reads the id to detect a
+      // name collision. Listing would expose every room name.
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['name', 'passwordHash', 'salt', 'createdBy', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.trim().lower() == roomId
+        && request.resource.data.passwordHash is string
+        && request.resource.data.salt is string
+        && request.resource.data.createdBy == myEmail()
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // userProfiles/{emailKey}  (UserProfileService)
+    // ---------------------------------------------------------------------
+    match /userProfiles/{emailKey} {
+      function isProfileOwner() {
+        return signedIn() && myEmail().lower() == emailKey;
+      }
+
+      allow get: if signedIn();
+      allow list: if false;
+      allow delete: if isProfileOwner();
+      allow create, update: if isProfileOwner()
+        && request.resource.data.keys().hasOnly(['nickname', 'updatedAt'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    // Everything else (including the legacy `chapters` collection) is closed.
+  }
+}

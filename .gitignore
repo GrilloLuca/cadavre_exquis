@@ -96,3 +96,8 @@ android/app/upload-keystore.jks
 **/vendor/bundle/
 android_build.env
 ios_build.env
+
+# Firebase CLI
+firebase-debug.log*
+firebase-debug.*.log*
+.firebase/
