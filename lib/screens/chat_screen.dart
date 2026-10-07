@@ -132,30 +132,49 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: story.parts.isEmpty
-                        ? Material(
-                            color: AppColors.cream,
-                            elevation: 5.0,
-                            borderRadius: BorderRadius.circular(20.0),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0,
-                                vertical: 12.0,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(10.0),
+                      child: story.parts.isEmpty
+                          ? Material(
+                              color: AppColors.cream,
+                              elevation: 5.0,
+                              borderRadius: BorderRadius.circular(20.0),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0,
+                                  vertical: 16.0,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.chatFirstWriterTitle,
+                                      style: const TextStyle(
+                                        color: AppColors.ink,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12.0),
+                                    Text(
+                                      l10n.chatFirstWriterHint,
+                                      style: const TextStyle(
+                                        color: AppColors.ink,
+                                        fontSize: 15.0,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Text(
-                                l10n.chatFirstWriterHint,
-                                style: const TextStyle(
-                                    color: AppColors.ink, fontSize: 15.0),
-                              ),
+                            )
+                          : MessageBubble(
+                              sender: l10n.storySoFarLabel,
+                              text: '"...${story.lastFiveWords}"',
+                              isMe: false,
                             ),
-                          )
-                        : MessageBubble(
-                            sender: l10n.storySoFarLabel,
-                            text: '"...${story.lastFiveWords}"',
-                            isMe: false,
-                          ),
+                    ),
                   ),
                   Container(
                     decoration: kMessageContainerDecoration.copyWith(

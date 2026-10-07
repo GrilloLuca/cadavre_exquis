@@ -31,6 +31,34 @@ class IncompleteStoriesScreen extends StatefulWidget {
 
 class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
   final _storyService = StoryService();
+  bool _isCreating = false;
+
+  /// Creates a new empty story and opens it right away, so the creator
+  /// writes its introduction.
+  Future<void> _createAndOpenStory() async {
+    setState(() => _isCreating = true);
+    try {
+      final story = await _storyService.createStory(
+        language: widget.language,
+        roomId: widget.roomId,
+      );
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ChatScreen(story: story)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.genericError),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isCreating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,10 +85,24 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: Text(
-                    l10n.noIncompleteStories,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.black54),
+                  child: Card(
+                    color: AppColors.cream.withValues(alpha: 0.92),
+                    elevation: 1.0,
+                    margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
+                      child: Text(
+                        l10n.noIncompleteStories,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.ink),
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -129,10 +171,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _storyService.createStory(
-          language: widget.language,
-          roomId: widget.roomId,
-        ),
+        onPressed: _isCreating ? null : _createAndOpenStory,
         tooltip: l10n.newStoryTooltip,
         child: const Icon(Icons.add),
       ),
