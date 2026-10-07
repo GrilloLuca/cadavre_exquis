@@ -103,8 +103,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get positionEpilogue => 'Epilogue';
 
   @override
+  String get chatFirstWriterTitle =>
+      'This is a new, empty story: you\'re the first to write!';
+
+  @override
   String get chatFirstWriterHint =>
-      'You\'re first: write the introduction of the story!';
+      'How it works:\n• Every story has 4 parts: Introduction, Development (1/2), Development (2/2) and Epilogue. You\'re writing the Introduction.\n• The next player only sees the last 5 words of your part, so end with a good hook!\n• You can\'t write two parts in a row: after your turn, someone else has to continue.\n• While you\'re writing, the story is locked for everyone else.\n• Once the Epilogue is written, the whole story appears in the Complete tab for everyone to read.';
 
   @override
   String get storySoFarLabel => 'So far it reads...';

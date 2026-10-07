@@ -42,9 +42,27 @@ class CompleteStoriesScreen extends StatelessWidget {
             final stories = snapshot.data!;
             if (stories.isEmpty) {
               return Center(
-                child: Text(
-                  l10n.noCompleteStories,
-                  style: const TextStyle(color: Colors.black54),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Card(
+                    color: AppColors.cream.withValues(alpha: 0.92),
+                    elevation: 1.0,
+                    margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
+                      child: Text(
+                        l10n.noCompleteStories,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.ink),
+                      ),
+                    ),
+                  ),
                 ),
               );
             }

@@ -3,7 +3,9 @@ import 'package:cadavre_exquisite/background.dart';
 import 'package:cadavre_exquisite/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
+import 'package:cadavre_exquisite/screens/login_screen.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -76,13 +78,15 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               SizedBox(
                 height: 48.0,
               ),
-              // ChatButton(
-              //   text: AppLocalizations.of(context)!.loginButton,
-              //   color: AppColors.primary,
-              //   onPressed: () {
-              //     Navigator.pushNamed(context, LoginScreen.id);
-              //   },
-              // ),
+              // Email/password login is only offered in debug builds.
+              if (kDebugMode)
+                ChatButton(
+                  text: AppLocalizations.of(context)!.loginButton,
+                  color: AppColors.primary,
+                  onPressed: () {
+                    Navigator.pushNamed(context, LoginScreen.id);
+                  },
+                ),
               // ChatButton(
               //   text: AppLocalizations.of(context)!.registerButton,
               //   color: AppColors.primaryDark,

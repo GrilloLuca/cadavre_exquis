@@ -63,8 +63,10 @@ class StoryService {
         );
   }
 
-  Future<void> createStory({required String language, String? roomId}) {
-    return _stories.add({
+  /// Creates an empty story and returns it, so the caller can open it
+  /// straight away.
+  Future<Story> createStory({required String language, String? roomId}) async {
+    final docRef = await _stories.add({
       'status': 'incomplete',
       'currentPosition': kStoryPositions.first,
       'parts': [],
@@ -74,6 +76,14 @@ class StoryService {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    return Story(
+      id: docRef.id,
+      status: 'incomplete',
+      currentPosition: kStoryPositions.first,
+      parts: const [],
+      language: language,
+      roomId: roomId,
+    );
   }
 
   /// Exclusively locks the story for [authorEmail] so no one else can open
@@ -91,10 +101,12 @@ class StoryService {
       final story = Story.fromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw const StoryServiceException(StoryServiceErrorCode.alreadyCompleted);
+        throw const StoryServiceException(
+            StoryServiceErrorCode.alreadyCompleted);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
-        throw const StoryServiceException(StoryServiceErrorCode.consecutiveTurnNotAllowed);
+        throw const StoryServiceException(
+            StoryServiceErrorCode.consecutiveTurnNotAllowed);
       }
       if (story.isLockedFor(authorEmail)) {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
@@ -139,7 +151,8 @@ class StoryService {
       final story = Story.fromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw const StoryServiceException(StoryServiceErrorCode.alreadyCompleted);
+        throw const StoryServiceException(
+            StoryServiceErrorCode.alreadyCompleted);
       }
       if (story.currentPosition != expectedPosition) {
         throw const StoryServiceException(StoryServiceErrorCode.positionTaken);
@@ -148,7 +161,8 @@ class StoryService {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
-        throw const StoryServiceException(StoryServiceErrorCode.consecutiveTurnNotAllowed);
+        throw const StoryServiceException(
+            StoryServiceErrorCode.consecutiveTurnNotAllowed);
       }
 
       final newPart = StoryPart(
