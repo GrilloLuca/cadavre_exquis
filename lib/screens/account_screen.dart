@@ -233,7 +233,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 onPressed: isBusy ? null : _saveNickname,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.cream,
                 ),
                 child: _isSaving
                     ? const SizedBox(
@@ -241,7 +241,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         height: 18.0,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.0,
-                          color: Colors.white,
+                          color: AppColors.cream,
                         ),
                       )
                     : Text(l10n.nicknameSaveButton),

@@ -16,10 +16,27 @@ class MessageBubble extends StatelessWidget {
         crossAxisAlignment:
             isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            sender,
-            style: TextStyle(fontSize: 12.0, color: Colors.black54),
+          // Sits directly on the background illustration, so it gets its own
+          // cream backing to stay readable.
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10.0,
+              vertical: 3.0,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.cream.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: Text(
+              sender,
+              style: const TextStyle(
+                fontSize: 13.0,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
+            ),
           ),
+          const SizedBox(height: 4.0),
           Material(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(30.0),
