@@ -64,6 +64,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get noCompleteStories => 'Nessuna storia completata, per ora.';
 
   @override
+  String get yourStoriesHeading => 'Le tue storie';
+
+  @override
   String get storyNotStarted => 'Nessuno ha ancora iniziato questa storia.';
 
   @override

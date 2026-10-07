@@ -206,6 +206,12 @@ abstract class AppLocalizations {
   /// **'Nessuna storia completata, per ora.'**
   String get noCompleteStories;
 
+  /// No description provided for @yourStoriesHeading.
+  ///
+  /// In it, this message translates to:
+  /// **'Le tue storie'**
+  String get yourStoriesHeading;
+
   /// No description provided for @storyNotStarted.
   ///
   /// In it, this message translates to:

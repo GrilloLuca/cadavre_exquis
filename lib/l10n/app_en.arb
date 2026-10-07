@@ -22,6 +22,7 @@
 
   "noIncompleteStories": "No stories to continue right now.\nCreate a new one with the + button.",
   "noCompleteStories": "No completed stories yet.",
+  "yourStoriesHeading": "Your stories",
   "storyNotStarted": "No one has started this story yet.",
   "storyBeingWritten": "Someone is writing the next chapter...",
   "storyWaitingForOthers": "You wrote the last chapter — waiting for another player.",
