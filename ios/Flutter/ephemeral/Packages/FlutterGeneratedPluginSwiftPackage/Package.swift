@@ -15,20 +15,20 @@ let package = Package(
         .library(name: "FlutterGeneratedPluginSwiftPackage", type: .static, targets: ["FlutterGeneratedPluginSwiftPackage"])
     ],
     dependencies: [
-        .package(name: "google_sign_in_ios", path: "../.packages/google_sign_in_ios-6.3.6"),
         .package(name: "firebase_core", path: "../.packages/firebase_core-4.12.1"),
-        .package(name: "firebase_auth", path: "../.packages/firebase_auth-6.5.6"),
         .package(name: "cloud_firestore", path: "../.packages/cloud_firestore-6.7.1"),
+        .package(name: "google_sign_in_ios", path: "../.packages/google_sign_in_ios-6.3.6"),
+        .package(name: "firebase_auth", path: "../.packages/firebase_auth-6.5.6"),
         .package(name: "FlutterFramework", path: "../.packages/FlutterFramework")
     ],
     targets: [
         .target(
             name: "FlutterGeneratedPluginSwiftPackage",
             dependencies: [
-                .product(name: "google-sign-in-ios", package: "google_sign_in_ios"),
                 .product(name: "firebase-core", package: "firebase_core"),
-                .product(name: "firebase-auth", package: "firebase_auth"),
                 .product(name: "cloud-firestore", package: "cloud_firestore"),
+                .product(name: "google-sign-in-ios", package: "google_sign_in_ios"),
+                .product(name: "firebase-auth", package: "firebase_auth"),
                 .product(name: "FlutterFramework", package: "FlutterFramework")
             ]
         )

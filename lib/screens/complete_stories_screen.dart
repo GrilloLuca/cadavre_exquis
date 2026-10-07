@@ -1,5 +1,6 @@
 import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:cadavre_exquisite/background.dart';
+import 'package:cadavre_exquisite/cream_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -48,23 +49,15 @@ class CompleteStoriesScreen extends StatelessWidget {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: Card(
-                    color: AppColors.cream.withValues(alpha: 0.92),
-                    elevation: 1.0,
-                    margin: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.0),
+                  child: CreamCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 16.0,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 16.0,
-                      ),
-                      child: Text(
-                        l10n.noCompleteStories,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.ink),
-                      ),
+                    child: Text(
+                      l10n.noCompleteStories,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.ink),
                     ),
                   ),
                 ),
@@ -133,13 +126,7 @@ class CompleteStoriesScreen extends StatelessWidget {
     final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Card(
-        color: AppColors.cream.withValues(alpha: 0.92),
-        elevation: 1.0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14.0),
-        ),
+      child: CreamCard(
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16.0,

@@ -64,5 +64,19 @@
   "roomPasswordTooShort": "Password must be at least 4 characters.",
   "roomPasswordMismatch": "Passwords don't match.",
   "errorRoomNameTaken": "A room with this name already exists. Try another name.",
-  "errorRoomJoinFailed": "Room not found or password incorrect."
+  "errorRoomJoinFailed": "Room not found or password incorrect.",
+
+  "nicknameLabel": "Nickname",
+  "nicknameHelper": "{min}–{max} characters: letters, numbers, spaces, _ - .",
+  "nicknameSaveButton": "Save",
+  "nicknameSaved": "Nickname saved.",
+  "nicknameRemoved": "Nickname removed.",
+  "nicknameLoadFailed": "Couldn't load your nickname.",
+  "retryButton": "Retry",
+  "nicknamePublicPreview": "In stories you'll appear as: {name}",
+  "storyPartAuthor": "— {name}",
+  "anonymousAuthor": "Anonymous",
+  "errorNicknameTooShort": "Nickname must be at least {min} characters.",
+  "errorNicknameTooLong": "Nickname can be at most {max} characters.",
+  "errorNicknameInvalidCharacters": "Use only letters, numbers, spaces and _ - ."
 }

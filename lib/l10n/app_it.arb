@@ -78,5 +78,57 @@
   "roomPasswordTooShort": "La password deve avere almeno 4 caratteri.",
   "roomPasswordMismatch": "Le password non coincidono.",
   "errorRoomNameTaken": "Esiste già una stanza con questo nome. Prova un altro nome.",
-  "errorRoomJoinFailed": "Stanza non trovata o password errata."
+  "errorRoomJoinFailed": "Stanza non trovata o password errata.",
+
+  "nicknameLabel": "Nickname",
+  "nicknameHelper": "{min}–{max} caratteri: lettere, numeri, spazi, _ - .",
+  "@nicknameHelper": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "nicknameSaveButton": "Salva",
+  "nicknameSaved": "Nickname salvato.",
+  "nicknameRemoved": "Nickname rimosso.",
+  "nicknameLoadFailed": "Impossibile caricare il nickname.",
+  "retryButton": "Riprova",
+  "nicknamePublicPreview": "Nelle storie apparirai come: {name}",
+  "@nicknamePublicPreview": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "storyPartAuthor": "— {name}",
+  "@storyPartAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "anonymousAuthor": "Anonimo",
+  "errorNicknameTooShort": "Il nickname deve avere almeno {min} caratteri.",
+  "@errorNicknameTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "errorNicknameTooLong": "Il nickname può avere al massimo {max} caratteri.",
+  "@errorNicknameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - ."
 }

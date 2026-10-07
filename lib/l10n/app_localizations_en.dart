@@ -199,4 +199,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorRoomJoinFailed => 'Room not found or password incorrect.';
+
+  @override
+  String get nicknameLabel => 'Nickname';
+
+  @override
+  String nicknameHelper(int min, int max) {
+    return '$min–$max characters: letters, numbers, spaces, _ - .';
+  }
+
+  @override
+  String get nicknameSaveButton => 'Save';
+
+  @override
+  String get nicknameSaved => 'Nickname saved.';
+
+  @override
+  String get nicknameRemoved => 'Nickname removed.';
+
+  @override
+  String get nicknameLoadFailed => 'Couldn\'t load your nickname.';
+
+  @override
+  String get retryButton => 'Retry';
+
+  @override
+  String nicknamePublicPreview(String name) {
+    return 'In stories you\'ll appear as: $name';
+  }
+
+  @override
+  String storyPartAuthor(String name) {
+    return '— $name';
+  }
+
+  @override
+  String get anonymousAuthor => 'Anonymous';
+
+  @override
+  String errorNicknameTooShort(int min) {
+    return 'Nickname must be at least $min characters.';
+  }
+
+  @override
+  String errorNicknameTooLong(int max) {
+    return 'Nickname can be at most $max characters.';
+  }
+
+  @override
+  String get errorNicknameInvalidCharacters =>
+      'Use only letters, numbers, spaces and _ - .';
 }
