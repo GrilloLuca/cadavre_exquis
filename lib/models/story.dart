@@ -110,6 +110,10 @@ class Story {
   bool wasLastWrittenBy(String? email) =>
       email != null && parts.isNotEmpty && parts.last.author == email;
 
+  /// Whether [email] wrote at least one part of this story.
+  bool hasPartBy(String? email) =>
+      email != null && parts.any((part) => part.author == email);
+
   /// Whether the story is currently locked by a different user than [email].
   bool isLockedFor(String? email) => lockedBy != null && lockedBy != email;
 
@@ -118,7 +122,8 @@ class Story {
   String get lastFiveWords {
     if (parts.isEmpty) return '';
     final words = parts.last.text.trim().split(RegExp(r'\s+'));
-    final lastWords = words.length <= 5 ? words : words.sublist(words.length - 5);
+    final lastWords =
+        words.length <= 5 ? words : words.sublist(words.length - 5);
     return lastWords.join(' ');
   }
 

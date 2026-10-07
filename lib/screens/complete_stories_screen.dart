@@ -1,5 +1,6 @@
 import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:cadavre_exquisite/background.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
@@ -67,47 +68,66 @@ class CompleteStoriesScreen extends StatelessWidget {
               );
             }
 
-            return ListView.separated(
+            // Stories the user took part in come first, then a divider,
+            // then everyone else's.
+            final email = FirebaseAuth.instance.currentUser?.email;
+            final mine = stories.where((s) => s.hasPartBy(email)).toList();
+            final others = stories.where((s) => !s.hasPartBy(email)).toList();
+
+            return ListView(
               padding: const EdgeInsets.all(12.0),
-              itemCount: stories.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8.0),
-              itemBuilder: (context, index) {
-                final story = stories[index];
-                final preview =
-                    story.parts.isNotEmpty ? story.parts.first.text : '';
-                return Card(
-                  color: AppColors.cream.withValues(alpha: 0.92),
-                  elevation: 1.0,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14.0),
+              children: [
+                for (final story in mine) _buildStoryCard(context, story),
+                if (mine.isNotEmpty && others.isNotEmpty)
+                  const Divider(
+                    height: 24.0,
+                    thickness: 1.5,
+                    indent: 8.0,
+                    endIndent: 8.0,
+                    color: AppColors.primaryDark,
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    iconColor: AppColors.primary,
-                    textColor: AppColors.ink,
-                    leading: const Icon(Icons.menu_book),
-                    title: Text(
-                      preview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(l10n.authorsCount(story.parts.length)),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StoryReadScreen(story: story),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+                for (final story in others) _buildStoryCard(context, story),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoryCard(BuildContext context, Story story) {
+    final l10n = AppLocalizations.of(context)!;
+    final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Card(
+        color: AppColors.cream.withValues(alpha: 0.92),
+        elevation: 1.0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 8.0,
+          ),
+          iconColor: AppColors.primary,
+          textColor: AppColors.ink,
+          leading: const Icon(Icons.menu_book),
+          title: Text(
+            preview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(l10n.authorsCount(story.parts.length)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StoryReadScreen(story: story),
+              ),
             );
           },
         ),
