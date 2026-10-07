@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ChatButton extends StatelessWidget {
@@ -9,6 +10,15 @@ class ChatButton extends StatelessWidget {
 
   ChatButton({this.text, this.color, this.onPressed, this.icon});
 
+  /// Cream on the dark (green) buttons, ink on light ones like Google sign-in.
+  Color get _textColor {
+    final background = color;
+    if (background == null) return AppColors.ink;
+    return ThemeData.estimateBrightnessForColor(background) == Brightness.dark
+        ? AppColors.cream
+        : AppColors.ink;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -19,6 +29,7 @@ class ChatButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(30.0),
         child: MaterialButton(
           onPressed: onPressed,
+          textColor: _textColor,
           minWidth: 200.0,
           height: 42.0,
           child: icon == null

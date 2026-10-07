@@ -113,7 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     privateRoom != null
-                        ? const Icon(Icons.lock, color: Colors.white, size: 20.0)
+                        ? const CircleAvatar(
+                            radius: 14.0,
+                            backgroundColor: AppColors.cream,
+                            child: Icon(
+                              Icons.lock,
+                              color: AppColors.primary,
+                              size: 18.0,
+                            ),
+                          )
                         : Text(
                             language.flag,
                             style: const TextStyle(fontSize: 20.0),

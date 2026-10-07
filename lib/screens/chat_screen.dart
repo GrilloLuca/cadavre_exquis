@@ -21,6 +21,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _storyService = StoryService();
   final _messageTextController = TextEditingController();
+  final _messageFocusNode = FocusNode();
   String _messageText = '';
   bool _isSending = false;
   bool _isLocking = true;
@@ -43,6 +44,11 @@ class _ChatScreenState extends State<ChatScreen> {
         _lockAcquired = true;
         _isLocking = false;
       });
+      // The field is disabled until the lock is held; focus it once the
+      // rebuild has enabled it so the keyboard opens straight away.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _messageFocusNode.requestFocus();
+      });
     } catch (e) {
       if (!mounted) return;
       final message = _errorMessage(context, e);
@@ -56,6 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _messageTextController.dispose();
+    _messageFocusNode.dispose();
     if (_lockAcquired) {
       final email = FirebaseAuth.instance.currentUser?.email;
       if (email != null) {
@@ -188,6 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Expanded(
                             child: TextField(
                               controller: _messageTextController,
+                              focusNode: _messageFocusNode,
                               enabled: !_isSending && _lockAcquired,
                               minLines: 1,
                               maxLines: 5,
