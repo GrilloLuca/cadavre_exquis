@@ -439,6 +439,84 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Stanza non trovata o password errata.'**
   String get errorRoomJoinFailed;
+
+  /// No description provided for @nicknameLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Nickname'**
+  String get nicknameLabel;
+
+  /// No description provided for @nicknameHelper.
+  ///
+  /// In it, this message translates to:
+  /// **'{min}–{max} caratteri: lettere, numeri, spazi, _ - .'**
+  String nicknameHelper(int min, int max);
+
+  /// No description provided for @nicknameSaveButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva'**
+  String get nicknameSaveButton;
+
+  /// No description provided for @nicknameSaved.
+  ///
+  /// In it, this message translates to:
+  /// **'Nickname salvato.'**
+  String get nicknameSaved;
+
+  /// No description provided for @nicknameRemoved.
+  ///
+  /// In it, this message translates to:
+  /// **'Nickname rimosso.'**
+  String get nicknameRemoved;
+
+  /// No description provided for @nicknameLoadFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile caricare il nickname.'**
+  String get nicknameLoadFailed;
+
+  /// No description provided for @retryButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Riprova'**
+  String get retryButton;
+
+  /// No description provided for @nicknamePublicPreview.
+  ///
+  /// In it, this message translates to:
+  /// **'Nelle storie apparirai come: {name}'**
+  String nicknamePublicPreview(String name);
+
+  /// No description provided for @storyPartAuthor.
+  ///
+  /// In it, this message translates to:
+  /// **'— {name}'**
+  String storyPartAuthor(String name);
+
+  /// No description provided for @anonymousAuthor.
+  ///
+  /// In it, this message translates to:
+  /// **'Anonimo'**
+  String get anonymousAuthor;
+
+  /// No description provided for @errorNicknameTooShort.
+  ///
+  /// In it, this message translates to:
+  /// **'Il nickname deve avere almeno {min} caratteri.'**
+  String errorNicknameTooShort(int min);
+
+  /// No description provided for @errorNicknameTooLong.
+  ///
+  /// In it, this message translates to:
+  /// **'Il nickname può avere al massimo {max} caratteri.'**
+  String errorNicknameTooLong(int max);
+
+  /// No description provided for @errorNicknameInvalidCharacters.
+  ///
+  /// In it, this message translates to:
+  /// **'Usa solo lettere, numeri, spazi e _ - .'**
+  String get errorNicknameInvalidCharacters;
 }
 
 class _AppLocalizationsDelegate

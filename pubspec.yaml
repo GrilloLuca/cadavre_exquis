@@ -20,12 +20,15 @@ dependencies:
   crypto: ^3.0.7
   google_sign_in: ^7.2.0
   flutter_svg: ^2.3.0
+  characters: ^1.4.1
 
 dev_dependencies:
+  fake_cloud_firestore: ^4.3.0
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  mock_exceptions: ^0.8.2
 
 flutter:
   uses-material-design: true
