@@ -7,6 +7,9 @@ import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 
+/// Non-story rows in the complete stories list.
+enum _ListMarker { yourStoriesHeading, divider }
+
 class CompleteStoriesScreen extends StatelessWidget {
   /// Language code of the room the user has joined: only stories in this
   /// language are listed.
@@ -71,23 +74,53 @@ class CompleteStoriesScreen extends StatelessWidget {
             // Stories the user took part in come first, then a divider,
             // then everyone else's.
             final email = FirebaseAuth.instance.currentUser?.email;
-            final mine = stories.where((s) => s.hasPartBy(email)).toList();
-            final others = stories.where((s) => !s.hasPartBy(email)).toList();
+            final mine = <Story>[];
+            final others = <Story>[];
+            for (final story in stories) {
+              (story.hasPartBy(email) ? mine : others).add(story);
+            }
 
-            return ListView(
+            // Markers stand in for the heading and the divider, so the list
+            // can still be built lazily.
+            final items = <Object>[
+              if (mine.isNotEmpty) _ListMarker.yourStoriesHeading,
+              ...mine,
+              if (mine.isNotEmpty && others.isNotEmpty) _ListMarker.divider,
+              ...others,
+            ];
+
+            return ListView.builder(
               padding: const EdgeInsets.all(12.0),
-              children: [
-                for (final story in mine) _buildStoryCard(context, story),
-                if (mine.isNotEmpty && others.isNotEmpty)
-                  const Divider(
-                    height: 24.0,
-                    thickness: 1.5,
-                    indent: 8.0,
-                    endIndent: 8.0,
-                    color: AppColors.primaryDark,
-                  ),
-                for (final story in others) _buildStoryCard(context, story),
-              ],
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                switch (item) {
+                  case _ListMarker.yourStoriesHeading:
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 8.0),
+                      child: Text(
+                        l10n.yourStoriesHeading,
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  case _ListMarker.divider:
+                    return const Divider(
+                      height: 24.0,
+                      thickness: 1.5,
+                      indent: 8.0,
+                      endIndent: 8.0,
+                      color: AppColors.primaryDark,
+                    );
+                  case Story story:
+                    return _buildStoryCard(context, story);
+                  default:
+                    throw StateError('Unexpected list item: $item');
+                }
+              },
             );
           },
         ),
