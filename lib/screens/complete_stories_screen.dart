@@ -136,7 +136,7 @@ class CompleteStoriesScreen extends StatelessWidget {
           textColor: AppColors.ink,
           leading: const Icon(Icons.menu_book),
           title: Text(
-            preview,
+            story.title ?? preview,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),

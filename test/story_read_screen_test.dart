@@ -11,8 +11,9 @@ import 'package:cadavre_exquisite/services/user_profile_service.dart';
 void main() {
   final timestamp = Timestamp.fromMillisecondsSinceEpoch(0);
 
-  Story buildStory() => Story(
+  Story buildStory({String? title}) => Story(
         id: 'story-1',
+        title: title,
         status: 'complete',
         currentPosition: 'epilogo',
         parts: [
@@ -31,11 +32,14 @@ void main() {
         ],
       );
 
-  Widget buildApp(UserProfileService service) => MaterialApp(
+  Widget buildApp(UserProfileService service, {String? title}) => MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
-        home: StoryReadScreen(story: buildStory(), profileService: service),
+        home: StoryReadScreen(
+          story: buildStory(title: title),
+          profileService: service,
+        ),
       );
 
   testWidgets('shows nicknames, falls back to masked emails, never the email',
@@ -82,5 +86,14 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text('— Supermario'), findsOneWidget);
+  });
+
+  testWidgets('shows the AI title above the parts when the story has one',
+      (tester) async {
+    final service = UserProfileService(firestore: FakeFirebaseFirestore());
+
+    await tester.pumpWidget(buildApp(service, title: 'The Seated Cat'));
+    await tester.pumpAndSettle();
+    expect(find.text('The Seated Cat'), findsOneWidget);
   });
 }

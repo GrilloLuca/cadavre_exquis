@@ -42,7 +42,7 @@ service cloud.firestore {
           && d.parts == []
           && d.lockedBy == null
           && d.language is string
-          && (!('roomId' in d) || exists(/databases/$(database)/documents/privateRooms/$(d.roomId)))
+          && (d.get('roomId', null) == null || exists(/databases/$(database)/documents/privateRooms/$(d.roomId)))
           && d.createdAt == request.time
           && d.updatedAt == request.time;
       }
@@ -92,8 +92,9 @@ service cloud.firestore {
           && after.updatedAt == request.time;
       }
 
-      // Lists are queried by `status` and filtered client-side by
-      // language/room, so every signed-in player needs read access.
+      // Lists are queried by `status` plus `roomId` (private rooms) or
+      // `language` + `roomId == null` (public rooms); every signed-in player
+      // can read any story.
       allow read: if signedIn();
       allow create: if signedIn() && isValidCreate();
       allow update: if signedIn() && (isValidLockChange() || isValidSubmit());
