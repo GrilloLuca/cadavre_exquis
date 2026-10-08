@@ -78,7 +78,9 @@ service cloud.firestore {
           && freeForMe()
           && !wroteLastPart(before.parts)
           && after.parts.size() == n + 1
-          && after.parts[0:n] == before.parts
+          // A [0:0] slice doesn't compare equal to [], so the first part is
+          // checked separately.
+          && (n == 0 || after.parts[0:n] == before.parts)
           && part.keys().hasOnly(['position', 'text', 'author', 'timestamp'])
           && part.position == before.currentPosition
           && part.author == myEmail()
