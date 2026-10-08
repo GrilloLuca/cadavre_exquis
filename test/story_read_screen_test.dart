@@ -3,10 +3,14 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cadavre_exquisite/ad_banner.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
+import 'package:cadavre_exquisite/services/ads_service.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
+
+import 'fake_ads_service.dart';
 
 void main() {
   final timestamp = Timestamp.fromMillisecondsSinceEpoch(0);
@@ -32,13 +36,19 @@ void main() {
         ],
       );
 
-  Widget buildApp(UserProfileService service, {String? title}) => MaterialApp(
+  Widget buildApp(
+    UserProfileService service, {
+    AdsService? adsService,
+    String? title,
+  }) =>
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
         home: StoryReadScreen(
           story: buildStory(title: title),
           profileService: service,
+          adsService: adsService,
         ),
       );
 
@@ -86,6 +96,28 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text('— Supermario'), findsOneWidget);
+  });
+
+  testWidgets('has a story-read banner slot that takes no space without an ad',
+      (tester) async {
+    final ads = FakeAdsService(available: true);
+    await tester.pumpWidget(buildApp(
+      UserProfileService(firestore: FakeFirebaseFirestore()),
+      adsService: ads,
+    ));
+    await tester.pumpAndSettle();
+
+    final banner = find.byType(AdBanner);
+    expect(banner, findsOneWidget);
+    expect(
+        tester.widget<AdBanner>(banner).placement, AdPlacement.storyReadBanner);
+    // Not inside the scrolling story.
+    expect(
+      find.ancestor(of: banner, matching: find.byType(SingleChildScrollView)),
+      findsNothing,
+    );
+    expect(ads.requested, [AdPlacement.storyReadBanner]);
+    expect(tester.getSize(banner), Size.zero);
   });
 
   testWidgets('shows the AI title above the parts when the story has one',

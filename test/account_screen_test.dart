@@ -8,7 +8,10 @@ import 'package:mock_exceptions/mock_exceptions.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
+import 'package:cadavre_exquisite/services/ads_service.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
+
+import 'fake_ads_service.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
 const _docId = 'luca.grillo@gmail.com';
@@ -53,17 +56,25 @@ void main() {
     };
   }
 
-  Widget buildApp(UserProfileService service) => MaterialApp(
+  Widget buildApp(UserProfileService service, {AdsService? adsService}) =>
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('it'),
-        home: AccountScreen(profileService: service, email: _email),
+        home: AccountScreen(
+          profileService: service,
+          email: _email,
+          adsService: adsService,
+        ),
       );
 
   Future<void> pumpScreen(WidgetTester tester,
-      [UserProfileService? service]) async {
+      [UserProfileService? service, AdsService? adsService]) async {
     await tester.pumpWidget(
-      buildApp(service ?? UserProfileService(firestore: firestore)),
+      buildApp(
+        service ?? UserProfileService(firestore: firestore),
+        adsService: adsService,
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -71,6 +82,7 @@ void main() {
   Finder field() => find.byType(TextFormField);
   Finder saveButton() => find.widgetWithText(ElevatedButton, 'Salva');
   Finder retryButton() => find.widgetWithText(TextButton, 'Riprova');
+  Finder adPrivacyButton() => find.text('Privacy e annunci');
 
   bool isSaveEnabled(WidgetTester tester) =>
       tester.widget<ElevatedButton>(saveButton()).onPressed != null;
@@ -257,5 +269,30 @@ void main() {
     await tapSave(tester);
     expect(find.text('Nickname salvato.'), findsOneWidget);
     expect(storedProfiles()[_docId]?['nickname'], 'Luca');
+  });
+
+  group('ad privacy settings', () {
+    testWidgets('are hidden when consent options are not required',
+        (tester) async {
+      await pumpScreen(tester, null, FakeAdsService());
+      expect(adPrivacyButton(), findsNothing);
+    });
+
+    testWidgets('appear once required and open the privacy options form',
+        (tester) async {
+      final ads = FakeAdsService();
+      await pumpScreen(tester, null, ads);
+      expect(adPrivacyButton(), findsNothing);
+
+      // The consent status is only known after the ads service initializes,
+      // which happens after the account tab is first built.
+      ads.privacyOptionsRequiredValue = true;
+      await tester.pump();
+      expect(adPrivacyButton(), findsOneWidget);
+
+      await tester.tap(adPrivacyButton());
+      await tester.pump();
+      expect(ads.privacyOptionsShown, 1);
+    });
   });
 }

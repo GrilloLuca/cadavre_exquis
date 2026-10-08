@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logoutButton;
 
+  /// No description provided for @adPrivacySettingsButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Privacy e annunci'**
+  String get adPrivacySettingsButton;
+
   /// No description provided for @errorStoryAlreadyCompleted.
   ///
   /// In it, this message translates to:

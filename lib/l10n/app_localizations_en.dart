@@ -128,6 +128,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutButton => 'Logout';
 
   @override
+  String get adPrivacySettingsButton => 'Ad privacy settings';
+
+  @override
   String get errorStoryAlreadyCompleted =>
       'This story has already been completed.';
 

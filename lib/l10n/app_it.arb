@@ -55,6 +55,7 @@
   },
   "sendButton": "Invia",
   "logoutButton": "Logout",
+  "adPrivacySettingsButton": "Privacy e annunci",
 
   "errorStoryAlreadyCompleted": "Questa storia è già stata completata.",
   "errorStoryPositionTaken": "Qualcun altro ha già scritto questo pezzo.",

@@ -21,6 +21,7 @@ dependencies:
   google_sign_in: ^7.2.0
   flutter_svg: ^2.3.0
   characters: ^1.4.1
+  google_mobile_ads: ^9.1.0
 
 dev_dependencies:
   fake_cloud_firestore: ^4.3.0
