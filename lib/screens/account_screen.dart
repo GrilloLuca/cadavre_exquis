@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/author_name.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
+import 'package:cadavre_exquisite/services/ads_service.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
@@ -25,7 +26,12 @@ String _nicknameErrorMessage(
 }
 
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key, this.profileService, this.email});
+  const AccountScreen({
+    super.key,
+    this.profileService,
+    this.email,
+    this.adsService,
+  });
 
   /// Service used to read/write the nickname. Defaults to a
   /// [UserProfileService] backed by the default Firestore instance.
@@ -35,6 +41,9 @@ class AccountScreen extends StatefulWidget {
   /// email; when provided, [FirebaseAuth] is never accessed while building.
   final String? email;
 
+  /// Ads consent service. Defaults to [AdsService.instance].
+  final AdsService? adsService;
+
   @override
   State<AccountScreen> createState() => _AccountScreenState();
 }
@@ -43,6 +52,7 @@ class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nicknameController = TextEditingController();
   late final UserProfileService _profileService;
+  late final AdsService _adsService;
 
   String? _email;
   bool _isLoadingNickname = false;
@@ -56,6 +66,7 @@ class _AccountScreenState extends State<AccountScreen> {
   void initState() {
     super.initState();
     _profileService = widget.profileService ?? UserProfileService();
+    _adsService = widget.adsService ?? AdsService.instance;
     _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
     _isLoadingNickname = _email != null;
     _loadNickname();
@@ -303,6 +314,24 @@ class _AccountScreenState extends State<AccountScreen> {
                         const SizedBox(height: 24.0),
                         _buildNicknameCard(l10n),
                       ],
+                      // Required by GDPR/UMP: users in the EEA/UK must be
+                      // able to change their ad consent at any time.
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _adsService.privacyOptionsRequired,
+                        builder: (context, required, _) => required
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 24.0),
+                                child: Center(
+                                  child: TextButton.icon(
+                                    onPressed: _adsService.showPrivacyOptions,
+                                    icon:
+                                        const Icon(Icons.privacy_tip_outlined),
+                                    label: Text(l10n.adPrivacySettingsButton),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                       const SizedBox(height: 32.0),
                       Center(
                         child: ElevatedButton.icon(

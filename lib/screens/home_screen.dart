@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/ad_banner.dart';
 import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -7,6 +8,7 @@ import 'package:cadavre_exquisite/screens/account_screen.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/incomplete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/private_room_screen.dart';
+import 'package:cadavre_exquisite/services/ads_service.dart';
 
 class HomeScreen extends StatefulWidget {
   static String id = 'home_screen';
@@ -26,6 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   String? _languageCode;
   PrivateRoom? _privateRoom;
+
+  @override
+  void initState() {
+    super.initState();
+    // Consent + ads SDK start once the user is in, without delaying the UI.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AdsService.instance.initialize());
+  }
 
   @override
   void didChangeDependencies() {
@@ -96,9 +106,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.lock_outline, size: 20.0),
+                      const Icon(
+                          Icons.lock_outline,
+                          size: 20.0,
+                          color: AppColors.primary
+                      ),
                       const SizedBox(width: 8.0),
-                      Text(l10n.privateRoomMenuItem),
+                      Text(
+                          l10n.privateRoomMenuItem,
+                      ),
                     ],
                   ),
                 ),
@@ -147,21 +163,38 @@ class _HomeScreenState extends State<HomeScreen> {
           const AccountScreen(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.edit_note),
-            label: l10n.homeTabIncomplete,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.menu_book),
-            label: l10n.homeTabComplete,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: l10n.homeTabProfile,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The banner lives here rather than in CompleteStoriesScreen: the
+          // IndexedStack keeps every tab alive, so it would keep loading ads
+          // while hidden. Built only on the complete-stories tab.
+          if (_selectedIndex == 1)
+            // The navigation bar below already pads for the bottom inset.
+            MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: const AdBanner(
+                placement: AdPlacement.completeStoriesBanner,
+              ),
+            ),
+          BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) => setState(() => _selectedIndex = index),
+            items: <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.edit_note),
+                label: l10n.homeTabIncomplete,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.menu_book),
+                label: l10n.homeTabComplete,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person),
+                label: l10n.homeTabProfile,
+              ),
+            ],
           ),
         ],
       ),
