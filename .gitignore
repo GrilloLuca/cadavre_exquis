@@ -1,5 +1,7 @@
 # Claude Code
 .claude/
+# Lock file for the agent skills installed in .claude/skills
+skills-lock.json
 
 # Miscellaneous
 *.class
