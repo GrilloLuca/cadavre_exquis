@@ -65,14 +65,8 @@ cd ios     && bundle exec fastlane ios beta              # or: release, certs
 - Pin Flutter: replace `channel: stable` with `flutter-version: <your version>` in the workflows for reproducible builds.
 
 ## Releasing a new version
-1. **Actions ▸ Deploy beta ▸ Run workflow**, set **Bump version** to `patch` (1.0.0 → 1.0.1), `minor` (→ 1.1.0) or `major` (→ 2.0.0).
-   The run bumps `pubspec.yaml`, opens and merges a PR into `master`, then builds that commit and uploads it
-   to Play internal + TestFlight. (Normal pushes to `master` and `bump = none` keep the current version.)
-2. Test, then **Actions ▸ Release ▸ Run workflow** to send it to production / App Store review.
-
-Locally: `cd android && bundle exec fastlane android bump type:minor` (edits `pubspec.yaml`, no commit).
-
-One-time requirements for the bump:
-- repo **Settings ▸ Actions ▸ General ▸ Workflow permissions** → tick **"Allow GitHub Actions to create and approve pull requests"**;
-- the `master` rule must not require PR approvals (Actions can't approve its own PR). If it does, the run stops with
-  an error and leaves the PR open: approve + merge it, then run Deploy beta again with `bump = none`.
+1. Bump the version name in `pubspec.yaml` in your PR: `patch` (1.0.0 → 1.0.1), `minor` (→ 1.1.0) or `major` (→ 2.0.0).
+   Locally: `cd android && bundle exec fastlane android bump type:patch` (edits `pubspec.yaml`, no commit).
+   Deploy beta doesn't bump anything: it builds `master` as committed.
+2. Merge the PR into `master`: Deploy beta builds it and uploads it to Play internal + TestFlight.
+3. Test, then **Actions ▸ Release ▸ Run workflow** to send it to production / App Store review.
