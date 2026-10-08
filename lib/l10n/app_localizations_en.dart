@@ -128,6 +128,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutButton => 'Logout';
 
   @override
+  String get deleteAccountButton => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Your account and nickname will be deleted permanently. The parts you wrote stay in their stories, shown as Anonymous.';
+
+  @override
+  String get deleteAccountGoogleHint =>
+      'You\'ll be asked to choose your Google account again to confirm.';
+
+  @override
+  String get deleteAccountConfirmButton => 'Delete';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get accountDeleted => 'Your account has been deleted.';
+
+  @override
   String get errorStoryAlreadyCompleted =>
       'This story has already been completed.';
 

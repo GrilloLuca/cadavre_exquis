@@ -129,6 +129,29 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logoutButton => 'Logout';
 
   @override
+  String get deleteAccountButton => 'Elimina account';
+
+  @override
+  String get deleteAccountTitle => 'Eliminare il tuo account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Il tuo account e il tuo nickname verranno eliminati definitivamente. Le parti che hai scritto restano nelle loro storie, come Anonimo.';
+
+  @override
+  String get deleteAccountGoogleHint =>
+      'Per confermare ti verrà chiesto di scegliere di nuovo il tuo account Google.';
+
+  @override
+  String get deleteAccountConfirmButton => 'Elimina';
+
+  @override
+  String get cancelButton => 'Annulla';
+
+  @override
+  String get accountDeleted => 'Il tuo account è stato eliminato.';
+
+  @override
   String get errorStoryAlreadyCompleted =>
       'Questa storia è già stata completata.';
 
