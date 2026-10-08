@@ -80,9 +80,6 @@ platform :android do
 
     File.write(pubspec, content.sub(match[0], "version: #{new_version}#{match[4]}"))
     UI.success("Version bumped (#{type}): #{old_version} -> #{new_version}")
-
-    # Expose the new version to GitHub Actions
-    File.open(ENV["GITHUB_OUTPUT"], "a") { |f| f.puts("version=#{new_version}") } if ENV["GITHUB_OUTPUT"]
     new_version
   end
 
