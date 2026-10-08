@@ -9,14 +9,19 @@ import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
   static String id = "login_screen";
+
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _auth = FirebaseAuth.instance;
-  late String email;
-  late String password;
+  // Empty until typed, so tapping login on a blank form reaches Firebase's
+  // invalid-email error instead of throwing a LateInitializationError.
+  String email = '';
+  String password = '';
   bool showSpinner = false;
 
   @override
@@ -80,12 +85,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           email: email,
                           password: password,
                         );
+                        if (!context.mounted) return;
                         Navigator.pushNamedAndRemoveUntil(
                           context,
                           HomeScreen.id,
                           (route) => false,
                         );
                       } on FirebaseAuthException catch (e) {
+                        if (!context.mounted) return;
                         const wrongCredentialsCodes = {
                           'invalid-credential',
                           'wrong-password',
@@ -101,6 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       } catch (e) {
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(l10n.loginFailed),
