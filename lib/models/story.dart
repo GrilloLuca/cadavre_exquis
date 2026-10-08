@@ -77,6 +77,11 @@ class Story {
   /// one of the public language rooms.
   final String? roomId;
 
+  /// AI-generated title, set by the `generateStoryTitle` Cloud Function
+  /// shortly after the story is completed. Null until then, or if
+  /// generation failed.
+  final String? title;
+
   Story({
     required this.id,
     required this.status,
@@ -85,6 +90,7 @@ class Story {
     this.lockedBy,
     this.language = kDefaultStoryLanguage,
     this.roomId,
+    this.title,
   });
 
   factory Story.fromSnapshot(DocumentSnapshot doc) {
@@ -99,6 +105,7 @@ class Story {
       lockedBy: data['lockedBy'] as String?,
       language: data['language'] as String? ?? kDefaultStoryLanguage,
       roomId: data['roomId'] as String?,
+      title: data['title'] as String?,
     );
   }
 
