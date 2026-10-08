@@ -77,6 +77,18 @@ class _StoryReadScreenState extends State<StoryReadScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (story.title != null) ...[
+                              Text(
+                                story.title!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 22.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryDark,
+                                ),
+                              ),
+                              const SizedBox(height: 20.0),
+                            ],
                             for (final (index, part)
                                 in story.parts.indexed) ...[
                               if (index > 0) const SizedBox(height: 16.0),

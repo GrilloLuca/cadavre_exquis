@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cadavre_exquisite/models/story.dart';
-import 'package:cadavre_exquisite/models/story_language.dart';
 
 enum StoryServiceErrorCode {
   alreadyCompleted,
@@ -18,49 +17,47 @@ class StoryServiceException implements Exception {
 }
 
 class StoryService {
-  final _firestore = FirebaseFirestore.instance;
+  StoryService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> get _stories =>
       _firestore.collection('stories');
 
-  /// Whether [story] belongs to the room identified by [language]/[roomId]:
-  /// stories in a private room ([roomId] set) when [roomId] is given, or
-  /// stories in the public [language] room (and not in any private room)
-  /// otherwise.
-  bool _isInRoom(Story story, {required String language, String? roomId}) {
-    if (roomId != null) return story.roomId == roomId;
-    return story.roomId == null && story.language == language;
+  /// Stories with [status] in the room identified by [language]/[roomId]:
+  /// the private room [roomId] when given, otherwise the public [language]
+  /// room. Public stories carry an explicit `roomId: null` so they can be
+  /// matched here; the `normalizeStory` Cloud Function adds it (and the
+  /// default `language`) to stories created by older app versions.
+  Query<Map<String, dynamic>> _roomQuery(
+    String status, {
+    required String language,
+    String? roomId,
+  }) {
+    final byStatus = _stories.where('status', isEqualTo: status);
+    if (roomId != null) return byStatus.where('roomId', isEqualTo: roomId);
+    return byStatus
+        .where('language', isEqualTo: language)
+        .where('roomId', isNull: true);
   }
 
-  /// Stories in the [language] room, or in the private room [roomId] if
-  /// given. Filtered client-side rather than with a `where(...)` clause so
-  /// stories created before language rooms existed (no `language` field,
-  /// defaulted to [kDefaultStoryLanguage] by the model) still show up in
-  /// their room.
   Stream<List<Story>> incompleteStoriesStream({
     required String language,
     String? roomId,
   }) {
-    return _stories.where('status', isEqualTo: 'incomplete').snapshots().map(
-          (snapshot) => snapshot.docs
-              .map(Story.fromSnapshot)
-              .where((story) =>
-                  _isInRoom(story, language: language, roomId: roomId))
-              .toList(),
-        );
+    return _roomQuery('incomplete', language: language, roomId: roomId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
   }
 
   Stream<List<Story>> completeStoriesStream({
     required String language,
     String? roomId,
   }) {
-    return _stories.where('status', isEqualTo: 'complete').snapshots().map(
-          (snapshot) => snapshot.docs
-              .map(Story.fromSnapshot)
-              .where((story) =>
-                  _isInRoom(story, language: language, roomId: roomId))
-              .toList(),
-        );
+    return _roomQuery('complete', language: language, roomId: roomId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
   }
 
   /// Creates an empty story and returns it, so the caller can open it
@@ -72,7 +69,7 @@ class StoryService {
       'parts': [],
       'lockedBy': null,
       'language': language,
-      if (roomId != null) 'roomId': roomId,
+      'roomId': roomId,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
