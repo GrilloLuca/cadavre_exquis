@@ -15,7 +15,7 @@ body {
 header, main, footer { max-width: 720px; margin: 0 auto; padding: 0 16px; }
 header { display: flex; align-items: center; gap: 12px; padding-top: 24px; }
 header a.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 22px; }
-header img { width: 48px; height: 48px; }
+header img { width: 48px; height: 48px; border-radius: 11px; }
 header nav { margin-left: auto; font-size: 15px; }
 header nav a { margin-left: 12px; }
 a { color: var(--primary-dark); }
