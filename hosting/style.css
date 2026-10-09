@@ -1,0 +1,33 @@
+:root {
+  --primary: #5e7f55;
+  --primary-dark: #3f5a3a;
+  --sage: #d5e2c8;
+  --cream: #f4eeda;
+  --ink: #2e2e28;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--sage);
+  color: var(--ink);
+  font: 17px/1.6 Georgia, "Times New Roman", serif;
+}
+header, main, footer { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+header { display: flex; align-items: center; gap: 12px; padding-top: 24px; }
+header a.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 22px; }
+header img { width: 48px; height: 48px; border-radius: 11px; }
+header nav { margin-left: auto; font-size: 15px; }
+header nav a { margin-left: 12px; }
+a { color: var(--primary-dark); }
+main { padding-top: 24px; padding-bottom: 32px; }
+.card { background: var(--cream); border: 2px solid var(--ink); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+h1 { font-size: 34px; line-height: 1.2; margin: 0 0 12px; }
+h2 { font-size: 22px; margin: 28px 0 8px; }
+.card > h2:first-child { margin-top: 0; }
+ol.steps { padding-left: 22px; }
+.stores { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.stores a { background: var(--primary); color: var(--cream); padding: 10px 18px; border-radius: 999px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 15px; }
+.stores a:hover { background: var(--primary-dark); }
+.muted { opacity: 0.75; font-size: 15px; }
+footer { padding-bottom: 32px; font-size: 14px; opacity: 0.8; }
+footer a { margin-right: 12px; }
