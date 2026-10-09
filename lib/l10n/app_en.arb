@@ -78,5 +78,16 @@
   "anonymousAuthor": "Anonymous",
   "errorNicknameTooShort": "Nickname must be at least {min} characters.",
   "errorNicknameTooLong": "Nickname can be at most {max} characters.",
-  "errorNicknameInvalidCharacters": "Use only letters, numbers, spaces and _ - ."
+  "errorNicknameInvalidCharacters": "Use only letters, numbers, spaces and _ - .",
+
+  "matureStoriesEntryTitle": "Stories for adults",
+  "matureStoriesEntrySubtitle": "Stories flagged as unsuitable for younger players",
+  "matureStoriesTitle": "Stories for adults",
+  "noMatureStories": "No stories in this section.",
+  "matureStoriesUnavailable": "This section isn't available.",
+  "ageCheckTitle": "Before you continue",
+  "ageCheckQuestion": "What year were you born?",
+  "ageCheckHint": "Year of birth",
+  "ageCheckNote": "You won't be able to change your answer.",
+  "ageCheckConfirm": "Confirm"
 }

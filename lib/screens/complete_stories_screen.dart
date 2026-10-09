@@ -5,11 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/services/age_check_service.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/screens/age_check_screen.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 
 /// Non-story rows in the complete stories list.
-enum _ListMarker { yourStoriesHeading, divider }
+enum _ListMarker { yourStoriesHeading, divider, matureStoriesEntry }
 
 class CompleteStoriesScreen extends StatelessWidget {
   /// Language code of the room the user has joined: only stories in this
@@ -20,10 +22,16 @@ class CompleteStoriesScreen extends StatelessWidget {
   /// takes precedence over [language]: only stories in this room are listed.
   final String? roomId;
 
+  /// Whether to list the stories the AI review flagged as unsuitable for
+  /// children instead of the others. The mature list is only reachable
+  /// through the age check (see [_MatureStoriesEntry]).
+  final bool mature;
+
   const CompleteStoriesScreen({
     super.key,
     required this.language,
     this.roomId,
+    this.mature = false,
   });
 
   @override
@@ -38,6 +46,7 @@ class CompleteStoriesScreen extends StatelessWidget {
           stream: storyService.completeStoriesStream(
             language: language,
             roomId: roomId,
+            mature: mature,
           ),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -49,16 +58,28 @@ class CompleteStoriesScreen extends StatelessWidget {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: CreamCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16.0,
-                    ),
-                    child: Text(
-                      l10n.noCompleteStories,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.ink),
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      CreamCard(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 16.0,
+                        ),
+                        child: Text(
+                          mature
+                              ? l10n.noMatureStories
+                              : l10n.noCompleteStories,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppColors.ink),
+                        ),
+                      ),
+                      if (!mature) ...[
+                        const SizedBox(height: 8.0),
+                        _matureStoriesEntry(),
+                      ],
+                    ],
                   ),
                 ),
               );
@@ -80,6 +101,7 @@ class CompleteStoriesScreen extends StatelessWidget {
               ...mine,
               if (mine.isNotEmpty && others.isNotEmpty) _ListMarker.divider,
               ...others,
+              if (!mature) _ListMarker.matureStoriesEntry,
             ];
 
             return ListView.builder(
@@ -108,6 +130,11 @@ class CompleteStoriesScreen extends StatelessWidget {
                       endIndent: 8.0,
                       color: AppColors.primaryDark,
                     );
+                  case _ListMarker.matureStoriesEntry:
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: _matureStoriesEntry(),
+                    );
                   case Story story:
                     return _buildStoryCard(context, story);
                   default:
@@ -120,6 +147,9 @@ class CompleteStoriesScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _matureStoriesEntry() =>
+      _MatureStoriesEntry(language: language, roomId: roomId);
 
   Widget _buildStoryCard(BuildContext context, Story story) {
     final l10n = AppLocalizations.of(context)!;
@@ -151,6 +181,127 @@ class CompleteStoriesScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Opens the stories flagged as mature, after the neutral age check. Hidden
+/// once the user is known to be a minor.
+class _MatureStoriesEntry extends StatefulWidget {
+  final String language;
+  final String? roomId;
+
+  const _MatureStoriesEntry({required this.language, this.roomId});
+
+  @override
+  State<_MatureStoriesEntry> createState() => _MatureStoriesEntryState();
+}
+
+class _MatureStoriesEntryState extends State<_MatureStoriesEntry> {
+  final _ageCheckService = AgeCheckService();
+  final _email = FirebaseAuth.instance.currentUser?.email;
+  int? _birthYear;
+  bool _isChecking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBirthYear();
+  }
+
+  Future<void> _loadBirthYear() async {
+    final email = _email;
+    if (email == null) return;
+    try {
+      final birthYear = await _ageCheckService.getBirthYear(email);
+      if (mounted) setState(() => _birthYear = birthYear);
+    } catch (_) {
+      // Unknown age: the entry stays visible and the check runs on tap.
+    }
+  }
+
+  bool get _isKnownMinor =>
+      _birthYear != null &&
+      !AgeCheckService.isAdult(_birthYear!, DateTime.now());
+
+  Future<void> _open() async {
+    final email = _email;
+    if (email == null || _isChecking) return;
+    setState(() => _isChecking = true);
+    try {
+      var birthYear = await _ageCheckService.getBirthYear(email);
+      if (birthYear == null) {
+        if (!mounted) return;
+        birthYear = await Navigator.push<int>(
+          context,
+          MaterialPageRoute(builder: (_) => const AgeCheckScreen()),
+        );
+        if (birthYear == null) return;
+        await _ageCheckService.setBirthYear(email: email, birthYear: birthYear);
+      }
+      if (!mounted) return;
+      setState(() => _birthYear = birthYear);
+
+      final l10n = AppLocalizations.of(context)!;
+      if (!AgeCheckService.isAdult(birthYear, DateTime.now())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.matureStoriesUnavailable)),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(
+              title: Text(l10n.matureStoriesTitle),
+              backgroundColor: AppColors.primary,
+            ),
+            body: CompleteStoriesScreen(
+              language: widget.language,
+              roomId: widget.roomId,
+              mature: true,
+            ),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.genericError)),
+      );
+    } finally {
+      if (mounted) setState(() => _isChecking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isKnownMinor) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    return CreamCard(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16.0,
+          vertical: 4.0,
+        ),
+        iconColor: AppColors.primary,
+        textColor: AppColors.ink,
+        leading: const Icon(Icons.lock_outline),
+        title: Text(
+          l10n.matureStoriesEntryTitle,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(l10n.matureStoriesEntrySubtitle),
+        trailing: _isChecking
+            ? const SizedBox(
+                width: 18.0,
+                height: 18.0,
+                child: CircularProgressIndicator(strokeWidth: 2.0),
+              )
+            : const Icon(Icons.chevron_right),
+        onTap: _open,
       ),
     );
   }

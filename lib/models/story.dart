@@ -77,10 +77,14 @@ class Story {
   /// one of the public language rooms.
   final String? roomId;
 
-  /// AI-generated title, set by the `generateStoryTitle` Cloud Function
+  /// AI-generated title, set by the `reviewCompletedStory` Cloud Function
   /// shortly after the story is completed. Null until then, or if
   /// generation failed.
   final String? title;
+
+  /// Whether the AI review judged the story unsuitable for children, set
+  /// alongside [title]. Null until the story is complete and reviewed.
+  final bool? mature;
 
   Story({
     required this.id,
@@ -91,6 +95,7 @@ class Story {
     this.language = kDefaultStoryLanguage,
     this.roomId,
     this.title,
+    this.mature,
   });
 
   factory Story.fromSnapshot(DocumentSnapshot doc) {
@@ -106,6 +111,7 @@ class Story {
       language: data['language'] as String? ?? kDefaultStoryLanguage,
       roomId: data['roomId'] as String?,
       title: data['title'] as String?,
+      mature: data['mature'] as bool?,
     );
   }
 

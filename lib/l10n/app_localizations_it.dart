@@ -251,4 +251,35 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get errorNicknameInvalidCharacters =>
       'Usa solo lettere, numeri, spazi e _ - .';
+
+  @override
+  String get matureStoriesEntryTitle => 'Storie per adulti';
+
+  @override
+  String get matureStoriesEntrySubtitle =>
+      'Storie segnalate come non adatte ai più giovani';
+
+  @override
+  String get matureStoriesTitle => 'Storie per adulti';
+
+  @override
+  String get noMatureStories => 'Nessuna storia in questa sezione.';
+
+  @override
+  String get matureStoriesUnavailable => 'Questa sezione non è disponibile.';
+
+  @override
+  String get ageCheckTitle => 'Prima di continuare';
+
+  @override
+  String get ageCheckQuestion => 'Qual è il tuo anno di nascita?';
+
+  @override
+  String get ageCheckHint => 'Anno di nascita';
+
+  @override
+  String get ageCheckNote => 'Non potrai modificare la risposta.';
+
+  @override
+  String get ageCheckConfirm => 'Conferma';
 }

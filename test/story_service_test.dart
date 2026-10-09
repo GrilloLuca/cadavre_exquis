@@ -8,7 +8,10 @@ void main() {
   late StoryService service;
 
   Future<void> addStory(String id,
-      {String status = 'complete', String language = 'it', String? roomId}) {
+      {String status = 'complete',
+      String language = 'it',
+      String? roomId,
+      bool? mature = false}) {
     return firestore.collection('stories').doc(id).set({
       'status': status,
       'currentPosition': 'epilogo',
@@ -16,6 +19,7 @@ void main() {
       'lockedBy': null,
       'language': language,
       'roomId': roomId,
+      if (mature != null) 'mature': mature,
     });
   }
 
@@ -30,9 +34,10 @@ void main() {
   });
 
   Future<List<String>> completeIds(
-      {required String language, String? roomId}) async {
+      {required String language, String? roomId, bool mature = false}) async {
     final stories = await service
-        .completeStoriesStream(language: language, roomId: roomId)
+        .completeStoriesStream(
+            language: language, roomId: roomId, mature: mature)
         .first;
     return stories.map((s) => s.id).toList();
   }
@@ -62,5 +67,14 @@ void main() {
     expect(await completeIds(language: 'fr'), isEmpty);
     final open = await service.incompleteStoriesStream(language: 'fr').first;
     expect(open.map((s) => s.id), [story.id]);
+  });
+
+  test('mature stories are only in the mature list, unreviewed in neither',
+      () async {
+    await addStory('it-mature', mature: true);
+    await addStory('it-unreviewed', mature: null);
+
+    expect(await completeIds(language: 'it'), ['it-public']);
+    expect(await completeIds(language: 'it', mature: true), ['it-mature']);
   });
 }

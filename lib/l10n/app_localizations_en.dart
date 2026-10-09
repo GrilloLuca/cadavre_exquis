@@ -249,4 +249,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorNicknameInvalidCharacters =>
       'Use only letters, numbers, spaces and _ - .';
+
+  @override
+  String get matureStoriesEntryTitle => 'Stories for adults';
+
+  @override
+  String get matureStoriesEntrySubtitle =>
+      'Stories flagged as unsuitable for younger players';
+
+  @override
+  String get matureStoriesTitle => 'Stories for adults';
+
+  @override
+  String get noMatureStories => 'No stories in this section.';
+
+  @override
+  String get matureStoriesUnavailable => 'This section isn\'t available.';
+
+  @override
+  String get ageCheckTitle => 'Before you continue';
+
+  @override
+  String get ageCheckQuestion => 'What year were you born?';
+
+  @override
+  String get ageCheckHint => 'Year of birth';
+
+  @override
+  String get ageCheckNote => 'You won\'t be able to change your answer.';
+
+  @override
+  String get ageCheckConfirm => 'Confirm';
 }

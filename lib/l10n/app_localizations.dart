@@ -517,6 +517,66 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Usa solo lettere, numeri, spazi e _ - .'**
   String get errorNicknameInvalidCharacters;
+
+  /// No description provided for @matureStoriesEntryTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Storie per adulti'**
+  String get matureStoriesEntryTitle;
+
+  /// No description provided for @matureStoriesEntrySubtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Storie segnalate come non adatte ai più giovani'**
+  String get matureStoriesEntrySubtitle;
+
+  /// No description provided for @matureStoriesTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Storie per adulti'**
+  String get matureStoriesTitle;
+
+  /// No description provided for @noMatureStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia in questa sezione.'**
+  String get noMatureStories;
+
+  /// No description provided for @matureStoriesUnavailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa sezione non è disponibile.'**
+  String get matureStoriesUnavailable;
+
+  /// No description provided for @ageCheckTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Prima di continuare'**
+  String get ageCheckTitle;
+
+  /// No description provided for @ageCheckQuestion.
+  ///
+  /// In it, this message translates to:
+  /// **'Qual è il tuo anno di nascita?'**
+  String get ageCheckQuestion;
+
+  /// No description provided for @ageCheckHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Anno di nascita'**
+  String get ageCheckHint;
+
+  /// No description provided for @ageCheckNote.
+  ///
+  /// In it, this message translates to:
+  /// **'Non potrai modificare la risposta.'**
+  String get ageCheckNote;
+
+  /// No description provided for @ageCheckConfirm.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma'**
+  String get ageCheckConfirm;
 }
 
 class _AppLocalizationsDelegate

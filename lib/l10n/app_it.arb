@@ -130,5 +130,16 @@
       }
     }
   },
-  "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - ."
+  "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - .",
+
+  "matureStoriesEntryTitle": "Storie per adulti",
+  "matureStoriesEntrySubtitle": "Storie segnalate come non adatte ai più giovani",
+  "matureStoriesTitle": "Storie per adulti",
+  "noMatureStories": "Nessuna storia in questa sezione.",
+  "matureStoriesUnavailable": "Questa sezione non è disponibile.",
+  "ageCheckTitle": "Prima di continuare",
+  "ageCheckQuestion": "Qual è il tuo anno di nascita?",
+  "ageCheckHint": "Anno di nascita",
+  "ageCheckNote": "Non potrai modificare la risposta.",
+  "ageCheckConfirm": "Conferma"
 }
