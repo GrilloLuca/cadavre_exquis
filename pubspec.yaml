@@ -1,7 +1,7 @@
 name: cadavre_exquisite
 description: Un gioco di scrittura collaborativa a turni, ispirato al cadavre exquis.
 
-version: 1.0.9+1
+version: 1.0.10+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -21,6 +21,7 @@ dependencies:
   google_sign_in: ^7.2.0
   flutter_svg: ^2.3.0
   characters: ^1.4.1
+  age_range_signals: 0.10.1
 
 dev_dependencies:
   fake_cloud_firestore: ^4.3.0

@@ -8,15 +8,18 @@ import 'package:flutter/material.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = "registration_screen";
+
+  const RegistrationScreen({super.key});
+
   @override
-  _RegistrationScreenState createState() => _RegistrationScreenState();
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
-  late String email;
-  late String password;
+  String email = '';
+  String password = '';
   bool showSpinner = false;
 
   Future<void> _register() async {
@@ -94,9 +97,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     onChanged: (value) {
                       email = value;
                     },
-                    decoration: kTextFieldDecoration.copyWith(
-                      hintText: l10n.emailHint
-                    ),
+                    decoration:
+                        kTextFieldDecoration.copyWith(hintText: l10n.emailHint),
                   ),
                   SizedBox(
                     height: 8.0,

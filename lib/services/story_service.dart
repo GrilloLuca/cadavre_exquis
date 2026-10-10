@@ -51,11 +51,15 @@ class StoryService {
         .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
   }
 
+  /// Completed stories the AI review judged [mature] (or not). Stories
+  /// still waiting for their review are in neither list.
   Stream<List<Story>> completeStoriesStream({
     required String language,
     String? roomId,
+    bool mature = false,
   }) {
     return _roomQuery('complete', language: language, roomId: roomId)
+        .where('mature', isEqualTo: mature)
         .snapshots()
         .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
   }

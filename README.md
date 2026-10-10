@@ -48,6 +48,23 @@ For iOS, make sure `GoogleService-Info.plist` is added to the `Runner` target in
 flutter run
 ```
 
+### 5. (Optional) Deploy the backend
+
+Story titles and content moderation run in Cloud Functions (`functions/`), which need the **Blaze** plan and the **Vertex AI API** enabled on the project. Gemini is called with the functions' service account, so there is no API key to configure.
+
+```bash
+firebase deploy --only firestore,functions   # rules, indexes and functions
+```
+
+The complete stories lists only show reviewed stories, so after the first deploy review the stories completed before it:
+
+```bash
+cd functions
+gcloud auth application-default login
+node scripts/review-complete-stories.js           # dry run
+node scripts/review-complete-stories.js --write
+```
+
 ---
 
 ## 🎲 The Concept
@@ -73,6 +90,7 @@ A story can only be written by one author at a time: while someone has it open, 
 * **Framework:** [Flutter](https://flutter.dev) — single codebase targeting Android, iOS, and Web.
 * **Language:** [Dart](https://dart.dev).
 * **Backend:** [Firebase Authentication](https://firebase.google.com/docs/auth) (email/password) and [Cloud Firestore](https://firebase.google.com/docs/firestore) as the real-time database. Story locking and part submission are implemented as Firestore transactions (`StoryService`) to keep concurrent writers consistent.
+* **Cloud Functions:** TypeScript functions in `functions/`. `reviewCompletedStory` sends each completed story to Gemini (`gemini-3.1-flash-lite` on Vertex AI) for a title and a `mature` verdict; `normalizeStory` fills in fields that older app versions don't write.
 * **State management:** plain Flutter — `StatefulWidget` + `StreamBuilder` listening directly to Firestore streams. No external state-management package.
 * **Localization:** `flutter_localizations` + `intl`, driven by `.arb` files under `lib/l10n/` (English and Italian are currently supported).
 
@@ -84,17 +102,22 @@ lib/
 ├── models/story.dart         # Story / StoryPart models and phase helpers
 ├── models/story_language.dart   # Languages available as story rooms
 ├── services/story_service.dart  # Firestore streams, locking & submission transactions
+├── services/age_check_service.dart  # Write-once birth year for the mature stories gate
 ├── screens/
 │   ├── welcome_screen.dart
 │   ├── login_screen.dart
 │   ├── registration_screen.dart
 │   ├── home_screen.dart          # Bottom-nav shell (Incomplete / Complete / Profile)
 │   ├── incomplete_stories_screen.dart
-│   ├── complete_stories_screen.dart
+│   ├── complete_stories_screen.dart  # Also the age-gated mature stories list
+│   ├── age_check_screen.dart     # Neutral birth-year screen
 │   ├── chat_screen.dart          # Writing UI for the current phase of a story
 │   ├── story_read_screen.dart    # Full read view of a completed story
 │   └── account_screen.dart       # Profile & logout
 └── l10n/                     # Localization templates and generated files
+functions/
+├── src/index.ts              # Cloud Functions: story review (title + moderation)
+└── scripts/                  # One-off maintenance scripts (backfills)
 ```
 
 ---
@@ -107,6 +130,8 @@ lib/
 - **Exclusive locking** so a story can only be written by one author at a time, with a live "being written" indicator for everyone else.
 - **Completed story archive** — read any finished story in full, part by part, with author attribution.
 - **Language-based rooms** — every story belongs to a language room (🇮🇹 🇬🇧 🇪🇸 🇫🇷 🇩🇪); pick a room from the home screen and you only see, continue, and read stories in that language, so each story is written entirely by authors sharing it. New stories are created in the room you're in, and the app starts you in the room matching your device language.
+- **AI story titles** — when a story is completed, a Cloud Function asks Gemini for a short title in the story's language, shown in the list and above the story.
+- **Moderation of completed stories** — the same review flags stories unsuitable for children (sexual content, graphic violence, strong profanity, drugs, self-harm, hate). Flagged stories leave the normal list and move to a **Stories for adults** section, opened after a neutral age screen that asks for the birth year once and never again. Players under 18 don't see the section at all. Stories in progress are not moderated yet.
 - **English and Italian localization.**
 
 ## 🚀 Roadmap

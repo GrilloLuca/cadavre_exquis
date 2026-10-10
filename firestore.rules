@@ -95,8 +95,10 @@ service cloud.firestore {
       }
 
       // Lists are queried by `status` plus `roomId` (private rooms) or
-      // `language` + `roomId == null` (public rooms); every signed-in player
-      // can read any story.
+      // `language` + `roomId == null` (public rooms), and complete lists by
+      // the AI review's `mature` verdict; every signed-in player can read
+      // any story. The age gate on mature stories is enforced by the app,
+      // not here.
       allow read: if signedIn();
       allow create: if signedIn() && isValidCreate();
       allow update: if signedIn() && (isValidLockChange() || isValidSubmit());
@@ -141,6 +143,26 @@ service cloud.firestore {
         && request.resource.data.nickname.size() >= 2
         && request.resource.data.nickname.size() <= 20
         && request.resource.data.updatedAt == request.time;
+    }
+
+    // ---------------------------------------------------------------------
+    // ageChecks/{emailKey}  (AgeCheckService)
+    // ---------------------------------------------------------------------
+    // The neutral age screen's answer: readable by its owner only, and
+    // written once, so a child can't retry with an older birth year.
+    match /ageChecks/{emailKey} {
+      function isOwner() {
+        return signedIn() && myEmail().lower() == emailKey;
+      }
+
+      allow get: if isOwner();
+      allow list, update, delete: if false;
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(['birthYear', 'createdAt'])
+        && request.resource.data.birthYear is int
+        && request.resource.data.birthYear >= 1900
+        && request.resource.data.birthYear <= request.time.year()
+        && request.resource.data.createdAt == request.time;
     }
 
     // Everything else (including the legacy `chapters` collection) is closed.
