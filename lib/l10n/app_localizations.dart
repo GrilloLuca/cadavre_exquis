@@ -308,6 +308,48 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logoutButton;
 
+  /// No description provided for @deleteAccountButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Elimina account'**
+  String get deleteAccountButton;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Eliminare il tuo account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'Il tuo account e il tuo nickname verranno eliminati definitivamente. Le parti che hai scritto restano nelle loro storie, come Anonimo.'**
+  String get deleteAccountMessage;
+
+  /// No description provided for @deleteAccountGoogleHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Per confermare ti verrà chiesto di scegliere di nuovo il tuo account Google.'**
+  String get deleteAccountGoogleHint;
+
+  /// No description provided for @deleteAccountConfirmButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Elimina'**
+  String get deleteAccountConfirmButton;
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla'**
+  String get cancelButton;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In it, this message translates to:
+  /// **'Il tuo account è stato eliminato.'**
+  String get accountDeleted;
+
   /// No description provided for @errorStoryAlreadyCompleted.
   ///
   /// In it, this message translates to:

@@ -2,6 +2,7 @@ import { FinishReason, GoogleGenAI, Type } from "@google/genai";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, Transaction } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
+import * as functionsV1 from "firebase-functions/v1";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 
 initializeApp();
@@ -183,3 +184,67 @@ function cleanTitle(raw: string | undefined): string | undefined {
     .trim();
   return title || undefined;
 }
+
+// Shown as "Anonymous" in the app: authorDisplayName() in
+// lib/models/author_name.dart returns null for an empty author.
+const DELETED_AUTHOR = "";
+
+/**
+ * The [parts] with every part written by [email] anonymized, or undefined if
+ * none was. Emails are compared case-insensitively, like profile keys.
+ */
+export function anonymizeParts(
+  parts: { author?: string }[] | undefined,
+  email: string,
+): { author?: string }[] | undefined {
+  const key = email.trim().toLowerCase();
+  let changed = false;
+  const result = (parts ?? []).map((part) => {
+    if (part.author?.trim().toLowerCase() !== key) return part;
+    changed = true;
+    return { ...part, author: DELETED_AUTHOR };
+  });
+  return changed ? result : undefined;
+}
+
+/**
+ * Removes a deleted account's email from Firestore: its profile is deleted,
+ * its story parts stay (they belong to stories other people wrote too) but
+ * become anonymous, its story locks are released and it's removed as the
+ * creator of its private rooms. There is no 2nd-gen trigger for deleted
+ * users, hence the 1st-gen function.
+ */
+export const anonymizeDeletedUser = functionsV1
+  .region("us-central1")
+  .auth.user()
+  .onDelete(async (user) => {
+    const email = user.email;
+    if (!email) return;
+    const key = email.trim().toLowerCase();
+    const db = getFirestore();
+    const writer = db.bulkWriter();
+
+    writer.delete(db.doc(`userProfiles/${key}`));
+
+    // Parts can't be queried by author, so every story is checked.
+    const stories = await db.collection("stories").select("parts", "lockedBy").get();
+    let storyCount = 0;
+    for (const doc of stories.docs) {
+      const fields: Record<string, unknown> = {};
+      const parts = anonymizeParts(doc.get("parts"), email);
+      if (parts) fields.parts = parts;
+      const lockedBy = doc.get("lockedBy");
+      if (typeof lockedBy === "string" && lockedBy.trim().toLowerCase() === key) {
+        fields.lockedBy = null;
+      }
+      if (Object.keys(fields).length === 0) continue;
+      storyCount++;
+      writer.update(doc.ref, fields);
+    }
+
+    const rooms = await db.collection("privateRooms").where("createdBy", "==", email).get();
+    for (const doc of rooms.docs) writer.update(doc.ref, { createdBy: null });
+
+    await writer.close();
+    logger.info("Anonymized deleted user", { uid: user.uid, stories: storyCount, rooms: rooms.size });
+  });

@@ -118,6 +118,13 @@ void main() {
       expect(await service.getNickname('luca@gmail.com'), isNull);
     });
 
+    test('deleteProfile removes the profile of a mixed-case email', () async {
+      await service.setNickname(email: 'luca@gmail.com', nickname: 'Luca');
+      await service.deleteProfile(' Luca@Gmail.com ');
+
+      expect((await profileDoc('luca@gmail.com')).exists, isFalse);
+    });
+
     test('clearing a nickname that was never set is a no-op', () async {
       await service.setNickname(email: 'luca@gmail.com', nickname: '');
       expect((await profileDoc('luca@gmail.com')).exists, isFalse);

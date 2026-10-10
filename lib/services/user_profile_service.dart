@@ -99,6 +99,10 @@ class UserProfileService {
     });
   }
 
+  /// Deletes the profile of the user with [email], if any.
+  Future<void> deleteProfile(String email) =>
+      _profiles.doc(profileKey(email)).delete();
+
   /// Nicknames for [emails], keyed by the original email strings passed in.
   /// Emails without a nickname are omitted. Duplicates are fetched once and
   /// lookups run in parallel; a lookup that fails is treated as "no

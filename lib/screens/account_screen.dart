@@ -47,6 +47,7 @@ class _AccountScreenState extends State<AccountScreen> {
   String? _email;
   bool _isLoadingNickname = false;
   bool _isSaving = false;
+  bool _isDeleting = false;
 
   /// True when the last prefill attempt failed. While set, editing and
   /// saving are disabled so an empty field can't wipe the stored nickname.
@@ -133,6 +134,59 @@ class _AccountScreenState extends State<AccountScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Asks for confirmation (and the password, for email/password users),
+  /// then deletes the account and returns to the welcome screen.
+  Future<void> _deleteAccount() async {
+    final email = _email;
+    if (email == null || _isDeleting) return;
+    final l10n = AppLocalizations.of(context)!;
+    final usesPassword = AuthService.usesPassword;
+
+    final confirmation = await showDialog<_DeleteConfirmation>(
+      context: context,
+      builder: (_) => _DeleteAccountDialog(usesPassword: usesPassword),
+    );
+    if (confirmation == null || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isDeleting = true);
+    try {
+      final confirmed =
+          await AuthService.reauthenticate(password: confirmation.password);
+      if (!confirmed) return;
+      try {
+        await _profileService.deleteProfile(email);
+      } catch (_) {
+        // The anonymizeDeletedUser Cloud Function deletes it as well.
+      }
+      await AuthService.deleteAccount();
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.accountDeleted)));
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        WelcomeScreen.id,
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == 'wrong-password' || e.code == 'invalid-credential'
+                ? l10n.loginInvalidCredentials
+                : l10n.genericError,
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.genericError), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
     }
   }
 
@@ -323,6 +377,26 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                         ),
                       ),
+                      if (_email != null) ...[
+                        const SizedBox(height: 16.0),
+                        Center(
+                          child: TextButton(
+                            onPressed: _isDeleting ? null : _deleteAccount,
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: _isDeleting
+                                ? const SizedBox(
+                                    width: 18.0,
+                                    height: 18.0,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.0,
+                                    ),
+                                  )
+                                : Text(l10n.deleteAccountButton),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -331,6 +405,81 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The user's answer to [_DeleteAccountDialog]: [password] is set for
+/// email/password users and null for Google users.
+class _DeleteConfirmation {
+  const _DeleteConfirmation(this.password);
+
+  final String? password;
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog({required this.usesPassword});
+
+  final bool usesPassword;
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    if (widget.usesPassword && _passwordController.text.isEmpty) return;
+    Navigator.pop(
+      context,
+      _DeleteConfirmation(
+        widget.usesPassword ? _passwordController.text : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Text(l10n.deleteAccountTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l10n.deleteAccountMessage),
+          const SizedBox(height: 16.0),
+          if (widget.usesPassword)
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              autofocus: true,
+              onSubmitted: (_) => _confirm(),
+              decoration: InputDecoration(hintText: l10n.passwordHint),
+            )
+          else
+            Text(l10n.deleteAccountGoogleHint),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancelButton),
+        ),
+        TextButton(
+          onPressed: _confirm,
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: Text(l10n.deleteAccountConfirmButton),
+        ),
+      ],
     );
   }
 }

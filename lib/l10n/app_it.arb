@@ -55,6 +55,13 @@
   },
   "sendButton": "Invia",
   "logoutButton": "Logout",
+  "deleteAccountButton": "Elimina account",
+  "deleteAccountTitle": "Eliminare il tuo account?",
+  "deleteAccountMessage": "Il tuo account e il tuo nickname verranno eliminati definitivamente. Le parti che hai scritto restano nelle loro storie, come Anonimo.",
+  "deleteAccountGoogleHint": "Per confermare ti verrà chiesto di scegliere di nuovo il tuo account Google.",
+  "deleteAccountConfirmButton": "Elimina",
+  "cancelButton": "Annulla",
+  "accountDeleted": "Il tuo account è stato eliminato.",
 
   "errorStoryAlreadyCompleted": "Questa storia è già stata completata.",
   "errorStoryPositionTaken": "Qualcun altro ha già scritto questo pezzo.",
