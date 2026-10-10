@@ -2,13 +2,18 @@ import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ChatButton extends StatelessWidget {
-
   final String? text;
   final Color? color;
-  final dynamic onPressed;
+  final VoidCallback? onPressed;
   final Widget? icon;
 
-  ChatButton({this.text, this.color, this.onPressed, this.icon});
+  const ChatButton({
+    super.key,
+    this.text,
+    this.color,
+    this.onPressed,
+    this.icon,
+  });
 
   /// Cream on the dark (green) buttons, ink on light ones like Google sign-in.
   Color get _textColor {

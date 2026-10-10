@@ -6,7 +6,12 @@ class MessageBubble extends StatelessWidget {
   final String text;
   final bool isMe;
 
-  MessageBubble({required this.sender, required this.text, required this.isMe});
+  const MessageBubble({
+    super.key,
+    required this.sender,
+    required this.text,
+    required this.isMe,
+  });
 
   @override
   Widget build(BuildContext context) {

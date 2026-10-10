@@ -9,14 +9,17 @@ import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
   static String id = "login_screen";
+
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _auth = FirebaseAuth.instance;
-  late String email;
-  late String password;
+  String email = '';
+  String password = '';
   bool showSpinner = false;
 
   @override
@@ -71,47 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ChatButton(
                     text: l10n.loginButton,
                     color: AppColors.primary,
-                    onPressed: () async {
-                      setState(() {
-                        showSpinner = true;
-                      });
-                      try {
-                        await _auth.signInWithEmailAndPassword(
-                          email: email,
-                          password: password,
-                        );
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          HomeScreen.id,
-                          (route) => false,
-                        );
-                      } on FirebaseAuthException catch (e) {
-                        const wrongCredentialsCodes = {
-                          'invalid-credential',
-                          'wrong-password',
-                          'user-not-found',
-                        };
-                        final message = wrongCredentialsCodes.contains(e.code)
-                            ? l10n.loginInvalidCredentials
-                            : (e.message ?? l10n.loginFailed);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(message),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.loginFailed),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                      setState(() {
-                        showSpinner = false;
-                      });
-                    },
+                    onPressed: showSpinner ? null : _signIn,
                   ),
                 ],
               ),
@@ -121,5 +84,54 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _signIn() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      showSpinner = true;
+    });
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      // The navigation below disposes this screen, so nothing may touch its
+      // state or context afterwards.
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        HomeScreen.id,
+        (route) => false,
+      );
+      return;
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      const wrongCredentialsCodes = {
+        'invalid-credential',
+        'wrong-password',
+        'user-not-found',
+      };
+      final message = wrongCredentialsCodes.contains(e.code)
+          ? l10n.loginInvalidCredentials
+          : (e.message ?? l10n.loginFailed);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.loginFailed),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    setState(() {
+      showSpinner = false;
+    });
   }
 }

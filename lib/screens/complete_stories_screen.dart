@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/age_check_service.dart';
+import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/services/user_profile_service.dart';
 import 'package:cadavre_exquisite/screens/age_check_screen.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 
@@ -27,16 +29,41 @@ class CompleteStoriesScreen extends StatelessWidget {
   /// through the age check (see [_MatureStoriesEntry]).
   final bool mature;
 
+  /// Source of the stories. Defaults to a [StoryService] on the default
+  /// Firestore instance; injectable for tests.
+  final StoryService? storyService;
+
+  /// Decides access to the mature list. Defaults to [AgeGate]; injectable
+  /// for tests.
+  final AgeGate? ageGate;
+
+  /// Stores the birth year asked when [ageGate] has no answer. Defaults to
+  /// [AgeCheckService]; inject the same storage as [ageGate] in tests.
+  final AgeCheckService? ageCheckService;
+
+  /// Email of the signed-in user. Defaults to the current [FirebaseAuth]
+  /// user's; when provided, [FirebaseAuth] is never accessed.
+  final String? email;
+
   const CompleteStoriesScreen({
     super.key,
     required this.language,
     this.roomId,
     this.mature = false,
+    this.storyService,
+    this.ageGate,
+    this.ageCheckService,
+    this.email,
   });
+
+  /// Forgets the users hidden from the mature entry this session.
+  @visibleForTesting
+  static void clearSessionState() =>
+      _MatureStoriesEntryState._sessionMinors.clear();
 
   @override
   Widget build(BuildContext context) {
-    final storyService = StoryService();
+    final storyService = this.storyService ?? StoryService();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -87,7 +114,8 @@ class CompleteStoriesScreen extends StatelessWidget {
 
             // Stories the user took part in come first, then a divider,
             // then everyone else's.
-            final email = FirebaseAuth.instance.currentUser?.email;
+            final email =
+                this.email ?? FirebaseAuth.instance.currentUser?.email;
             final mine = <Story>[];
             final others = <Story>[];
             for (final story in stories) {
@@ -148,8 +176,14 @@ class CompleteStoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _matureStoriesEntry() =>
-      _MatureStoriesEntry(language: language, roomId: roomId);
+  Widget _matureStoriesEntry() => _MatureStoriesEntry(
+        language: language,
+        roomId: roomId,
+        storyService: storyService,
+        ageGate: ageGate,
+        ageCheckService: ageCheckService,
+        email: email,
+      );
 
   Widget _buildStoryCard(BuildContext context, Story story) {
     final l10n = AppLocalizations.of(context)!;
@@ -186,65 +220,101 @@ class CompleteStoriesScreen extends StatelessWidget {
   }
 }
 
-/// Opens the stories flagged as mature, after the neutral age check. Hidden
-/// once the user is known to be a minor.
+/// Opens the stories flagged as mature once [AgeGate] lets the user in:
+/// platform age signals first, the neutral birth-year screen only when
+/// there is no usable signal and no stored year. Hidden once the user is
+/// known to be a minor.
 class _MatureStoriesEntry extends StatefulWidget {
   final String language;
   final String? roomId;
+  final StoryService? storyService;
+  final AgeGate? ageGate;
+  final AgeCheckService? ageCheckService;
+  final String? email;
 
-  const _MatureStoriesEntry({required this.language, this.roomId});
+  const _MatureStoriesEntry({
+    required this.language,
+    this.roomId,
+    this.storyService,
+    this.ageGate,
+    this.ageCheckService,
+    this.email,
+  });
 
   @override
   State<_MatureStoriesEntry> createState() => _MatureStoriesEntryState();
 }
 
 class _MatureStoriesEntryState extends State<_MatureStoriesEntry> {
-  final _ageCheckService = AgeCheckService();
-  final _email = FirebaseAuth.instance.currentUser?.email;
+  /// Users found to be minors this app session (profile keys), so the
+  /// entry stays hidden even when the list is rebuilt from scratch.
+  static final Set<String> _sessionMinors = {};
+
+  late final AgeCheckService _storage =
+      widget.ageCheckService ?? AgeCheckService();
+  late final AgeGate _gate = widget.ageGate ?? AgeGate(storage: _storage);
+  String? _email;
   int? _birthYear;
   bool _isChecking = false;
 
   @override
   void initState() {
     super.initState();
+    _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
     _loadBirthYear();
   }
 
+  /// Quietly reads the stored birth year, to hide the entry from known
+  /// minors. Never asks the platform: that may show a system sheet, so it
+  /// only happens on tap.
   Future<void> _loadBirthYear() async {
     final email = _email;
     if (email == null) return;
     try {
-      final birthYear = await _ageCheckService.getBirthYear(email);
+      final birthYear = await _gate.storedBirthYear(email);
       if (mounted) setState(() => _birthYear = birthYear);
     } catch (_) {
       // Unknown age: the entry stays visible and the check runs on tap.
     }
   }
 
-  bool get _isKnownMinor =>
-      _birthYear != null &&
-      !AgeCheckService.isAdult(_birthYear!, DateTime.now());
+  bool get _isKnownMinor {
+    final email = _email;
+    if (email != null &&
+        _sessionMinors.contains(UserProfileService.profileKey(email))) {
+      return true;
+    }
+    return _birthYear != null &&
+        !AgeCheckService.isAdult(_birthYear!, DateTime.now());
+  }
 
   Future<void> _open() async {
     final email = _email;
     if (email == null || _isChecking) return;
     setState(() => _isChecking = true);
     try {
-      var birthYear = await _ageCheckService.getBirthYear(email);
-      if (birthYear == null) {
-        if (!mounted) return;
-        birthYear = await Navigator.push<int>(
-          context,
-          MaterialPageRoute(builder: (_) => const AgeCheckScreen()),
-        );
-        if (birthYear == null) return;
-        await _ageCheckService.setBirthYear(email: email, birthYear: birthYear);
+      final bool isAdult;
+      switch (await _gate.resolve(email)) {
+        case AgeVerdict.adult:
+          isAdult = true;
+        case AgeVerdict.minor:
+          isAdult = false;
+        case AgeVerdict.askBirthYear:
+          if (!mounted) return;
+          final birthYear = await Navigator.push<int>(
+            context,
+            MaterialPageRoute(builder: (_) => const AgeCheckScreen()),
+          );
+          if (birthYear == null) return;
+          await _storage.setBirthYear(email: email, birthYear: birthYear);
+          isAdult = AgeCheckService.isAdult(birthYear, DateTime.now());
       }
       if (!mounted) return;
-      setState(() => _birthYear = birthYear);
 
       final l10n = AppLocalizations.of(context)!;
-      if (!AgeCheckService.isAdult(birthYear, DateTime.now())) {
+      if (!isAdult) {
+        _sessionMinors.add(UserProfileService.profileKey(email));
+        setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.matureStoriesUnavailable)),
         );
@@ -262,6 +332,10 @@ class _MatureStoriesEntryState extends State<_MatureStoriesEntry> {
               language: widget.language,
               roomId: widget.roomId,
               mature: true,
+              storyService: widget.storyService,
+              ageGate: widget.ageGate,
+              ageCheckService: widget.ageCheckService,
+              email: widget.email,
             ),
           ),
         ),

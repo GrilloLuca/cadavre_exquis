@@ -48,10 +48,36 @@ class _AgeCheckScreenState extends State<AgeCheckScreen> {
                     ),
                   ),
                   const SizedBox(height: 16.0),
+                  // Explicit colours: the app theme doesn't style dropdown
+                  // menus, which otherwise render white on white.
                   DropdownButtonFormField<int>(
                     initialValue: _birthYear,
-                    hint: Text(l10n.ageCheckHint),
+                    hint: Text(
+                      l10n.ageCheckHint,
+                      style: TextStyle(
+                        color: AppColors.ink.withValues(alpha: 0.6),
+                      ),
+                    ),
                     menuMaxHeight: 320.0,
+                    dropdownColor: AppColors.cream,
+                    focusColor: AppColors.sage,
+                    iconEnabledColor: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(12.0),
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                      color: AppColors.ink,
+                    ),
+                    decoration: const InputDecoration(
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.primaryDark,
+                          width: 2.0,
+                        ),
+                      ),
+                    ),
                     items: [
                       for (var year = currentYear;
                           year >= AgeCheckService.oldestBirthYear;
