@@ -13,9 +13,12 @@ import 'package:cadavre_exquisite/screens/age_check_screen.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 
 /// Non-story rows in the complete stories list.
-enum _ListMarker { yourStoriesHeading, divider, matureStoriesEntry }
+enum _ListMarker { yourStoriesHeading, divider }
 
-class CompleteStoriesScreen extends StatelessWidget {
+/// The completed stories of the room, newest first. Stories the AI review
+/// flagged as mature are listed with the others but locked behind the age
+/// check ([AgeGate]); known minors don't see them at all.
+class CompleteStoriesScreen extends StatefulWidget {
   /// Language code of the room the user has joined: only stories in this
   /// language are listed.
   final String language;
@@ -24,22 +27,21 @@ class CompleteStoriesScreen extends StatelessWidget {
   /// takes precedence over [language]: only stories in this room are listed.
   final String? roomId;
 
-  /// Whether to list the stories the AI review flagged as unsuitable for
-  /// children instead of the others. The mature list is only reachable
-  /// through the age check (see [_MatureStoriesEntry]).
-  final bool mature;
-
   /// Source of the stories. Defaults to a [StoryService] on the default
   /// Firestore instance; injectable for tests.
   final StoryService? storyService;
 
-  /// Decides access to the mature list. Defaults to [AgeGate]; injectable
+  /// Decides access to mature stories. Defaults to [AgeGate]; injectable
   /// for tests.
   final AgeGate? ageGate;
 
   /// Stores the birth year asked when [ageGate] has no answer. Defaults to
   /// [AgeCheckService]; inject the same storage as [ageGate] in tests.
   final AgeCheckService? ageCheckService;
+
+  /// Passed to [StoryReadScreen] for the authors' nicknames; injectable for
+  /// tests.
+  final UserProfileService? profileService;
 
   /// Email of the signed-in user. Defaults to the current [FirebaseAuth]
   /// user's; when provided, [FirebaseAuth] is never accessed.
@@ -49,77 +51,228 @@ class CompleteStoriesScreen extends StatelessWidget {
     super.key,
     required this.language,
     this.roomId,
-    this.mature = false,
     this.storyService,
     this.ageGate,
     this.ageCheckService,
+    this.profileService,
     this.email,
   });
 
-  /// Forgets the users hidden from the mature entry this session.
-  @visibleForTesting
-  static void clearSessionState() =>
-      _MatureStoriesEntryState._sessionMinors.clear();
+  /// Forgets who was found adult or minor this session, so mature stories
+  /// are locked again. Call on sign-out.
+  static void clearSessionState() {
+    _CompleteStoriesScreenState._sessionMinors.clear();
+    _CompleteStoriesScreenState._sessionAdults.clear();
+  }
+
+  @override
+  State<CompleteStoriesScreen> createState() => _CompleteStoriesScreenState();
+}
+
+class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
+  /// Users found to be minors this app session (profile keys): their
+  /// mature stories stay hidden even when the list is rebuilt from scratch.
+  static final Set<String> _sessionMinors = {};
+
+  /// Users found to be adults this app session (profile keys): their
+  /// mature stories are unlocked until the app restarts or they sign out.
+  static final Set<String> _sessionAdults = {};
+
+  late final AgeCheckService _storage =
+      widget.ageCheckService ?? AgeCheckService();
+  late final AgeGate _gate = widget.ageGate ?? AgeGate(storage: _storage);
+  late Stream<List<Story>> _stories;
+
+  String? _email;
+  int? _birthYear;
+
+  /// Whether the quiet birth-year read has finished (or failed, or there is
+  /// no user). Until then mature stories are hidden, so a stored minor never
+  /// sees a locked tile flash in before the read lands.
+  bool _birthYearLoaded = false;
+
+  /// Id of the mature story whose age check is running, null when idle.
+  /// Only one check runs at a time.
+  String? _checkingStoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
+    _stories = _subscribe();
+    _loadBirthYear();
+  }
+
+  @override
+  void didUpdateWidget(CompleteStoriesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The user switched room or language.
+    if (oldWidget.language != widget.language ||
+        oldWidget.roomId != widget.roomId ||
+        oldWidget.storyService != widget.storyService) {
+      _stories = _subscribe();
+    }
+  }
+
+  /// Kept in the state so rebuilds (spinner, unlock) don't resubscribe.
+  Stream<List<Story>> _subscribe() =>
+      (widget.storyService ?? StoryService()).completeStoriesStream(
+        language: widget.language,
+        roomId: widget.roomId,
+      );
+
+  /// Quietly reads the stored birth year, to hide mature stories from known
+  /// minors. Never asks the platform: that may show a system sheet, so it
+  /// only happens on tap.
+  Future<void> _loadBirthYear() async {
+    final email = _email;
+    if (email == null) {
+      _birthYearLoaded = true;
+      return;
+    }
+    int? birthYear;
+    try {
+      birthYear = await _gate.storedBirthYear(email);
+    } catch (_) {
+      // Unknown age: mature stories stay locked and the check runs on tap.
+    }
+    if (!mounted) return;
+    setState(() {
+      _birthYear = birthYear;
+      _birthYearLoaded = true;
+    });
+  }
+
+  String? get _profileKey {
+    final email = _email;
+    return email == null ? null : UserProfileService.profileKey(email);
+  }
+
+  bool get _isKnownMinor {
+    final key = _profileKey;
+    if (key != null && _sessionMinors.contains(key)) return true;
+    return _birthYear != null &&
+        !AgeCheckService.isAdult(_birthYear!, DateTime.now());
+  }
+
+  bool get _isUnlocked {
+    final key = _profileKey;
+    return key != null && _sessionAdults.contains(key);
+  }
+
+  void _openStory(Story story) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryReadScreen(
+          story: story,
+          profileService: widget.profileService,
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Runs the age check for a locked [story]: platform signals first, the
+  /// neutral birth-year screen only when there is no usable signal and no
+  /// stored year. Opens the story for adults.
+  Future<void> _unlock(Story story) async {
+    final email = _email;
+    if (email == null || _checkingStoryId != null) return;
+    final key = UserProfileService.profileKey(email);
+    if (_isKnownMinor) {
+      _showSnackBar(AppLocalizations.of(context)!.matureStoryUnavailable);
+      return;
+    }
+    setState(() => _checkingStoryId = story.id);
+    try {
+      final bool isAdult;
+      switch (await _gate.resolve(email)) {
+        case AgeVerdict.adult:
+          isAdult = true;
+        case AgeVerdict.minor:
+          isAdult = false;
+        case AgeVerdict.askBirthYear:
+          if (!mounted) return;
+          final birthYear = await Navigator.push<int>(
+            context,
+            MaterialPageRoute(builder: (_) => const AgeCheckScreen()),
+          );
+          if (birthYear == null) return;
+          await _storage.setBirthYear(email: email, birthYear: birthYear);
+          isAdult = AgeCheckService.isAdult(birthYear, DateTime.now());
+      }
+
+      if (isAdult) {
+        _sessionAdults.add(key);
+      } else {
+        _sessionMinors.add(key);
+      }
+      if (!mounted) return;
+      setState(() {});
+      if (isAdult) {
+        _openStory(story);
+      } else {
+        _showSnackBar(AppLocalizations.of(context)!.matureStoryUnavailable);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(AppLocalizations.of(context)!.genericError);
+    } finally {
+      if (mounted) setState(() => _checkingStoryId = null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final storyService = this.storyService ?? StoryService();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Background(
         opacity: 0.2,
         child: StreamBuilder<List<Story>>(
-          stream: storyService.completeStoriesStream(
-            language: language,
-            roomId: roomId,
-            mature: mature,
-          ),
+          stream: _stories,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final stories = snapshot.data!;
+            // Already sorted newest first by the service. Known minors
+            // don't see mature stories at all, and nobody sees them before
+            // the stored birth year is known.
+            final hideMature = !_birthYearLoaded || _isKnownMinor;
+            final stories = [
+              for (final story in snapshot.data!)
+                if (!(hideMature && story.mature == true)) story,
+            ];
             if (stories.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CreamCard(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 16.0,
-                        ),
-                        child: Text(
-                          mature
-                              ? l10n.noMatureStories
-                              : l10n.noCompleteStories,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.ink),
-                        ),
-                      ),
-                      if (!mature) ...[
-                        const SizedBox(height: 8.0),
-                        _matureStoriesEntry(),
-                      ],
-                    ],
+                  child: CreamCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 16.0,
+                    ),
+                    child: Text(
+                      l10n.noCompleteStories,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.ink),
+                    ),
                   ),
                 ),
               );
             }
 
             // Stories the user took part in come first, then a divider,
-            // then everyone else's.
-            final email =
-                this.email ?? FirebaseAuth.instance.currentUser?.email;
+            // then everyone else's. Both groups keep the service's order.
             final mine = <Story>[];
             final others = <Story>[];
             for (final story in stories) {
-              (story.hasPartBy(email) ? mine : others).add(story);
+              (story.hasPartBy(_email) ? mine : others).add(story);
             }
 
             // Markers stand in for the heading and the divider, so the list
@@ -129,7 +282,6 @@ class CompleteStoriesScreen extends StatelessWidget {
               ...mine,
               if (mine.isNotEmpty && others.isNotEmpty) _ListMarker.divider,
               ...others,
-              if (!mature) _ListMarker.matureStoriesEntry,
             ];
 
             return ListView.builder(
@@ -158,11 +310,6 @@ class CompleteStoriesScreen extends StatelessWidget {
                       endIndent: 8.0,
                       color: AppColors.primaryDark,
                     );
-                  case _ListMarker.matureStoriesEntry:
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: _matureStoriesEntry(),
-                    );
                   case Story story:
                     return _buildStoryCard(context, story);
                   default:
@@ -176,21 +323,18 @@ class CompleteStoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _matureStoriesEntry() => _MatureStoriesEntry(
-        language: language,
-        roomId: roomId,
-        storyService: storyService,
-        ageGate: ageGate,
-        ageCheckService: ageCheckService,
-        email: email,
-      );
-
   Widget _buildStoryCard(BuildContext context, Story story) {
     final l10n = AppLocalizations.of(context)!;
-    final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: CreamCard(
+    final locked = story.mature == true && !_isUnlocked;
+    final unlockedMature = story.mature == true && !locked;
+
+    final Widget tile;
+    if (locked) {
+      // Never render the AI title or any part text: either can contain
+      // what the review flagged.
+      tile = Semantics(
+        button: true,
+        onTapHint: l10n.matureStoryUnlockHint,
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16.0,
@@ -198,185 +342,60 @@ class CompleteStoriesScreen extends StatelessWidget {
           ),
           iconColor: AppColors.primary,
           textColor: AppColors.ink,
-          leading: const Icon(Icons.menu_book),
+          leading: Icon(
+            Icons.lock,
+            size: 24.0,
+            color: AppColors.primaryDark,
+            semanticLabel: l10n.matureStoryLockedLabel,
+          ),
           title: Text(
-            story.title ?? preview,
+            l10n.matureStoryLockedTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(l10n.authorsCount(story.parts.length)),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StoryReadScreen(story: story),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// Opens the stories flagged as mature once [AgeGate] lets the user in:
-/// platform age signals first, the neutral birth-year screen only when
-/// there is no usable signal and no stored year. Hidden once the user is
-/// known to be a minor.
-class _MatureStoriesEntry extends StatefulWidget {
-  final String language;
-  final String? roomId;
-  final StoryService? storyService;
-  final AgeGate? ageGate;
-  final AgeCheckService? ageCheckService;
-  final String? email;
-
-  const _MatureStoriesEntry({
-    required this.language,
-    this.roomId,
-    this.storyService,
-    this.ageGate,
-    this.ageCheckService,
-    this.email,
-  });
-
-  @override
-  State<_MatureStoriesEntry> createState() => _MatureStoriesEntryState();
-}
-
-class _MatureStoriesEntryState extends State<_MatureStoriesEntry> {
-  /// Users found to be minors this app session (profile keys), so the
-  /// entry stays hidden even when the list is rebuilt from scratch.
-  static final Set<String> _sessionMinors = {};
-
-  late final AgeCheckService _storage =
-      widget.ageCheckService ?? AgeCheckService();
-  late final AgeGate _gate = widget.ageGate ?? AgeGate(storage: _storage);
-  String? _email;
-  int? _birthYear;
-  bool _isChecking = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
-    _loadBirthYear();
-  }
-
-  /// Quietly reads the stored birth year, to hide the entry from known
-  /// minors. Never asks the platform: that may show a system sheet, so it
-  /// only happens on tap.
-  Future<void> _loadBirthYear() async {
-    final email = _email;
-    if (email == null) return;
-    try {
-      final birthYear = await _gate.storedBirthYear(email);
-      if (mounted) setState(() => _birthYear = birthYear);
-    } catch (_) {
-      // Unknown age: the entry stays visible and the check runs on tap.
-    }
-  }
-
-  bool get _isKnownMinor {
-    final email = _email;
-    if (email != null &&
-        _sessionMinors.contains(UserProfileService.profileKey(email))) {
-      return true;
-    }
-    return _birthYear != null &&
-        !AgeCheckService.isAdult(_birthYear!, DateTime.now());
-  }
-
-  Future<void> _open() async {
-    final email = _email;
-    if (email == null || _isChecking) return;
-    setState(() => _isChecking = true);
-    try {
-      final bool isAdult;
-      switch (await _gate.resolve(email)) {
-        case AgeVerdict.adult:
-          isAdult = true;
-        case AgeVerdict.minor:
-          isAdult = false;
-        case AgeVerdict.askBirthYear:
-          if (!mounted) return;
-          final birthYear = await Navigator.push<int>(
-            context,
-            MaterialPageRoute(builder: (_) => const AgeCheckScreen()),
-          );
-          if (birthYear == null) return;
-          await _storage.setBirthYear(email: email, birthYear: birthYear);
-          isAdult = AgeCheckService.isAdult(birthYear, DateTime.now());
-      }
-      if (!mounted) return;
-
-      final l10n = AppLocalizations.of(context)!;
-      if (!isAdult) {
-        _sessionMinors.add(UserProfileService.profileKey(email));
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.matureStoriesUnavailable)),
-        );
-        return;
-      }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(
-              title: Text(l10n.matureStoriesTitle),
-              backgroundColor: AppColors.primary,
-            ),
-            body: CompleteStoriesScreen(
-              language: widget.language,
-              roomId: widget.roomId,
-              mature: true,
-              storyService: widget.storyService,
-              ageGate: widget.ageGate,
-              ageCheckService: widget.ageCheckService,
-              email: widget.email,
-            ),
-          ),
+          trailing: _checkingStoryId == story.id
+              ? const SizedBox(
+                  width: 18.0,
+                  height: 18.0,
+                  child: CircularProgressIndicator(strokeWidth: 2.0),
+                )
+              : null,
+          onTap: () => _unlock(story),
         ),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.genericError)),
-      );
-    } finally {
-      if (mounted) setState(() => _isChecking = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isKnownMinor) return const SizedBox.shrink();
-    final l10n = AppLocalizations.of(context)!;
-    return CreamCard(
-      child: ListTile(
+    } else {
+      final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
+      tile = ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16.0,
-          vertical: 4.0,
+          vertical: 8.0,
         ),
         iconColor: AppColors.primary,
         textColor: AppColors.ink,
-        leading: const Icon(Icons.lock_outline),
+        leading: const Icon(Icons.menu_book),
         title: Text(
-          l10n.matureStoriesEntryTitle,
+          story.title ?? preview,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(l10n.matureStoriesEntrySubtitle),
-        trailing: _isChecking
-            ? const SizedBox(
-                width: 18.0,
-                height: 18.0,
-                child: CircularProgressIndicator(strokeWidth: 2.0),
+        subtitle: Text(l10n.authorsCount(story.parts.length)),
+        trailing: unlockedMature
+            ? Icon(
+                Icons.lock_open,
+                size: 20.0,
+                semanticLabel: l10n.matureStoryAdultContent,
               )
-            : const Icon(Icons.chevron_right),
-        onTap: _open,
-      ),
+            : null,
+        onTap: () => _openStory(story),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: CreamCard(child: tile),
     );
   }
 }

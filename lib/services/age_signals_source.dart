@@ -63,7 +63,7 @@ class PluginAgeSignalsSource implements AgeSignalsSource {
       error is MissingEntitlementException;
 
   /// Initializes the plugin lazily, on the first check rather than at app
-  /// start, so users who never open the section never touch the API. A
+  /// start, so users who never tap a mature story never touch the API. A
   /// failed initialization is forgotten so the next check retries it.
   Future<void> _ensureInitialized() {
     return _initialization ??=

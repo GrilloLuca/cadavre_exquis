@@ -117,6 +117,28 @@ class Story {
 
   bool get isComplete => status == 'complete';
 
+  /// When the story was completed: the timestamp of its last part, or null
+  /// if no part has been written. Part timestamps exist on every story,
+  /// including those from older app versions, unlike `updatedAt`.
+  Timestamp? get completedAt => parts.isEmpty ? null : parts.last.timestamp;
+
+  /// Orders stories newest completed first ([completedAt] descending),
+  /// stories without parts last, ties broken by [id] ascending, so the
+  /// order is fully deterministic.
+  static int compareByCompletedAtDesc(Story a, Story b) {
+    final aAt = a.completedAt;
+    final bAt = b.completedAt;
+    if (aAt != null && bAt != null) {
+      final byTime = bAt.compareTo(aAt);
+      if (byTime != 0) return byTime;
+    } else if (aAt != null) {
+      return -1;
+    } else if (bAt != null) {
+      return 1;
+    }
+    return a.id.compareTo(b.id);
+  }
+
   /// Whether [email] wrote the most recent part, which would make this
   /// their second consecutive turn. A user may write several parts of the
   /// same story, just not two in a row.

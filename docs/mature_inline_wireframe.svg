@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420" font-family="Helvetica, Arial, sans-serif">
+  <title>Mature stories inline: tile states</title>
+  <rect width="760" height="420" fill="#D5E2C8"/>
+
+  <!-- Column 1: locked list -->
+  <text x="20" y="28" font-size="14" font-weight="700" fill="#2E2E28">A. Locked (session not verified)</text>
+  <text x="20" y="56" font-size="14" font-weight="700" fill="#3F5A3A">Le tue storie</text>
+
+  <g transform="translate(12,66)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#5E7F55">[book]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Il drago e la lavatrice</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">4 autori</text>
+  </g>
+  <g transform="translate(12,138)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#3F5A3A">[lock]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Storia per adulti</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">4 autori</text>
+    <text x="250" y="38" font-size="10" fill="#3F5A3A">no title, no preview</text>
+  </g>
+  <line x1="20" y1="218" x2="360" y2="218" stroke="#3F5A3A" stroke-width="1.5"/>
+  <g transform="translate(12,232)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#3F5A3A">[lock]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Storia per adulti</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">3 autori</text>
+    <circle cx="330" cy="32" r="8" fill="none" stroke="#5E7F55" stroke-width="2" stroke-dasharray="30 20"/>
+    <text x="232" y="60" font-size="10" fill="#3F5A3A">checking: 18dp spinner</text>
+  </g>
+  <g transform="translate(12,304)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#5E7F55">[book]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">La gita al lago</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">4 autori</text>
+  </g>
+  <text x="20" y="400" font-size="11" fill="#2E2E28">Newest first within each group. No "Storie per adulti" entry at the bottom.</text>
+
+  <!-- Column 2: unlocked list -->
+  <text x="392" y="28" font-size="14" font-weight="700" fill="#2E2E28">B. Unlocked (adult verified this session)</text>
+  <text x="392" y="56" font-size="14" font-weight="700" fill="#3F5A3A">Le tue storie</text>
+  <g transform="translate(384,66)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#5E7F55">[book]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Il drago e la lavatrice</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">4 autori</text>
+  </g>
+  <g transform="translate(384,138)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#5E7F55">[book]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Real AI title shown</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">4 autori</text>
+    <text x="290" y="38" font-size="14" fill="#5E7F55">[open]</text>
+    <text x="250" y="58" font-size="10" fill="#3F5A3A">lock_open 20dp</text>
+  </g>
+  <line x1="392" y1="218" x2="732" y2="218" stroke="#3F5A3A" stroke-width="1.5"/>
+  <g transform="translate(384,232)">
+    <rect width="356" height="64" rx="14" fill="#F4EEDA" fill-opacity="0.92"/>
+    <text x="16" y="38" font-size="20" fill="#5E7F55">[book]</text>
+    <text x="80" y="28" font-size="14" font-weight="600" fill="#2E2E28">Another real title</text>
+    <text x="80" y="48" font-size="12" fill="#2E2E28">3 autori</text>
+    <text x="290" y="38" font-size="14" fill="#5E7F55">[open]</text>
+  </g>
+  <g transform="translate(384,320)">
+    <rect width="356" height="44" rx="4" fill="#2E2E28"/>
+    <text x="16" y="27" font-size="13" fill="#F4EEDA">Minor: "Questa storia non è disponibile."</text>
+  </g>
+</svg>

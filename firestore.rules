@@ -95,10 +95,11 @@ service cloud.firestore {
       }
 
       // Lists are queried by `status` plus `roomId` (private rooms) or
-      // `language` + `roomId == null` (public rooms), and complete lists by
-      // the AI review's `mature` verdict; every signed-in player can read
-      // any story. The age gate on mature stories is enforced by the app,
-      // not here.
+      // `language` + `roomId == null` (public rooms); complete lists also by
+      // `mature in [false, true]` (stories with an AI review verdict), with
+      // mature stories shown locked in the same list. Every signed-in
+      // player can read any story: the age gate on mature stories is
+      // enforced by the app, not here.
       allow read: if signedIn();
       allow create: if signedIn() && isValidCreate();
       allow update: if signedIn() && (isValidLockChange() || isValidSubmit());

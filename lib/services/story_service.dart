@@ -51,17 +51,25 @@ class StoryService {
         .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
   }
 
-  /// Completed stories the AI review judged [mature] (or not). Stories
-  /// still waiting for their review are in neither list.
+  /// Completed stories of the room that the AI review has already judged,
+  /// both `mature == false` and `mature == true` (the UI locks the latter
+  /// behind the age check). Stories still waiting for their review (no
+  /// `mature` field) are left out: they could be mature and there is
+  /// nothing to lock yet.
+  ///
+  /// The `in` filter is served like an equality, so the composite indexes
+  /// `(status, language, roomId, mature)` and `(status, roomId, mature)`
+  /// cover it. Sorted newest completed first, see
+  /// [Story.compareByCompletedAtDesc].
   Stream<List<Story>> completeStoriesStream({
     required String language,
     String? roomId,
-    bool mature = false,
   }) {
     return _roomQuery('complete', language: language, roomId: roomId)
-        .where('mature', isEqualTo: mature)
+        .where('mature', whereIn: [false, true])
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
+        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList()
+          ..sort(Story.compareByCompletedAtDesc));
   }
 
   /// Creates an empty story and returns it, so the caller can open it
