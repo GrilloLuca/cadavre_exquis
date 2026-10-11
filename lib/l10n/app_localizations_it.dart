@@ -276,20 +276,19 @@ class AppLocalizationsIt extends AppLocalizations {
       'Usa solo lettere, numeri, spazi e _ - .';
 
   @override
-  String get matureStoriesEntryTitle => 'Storie per adulti';
+  String get matureStoryLockedTitle => 'Storia per adulti';
 
   @override
-  String get matureStoriesEntrySubtitle =>
-      'Storie segnalate come non adatte ai più giovani';
+  String get matureStoryLockedLabel => 'bloccata';
 
   @override
-  String get matureStoriesTitle => 'Storie per adulti';
+  String get matureStoryUnlockHint => 'sbloccare';
 
   @override
-  String get noMatureStories => 'Nessuna storia in questa sezione.';
+  String get matureStoryAdultContent => 'contenuto per adulti';
 
   @override
-  String get matureStoriesUnavailable => 'Questa sezione non è disponibile.';
+  String get matureStoryUnavailable => 'Questa storia non è disponibile.';
 
   @override
   String get ageCheckTitle => 'Prima di continuare';

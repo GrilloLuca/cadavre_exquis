@@ -560,35 +560,35 @@ abstract class AppLocalizations {
   /// **'Usa solo lettere, numeri, spazi e _ - .'**
   String get errorNicknameInvalidCharacters;
 
-  /// No description provided for @matureStoriesEntryTitle.
+  /// Title shown instead of the real title on a locked mature story in the completed stories list.
   ///
   /// In it, this message translates to:
-  /// **'Storie per adulti'**
-  String get matureStoriesEntryTitle;
+  /// **'Storia per adulti'**
+  String get matureStoryLockedTitle;
 
-  /// No description provided for @matureStoriesEntrySubtitle.
+  /// Screen-reader label of the padlock on a locked mature story.
   ///
   /// In it, this message translates to:
-  /// **'Storie segnalate come non adatte ai più giovani'**
-  String get matureStoriesEntrySubtitle;
+  /// **'bloccata'**
+  String get matureStoryLockedLabel;
 
-  /// No description provided for @matureStoriesTitle.
+  /// Screen-reader tap hint on a locked mature story; the platform adds the 'Double tap to' prefix, so this is just the verb.
   ///
   /// In it, this message translates to:
-  /// **'Storie per adulti'**
-  String get matureStoriesTitle;
+  /// **'sbloccare'**
+  String get matureStoryUnlockHint;
 
-  /// No description provided for @noMatureStories.
+  /// Screen-reader label of the open padlock on an unlocked mature story.
   ///
   /// In it, this message translates to:
-  /// **'Nessuna storia in questa sezione.'**
-  String get noMatureStories;
+  /// **'contenuto per adulti'**
+  String get matureStoryAdultContent;
 
-  /// No description provided for @matureStoriesUnavailable.
+  /// Snackbar when an age check denies a mature story.
   ///
   /// In it, this message translates to:
-  /// **'Questa sezione non è disponibile.'**
-  String get matureStoriesUnavailable;
+  /// **'Questa storia non è disponibile.'**
+  String get matureStoryUnavailable;
 
   /// No description provided for @ageCheckTitle.
   ///

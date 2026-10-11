@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/author_name.dart';
+import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
+import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
@@ -362,6 +364,10 @@ class _AccountScreenState extends State<AccountScreen> {
                         child: ElevatedButton.icon(
                           onPressed: () async {
                             await AuthService.signOut();
+                            // Mature stories lock again for the next user,
+                            // and their age signals are asked afresh.
+                            CompleteStoriesScreen.clearSessionState();
+                            AgeGate.clearSessionCache();
                             if (!context.mounted) return;
                             Navigator.pushNamedAndRemoveUntil(
                               context,

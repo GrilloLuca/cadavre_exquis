@@ -2,6 +2,8 @@
 
 Status: proposed (2026-10-09), branch `feature/mature-stories`.
 
+> **UI superseded:** the "Storie per adulti" section and its entry tile described below were replaced by inline locked stories (2026-10-11). The gate logic (`AgeGate.resolve`, `AgeCheckScreen` fallback) is unchanged; for the UI and tap flow see `docs/MATURE_INLINE_PLAN.md` and `docs/MATURE_INLINE_UI_SPEC.md`.
+
 ## Goal
 On tap of "Storie per adulti", ask the platform first (Play Age Signals on Android, Declared Age Range on iOS 26+). Fall back to the existing neutral birth-year screen only when no signal is available. Firestore rules and Cloud Functions stay as they are.
 

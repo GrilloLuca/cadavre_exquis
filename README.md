@@ -109,7 +109,7 @@ lib/
 │   ├── registration_screen.dart
 │   ├── home_screen.dart          # Bottom-nav shell (Incomplete / Complete / Profile)
 │   ├── incomplete_stories_screen.dart
-│   ├── complete_stories_screen.dart  # Also the age-gated mature stories list
+│   ├── complete_stories_screen.dart  # Completed stories, mature ones locked behind the age check
 │   ├── age_check_screen.dart     # Neutral birth-year screen
 │   ├── chat_screen.dart          # Writing UI for the current phase of a story
 │   ├── story_read_screen.dart    # Full read view of a completed story
@@ -131,7 +131,7 @@ functions/
 - **Completed story archive** — read any finished story in full, part by part, with author attribution.
 - **Language-based rooms** — every story belongs to a language room (🇮🇹 🇬🇧 🇪🇸 🇫🇷 🇩🇪); pick a room from the home screen and you only see, continue, and read stories in that language, so each story is written entirely by authors sharing it. New stories are created in the room you're in, and the app starts you in the room matching your device language.
 - **AI story titles** — when a story is completed, a Cloud Function asks Gemini for a short title in the story's language, shown in the list and above the story.
-- **Moderation of completed stories** — the same review flags stories unsuitable for children (sexual content, graphic violence, strong profanity, drugs, self-harm, hate). Flagged stories leave the normal list and move to a **Stories for adults** section, opened after a neutral age screen that asks for the birth year once and never again. Players under 18 don't see the section at all. Stories in progress are not moderated yet.
+- **Moderation of completed stories** — the same review flags stories unsuitable for children (sexual content, graphic violence, strong profanity, drugs, self-harm, hate). Flagged stories stay in the list, in chronological order with the others, but locked behind a padlock and without their title. Opening one requires the age check: the platform's age signals first (Play Age Signals, Declared Age Range on iOS 26+), then a neutral screen that asks for the birth year once and never again. Once verified as an adult, every flagged story unlocks for the rest of the session. Players under 18 don't see flagged stories at all. Stories in progress are not moderated yet.
 - **English and Italian localization.**
 
 ## 🚀 Roadmap

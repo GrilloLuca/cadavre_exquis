@@ -274,20 +274,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use only letters, numbers, spaces and _ - .';
 
   @override
-  String get matureStoriesEntryTitle => 'Stories for adults';
+  String get matureStoryLockedTitle => 'Story for adults';
 
   @override
-  String get matureStoriesEntrySubtitle =>
-      'Stories flagged as unsuitable for younger players';
+  String get matureStoryLockedLabel => 'locked';
 
   @override
-  String get matureStoriesTitle => 'Stories for adults';
+  String get matureStoryUnlockHint => 'unlock';
 
   @override
-  String get noMatureStories => 'No stories in this section.';
+  String get matureStoryAdultContent => 'adult content';
 
   @override
-  String get matureStoriesUnavailable => 'This section isn\'t available.';
+  String get matureStoryUnavailable => 'This story isn\'t available.';
 
   @override
   String get ageCheckTitle => 'Before you continue';

@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
-
 import 'package:cadavre_exquisite/services/age_check_service.dart';
 import 'package:cadavre_exquisite/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
-/// The gate's answer for the mature-stories section.
+/// The gate's answer for opening a mature story.
 enum AgeVerdict {
   /// Let the user in.
   adult,
@@ -18,7 +16,7 @@ enum AgeVerdict {
   askBirthYear,
 }
 
-/// Decides whether a user may open the mature-stories section, combining
+/// Decides whether a user may open mature stories, combining
 /// platform age signals with the birth year stored by [AgeCheckService].
 ///
 /// Any minor verdict wins: a stored minor year denies access without asking
@@ -52,13 +50,13 @@ class AgeGate {
   /// [AgeSignal.unavailable] is never stored, so later taps retry.
   static final Map<String, AgeSignal> _sessionSignals = {};
 
-  /// Clears the session cache. For tests, or for a future sign-out hook.
-  @visibleForTesting
+  /// Clears the session cache. Called on sign-out, so the next user's
+  /// signals are asked afresh; also used by tests.
   static void clearSessionCache() => _sessionSignals.clear();
 
   /// The birth year stored for [email], or null if never asked. Quiet: no
   /// platform call and no UI, so it is safe from `initState` (for example,
-  /// to hide the entry point from known minors).
+  /// to hide mature stories from known minors).
   Future<int?> storedBirthYear(String email) => _storage.getBirthYear(email);
 
   /// Decides access for [email]. May show a system sheet, so call it only on

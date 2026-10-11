@@ -139,11 +139,26 @@
   },
   "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - .",
 
-  "matureStoriesEntryTitle": "Storie per adulti",
-  "matureStoriesEntrySubtitle": "Storie segnalate come non adatte ai più giovani",
-  "matureStoriesTitle": "Storie per adulti",
-  "noMatureStories": "Nessuna storia in questa sezione.",
-  "matureStoriesUnavailable": "Questa sezione non è disponibile.",
+  "matureStoryLockedTitle": "Storia per adulti",
+  "@matureStoryLockedTitle": {
+    "description": "Title shown instead of the real title on a locked mature story in the completed stories list."
+  },
+  "matureStoryLockedLabel": "bloccata",
+  "@matureStoryLockedLabel": {
+    "description": "Screen-reader label of the padlock on a locked mature story."
+  },
+  "matureStoryUnlockHint": "sbloccare",
+  "@matureStoryUnlockHint": {
+    "description": "Screen-reader tap hint on a locked mature story; the platform adds the 'Double tap to' prefix, so this is just the verb."
+  },
+  "matureStoryAdultContent": "contenuto per adulti",
+  "@matureStoryAdultContent": {
+    "description": "Screen-reader label of the open padlock on an unlocked mature story."
+  },
+  "matureStoryUnavailable": "Questa storia non è disponibile.",
+  "@matureStoryUnavailable": {
+    "description": "Snackbar when an age check denies a mature story."
+  },
   "ageCheckTitle": "Prima di continuare",
   "ageCheckQuestion": "Qual è il tuo anno di nascita?",
   "ageCheckHint": "Anno di nascita",

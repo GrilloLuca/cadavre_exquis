@@ -152,8 +152,8 @@ export async function saveReview(storyId: string, review: StoryReview): Promise<
 
 /**
  * Reviews a story once its last part is written: the complete stories list
- * only shows stories with `mature == false`, and the age-gated mature
- * section those with `mature == true`.
+ * only shows reviewed stories (`mature` set), and those with
+ * `mature == true` appear there locked behind the app's age check.
  */
 export const reviewCompletedStory = onDocumentUpdated(
   { document: "stories/{storyId}", region: "us-central1" },
