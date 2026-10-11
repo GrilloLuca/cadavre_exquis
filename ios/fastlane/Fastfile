@@ -81,6 +81,11 @@ platform :ios do
       profile_name: profile
     )
 
+    # Resolve Swift packages up front so build_app's -showBuildSettings
+    # doesn't time out fetching them.
+    sh("cd #{PROJECT_ROOT}/ios && xcodebuild -resolvePackageDependencies " \
+       "-workspace Runner.xcworkspace -scheme Runner")
+
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
