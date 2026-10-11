@@ -41,6 +41,13 @@
   "chatMessageHint": "Write here: {position}...",
   "sendButton": "Send",
   "logoutButton": "Logout",
+  "deleteAccountButton": "Delete account",
+  "deleteAccountTitle": "Delete your account?",
+  "deleteAccountMessage": "Your account and nickname will be deleted permanently. The parts you wrote stay in their stories, shown as Anonymous.",
+  "deleteAccountGoogleHint": "You'll be asked to choose your Google account again to confirm.",
+  "deleteAccountConfirmButton": "Delete",
+  "cancelButton": "Cancel",
+  "accountDeleted": "Your account has been deleted.",
 
   "errorStoryAlreadyCompleted": "This story has already been completed.",
   "errorStoryPositionTaken": "Someone else has already written this part.",
