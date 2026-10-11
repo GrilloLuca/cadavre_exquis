@@ -96,6 +96,8 @@ android/key.properties
 # CI
 android/app/upload-keystore.jks
 **/vendor/bundle/
+# Local Bundler config (e.g. gems installed into vendor/bundle)
+ios/.bundle/
 android_build.env
 ios_build.env
 
