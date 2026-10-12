@@ -1,5 +1,8 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -7,11 +10,10 @@ import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/ui/private_room/view_models/join_private_room_view_model.dart';
 
 /// Form to join an existing private room. Pops with the joined
-/// [PrivateRoom]. Owns [viewModel] and disposes it.
+/// [PrivateRoom]. Creates its ViewModel once, in `initState`
+/// (see `ChatScreen`), and disposes it.
 class JoinPrivateRoomScreen extends StatefulWidget {
-  const JoinPrivateRoomScreen({super.key, required this.viewModel});
-
-  final JoinPrivateRoomViewModel viewModel;
+  const JoinPrivateRoomScreen({super.key});
 
   @override
   State<JoinPrivateRoomScreen> createState() => _JoinPrivateRoomScreenState();
@@ -22,11 +24,14 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
   String _name = '';
   String _password = '';
 
-  JoinPrivateRoomViewModel get _viewModel => widget.viewModel;
+  late final JoinPrivateRoomViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = JoinPrivateRoomViewModel(
+      roomRepository: context.read<PrivateRoomRepository>(),
+    );
     _viewModel.join.addListener(_onJoinChanged);
   }
 

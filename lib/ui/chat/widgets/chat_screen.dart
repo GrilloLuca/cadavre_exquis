@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -9,14 +13,17 @@ import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 
-/// Chat screen used to write the next part of a single incomplete story.
+/// Chat screen used to write the next part of [story].
 ///
-/// Owns [viewModel]: disposing the screen disposes it, which gives the
-/// story's lock back if the part wasn't submitted.
+/// Creates its [ChatViewModel] once, in `initState`: a route's builder can
+/// run again (whenever the Navigator's dependencies change), so the
+/// ViewModel must not be created there. Disposing the screen disposes the
+/// ViewModel, which gives the story's lock back if the part wasn't
+/// submitted.
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.viewModel});
+  const ChatScreen({super.key, required this.story});
 
-  final ChatViewModel viewModel;
+  final Story story;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -26,11 +33,16 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageTextController = TextEditingController();
   final _messageFocusNode = FocusNode();
 
-  ChatViewModel get _viewModel => widget.viewModel;
+  late final ChatViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = ChatViewModel(
+      story: widget.story,
+      storyRepository: context.read<StoryRepository>(),
+      authRepository: context.read<AuthRepository>(),
+    );
     _viewModel.lock.addListener(_onLockChanged);
     _viewModel.submit.addListener(_onSubmitChanged);
   }

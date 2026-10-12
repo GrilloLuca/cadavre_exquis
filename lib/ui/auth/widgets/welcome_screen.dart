@@ -12,9 +12,8 @@ import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// First screen for signed-out users: Google sign-in (and email login in
-/// debug builds). It is also built directly by `AuthWrapper`, whose build
-/// runs on every auth change, so it creates its own [WelcomeViewModel]
-/// instead of receiving one.
+/// debug builds). Creates its [WelcomeViewModel] once, in `initState` (see
+/// `ChatScreen`).
 class WelcomeScreen extends StatefulWidget {
   static String id = "welcome_screen";
 

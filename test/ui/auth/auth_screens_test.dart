@@ -6,8 +6,6 @@ import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
-import 'package:cadavre_exquisite/ui/auth/view_models/login_view_model.dart';
-import 'package:cadavre_exquisite/ui/auth/view_models/registration_view_model.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/registration_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
@@ -49,8 +47,7 @@ void main() {
   }
 
   group('LoginScreen', () {
-    Widget screen() =>
-        LoginScreen(viewModel: LoginViewModel(authRepository: auth));
+    Widget screen() => const LoginScreen();
 
     testWidgets('signs in and goes home', (tester) async {
       await pump(tester, screen());
@@ -80,8 +77,7 @@ void main() {
   });
 
   group('RegistrationScreen', () {
-    Widget screen() => RegistrationScreen(
-        viewModel: RegistrationViewModel(authRepository: auth));
+    Widget screen() => const RegistrationScreen();
 
     testWidgets('registers and goes home', (tester) async {
       await pump(tester, screen());

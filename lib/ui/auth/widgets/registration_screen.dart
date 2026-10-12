@@ -5,15 +5,17 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/view_models/registration_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = "registration_screen";
 
-  const RegistrationScreen({super.key, required this.viewModel});
+  const RegistrationScreen({super.key});
 
   /// Owned by the screen, which disposes it.
-  final RegistrationViewModel viewModel;
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -24,11 +26,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   String email = '';
   String password = '';
 
-  RegistrationViewModel get _viewModel => widget.viewModel;
+  late final RegistrationViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel =
+        RegistrationViewModel(authRepository: context.read<AuthRepository>());
     _viewModel.register.addListener(_onRegisterChanged);
   }
 

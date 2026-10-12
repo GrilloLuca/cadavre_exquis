@@ -6,8 +6,6 @@ import 'package:cadavre_exquisite/config/dependencies.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/services/google_sign_in_service.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/ui/auth/view_models/login_view_model.dart';
-import 'package:cadavre_exquisite/ui/auth/view_models/registration_view_model.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/registration_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
@@ -39,16 +37,8 @@ class CadavreExquisiteApp extends StatelessWidget {
       routes: {
         WelcomeScreen.id: (context) => WelcomeScreen(),
         HomeScreen.id: (context) => const HomeScreen(),
-        LoginScreen.id: (context) => LoginScreen(
-              viewModel: LoginViewModel(
-                authRepository: context.read<AuthRepository>(),
-              ),
-            ),
-        RegistrationScreen.id: (context) => RegistrationScreen(
-              viewModel: RegistrationViewModel(
-                authRepository: context.read<AuthRepository>(),
-              ),
-            ),
+        LoginScreen.id: (context) => const LoginScreen(),
+        RegistrationScreen.id: (context) => const RegistrationScreen(),
       },
     );
   }

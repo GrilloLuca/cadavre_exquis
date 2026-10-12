@@ -6,16 +6,17 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/view_models/login_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
-/// Email/password sign-in, offered in debug builds only. Owns [viewModel]
-/// and disposes it.
+/// Email/password sign-in, offered in debug builds only. Creates its
+/// ViewModel once, in `initState` (see `ChatScreen`), and disposes it.
 class LoginScreen extends StatefulWidget {
   static String id = "login_screen";
 
-  const LoginScreen({super.key, required this.viewModel});
-
-  final LoginViewModel viewModel;
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,11 +26,12 @@ class _LoginScreenState extends State<LoginScreen> {
   String email = '';
   String password = '';
 
-  LoginViewModel get _viewModel => widget.viewModel;
+  late final LoginViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = LoginViewModel(authRepository: context.read<AuthRepository>());
     _viewModel.login.addListener(_onLoginChanged);
   }
 

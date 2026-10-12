@@ -1,5 +1,9 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -7,11 +11,10 @@ import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/ui/private_room/view_models/create_private_room_view_model.dart';
 
 /// Form to create a new private room. Pops with the created
-/// [PrivateRoom]. Owns [viewModel] and disposes it.
+/// [PrivateRoom]. Creates its ViewModel once, in `initState`
+/// (see `ChatScreen`), and disposes it.
 class CreatePrivateRoomScreen extends StatefulWidget {
-  const CreatePrivateRoomScreen({super.key, required this.viewModel});
-
-  final CreatePrivateRoomViewModel viewModel;
+  const CreatePrivateRoomScreen({super.key});
 
   @override
   State<CreatePrivateRoomScreen> createState() =>
@@ -23,11 +26,15 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
   String _name = '';
   String _password = '';
 
-  CreatePrivateRoomViewModel get _viewModel => widget.viewModel;
+  late final CreatePrivateRoomViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = CreatePrivateRoomViewModel(
+      roomRepository: context.read<PrivateRoomRepository>(),
+      authRepository: context.read<AuthRepository>(),
+    );
     _viewModel.create.addListener(_onCreateChanged);
   }
 
