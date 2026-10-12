@@ -211,9 +211,9 @@
   },
   "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - .",
 
-  "matureStoryLockedTitle": "Storia per adulti",
+  "matureStoryLockedTitle": "Contenuto esplicito",
   "@matureStoryLockedTitle": {
-    "description": "Title shown instead of the real title on a locked mature story in the completed stories list."
+    "description": "Label of a locked mature story in the completed stories list: shown next to the authors count, and as the title when the story has no AI title."
   },
   "matureStoryLockedLabel": "bloccata",
   "@matureStoryLockedLabel": {
@@ -223,7 +223,7 @@
   "@matureStoryUnlockHint": {
     "description": "Screen-reader tap hint on a locked mature story; the platform adds the 'Double tap to' prefix, so this is just the verb."
   },
-  "matureStoryAdultContent": "contenuto per adulti",
+  "matureStoryAdultContent": "contenuto esplicito",
   "@matureStoryAdultContent": {
     "description": "Screen-reader label of the open padlock on an unlocked mature story."
   },

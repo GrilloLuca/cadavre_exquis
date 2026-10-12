@@ -98,10 +98,10 @@
   "errorNicknameTooLong": "Nickname can be at most {max} characters.",
   "errorNicknameInvalidCharacters": "Use only letters, numbers, spaces and _ - .",
 
-  "matureStoryLockedTitle": "Story for adults",
+  "matureStoryLockedTitle": "Explicit content",
   "matureStoryLockedLabel": "locked",
   "matureStoryUnlockHint": "unlock",
-  "matureStoryAdultContent": "adult content",
+  "matureStoryAdultContent": "explicit content",
   "matureStoryUnavailable": "This story isn't available.",
   "ageCheckTitle": "Before you continue",
   "ageCheckQuestion": "What year were you born?",

@@ -330,8 +330,10 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
 
     final Widget tile;
     if (locked) {
-      // Never render the AI title or any part text: either can contain
-      // what the review flagged.
+      // The AI title is generated child-safe, so it is shown; the part text
+      // never is, as it can contain what the review flagged. A story the
+      // model refused to read has no title and falls back to the label.
+      final title = story.title;
       tile = Semantics(
         button: true,
         onTapHint: l10n.matureStoryUnlockHint,
@@ -349,12 +351,17 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
             semanticLabel: l10n.matureStoryLockedLabel,
           ),
           title: Text(
-            l10n.matureStoryLockedTitle,
+            title ?? l10n.matureStoryLockedTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(l10n.authorsCount(story.parts.length)),
+          subtitle: Text(
+            title == null
+                ? l10n.authorsCount(story.parts.length)
+                : '${l10n.matureStoryLockedTitle} · '
+                    '${l10n.authorsCount(story.parts.length)}',
+          ),
           trailing: _checkingStoryId == story.id
               ? const SizedBox(
                   width: 18.0,
