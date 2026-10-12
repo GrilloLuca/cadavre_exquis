@@ -27,6 +27,8 @@ String _nicknameErrorMessage(
       return l10n.errorNicknameTooLong(UserProfileService.maxNicknameLength);
     case UserProfileServiceErrorCode.nicknameInvalidCharacters:
       return l10n.errorNicknameInvalidCharacters;
+    case UserProfileServiceErrorCode.nicknameAlreadySet:
+      return l10n.errorNicknameAlreadySet;
   }
 }
 
@@ -87,11 +89,15 @@ class _AccountScreenState extends State<AccountScreen> {
 
   String? _email;
   bool _isLoadingNickname = false;
+
+  /// True once a nickname is stored: it can be chosen only once, so the
+  /// field becomes read-only.
+  bool _hasNickname = false;
   bool _isSaving = false;
   bool _isDeleting = false;
 
   /// True when the last prefill attempt failed. While set, editing and
-  /// saving are disabled so an empty field can't wipe the stored nickname.
+  /// saving are disabled, since the user may already have a nickname.
   bool _loadFailed = false;
 
   @override
@@ -127,6 +133,7 @@ class _AccountScreenState extends State<AccountScreen> {
       final nickname = await _profileService.getNickname(email);
       if (!mounted) return;
       _nicknameController.text = nickname ?? '';
+      _hasNickname = nickname != null;
     } catch (_) {
       failed = true;
     } finally {
@@ -141,7 +148,11 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _saveNickname() async {
     final email = _email;
-    if (email == null || _isSaving || _isLoadingNickname || _loadFailed) {
+    if (email == null ||
+        _hasNickname ||
+        _isSaving ||
+        _isLoadingNickname ||
+        _loadFailed) {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -149,18 +160,36 @@ class _AccountScreenState extends State<AccountScreen> {
     final l10n = AppLocalizations.of(context)!;
     final normalized =
         UserProfileService.normalizeNickname(_nicknameController.text);
+    if (normalized.isEmpty) return;
+
+    // The choice is final, so it is confirmed first.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.nicknameConfirmTitle),
+        content: Text(l10n.nicknameConfirmMessage(normalized)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.nicknameConfirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
 
     setState(() => _isSaving = true);
     try {
       await _profileService.setNickname(email: email, nickname: normalized);
       if (!mounted) return;
       _nicknameController.text = normalized;
+      setState(() => _hasNickname = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            normalized.isEmpty ? l10n.nicknameRemoved : l10n.nicknameSaved,
-          ),
-        ),
+        SnackBar(content: Text(l10n.nicknameSaved)),
       );
     } on UserProfileServiceException catch (e) {
       if (!mounted) return;
@@ -170,6 +199,10 @@ class _AccountScreenState extends State<AccountScreen> {
           backgroundColor: Colors.red,
         ),
       );
+      // Set meanwhile (e.g. on another device): show the stored one.
+      if (e.code == UserProfileServiceErrorCode.nicknameAlreadySet) {
+        _loadNickname();
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -200,11 +233,9 @@ class _AccountScreenState extends State<AccountScreen> {
       final confirmed =
           await AuthService.reauthenticate(password: confirmation.password);
       if (!confirmed) return;
-      try {
-        await _profileService.deleteProfile(email);
-      } catch (_) {
-        // The anonymizeDeletedUser Cloud Function deletes it as well.
-      }
+      // The anonymizeDeletedUser Cloud Function deletes the profile: the
+      // rules don't let the user delete it, as that would free the
+      // nickname to be chosen again.
       await AuthService.deleteAccount();
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.accountDeleted)));
@@ -235,6 +266,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _buildNicknameCard(AppLocalizations l10n) {
     final isBusy = _isLoadingNickname || _isSaving || _loadFailed;
+    final canEdit = !isBusy && !_hasNickname;
 
     return CreamCard(
       padding: const EdgeInsets.all(16.0),
@@ -246,7 +278,7 @@ class _AccountScreenState extends State<AccountScreen> {
           children: <Widget>[
             TextFormField(
               controller: _nicknameController,
-              enabled: !isBusy,
+              enabled: canEdit,
               // Show the counter but let the validator report "too long":
               // the limit applies to the normalized text, not the raw input.
               maxLength: UserProfileService.maxNicknameLength,
@@ -259,10 +291,12 @@ class _AccountScreenState extends State<AccountScreen> {
               },
               decoration: InputDecoration(
                 labelText: l10n.nicknameLabel,
-                helperText: l10n.nicknameHelper(
-                  UserProfileService.minNicknameLength,
-                  UserProfileService.maxNicknameLength,
-                ),
+                helperText: _hasNickname
+                    ? l10n.nicknameLockedNote
+                    : '${l10n.nicknameHelper(
+                        UserProfileService.minNicknameLength,
+                        UserProfileService.maxNicknameLength,
+                      )}\n${l10n.nicknameOnceNote}',
                 helperMaxLines: 2,
                 errorMaxLines: 2,
                 suffixIcon: _isLoadingNickname
@@ -323,27 +357,29 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 16.0),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: isBusy ? null : _saveNickname,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.cream,
+            if (!_hasNickname) ...[
+              const SizedBox(height: 16.0),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: isBusy ? null : _saveNickname,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.cream,
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 18.0,
+                          height: 18.0,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0,
+                            color: AppColors.cream,
+                          ),
+                        )
+                      : Text(l10n.nicknameSaveButton),
                 ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 18.0,
-                        height: 18.0,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.0,
-                          color: AppColors.cream,
-                        ),
-                      )
-                    : Text(l10n.nicknameSaveButton),
               ),
-            ),
+            ],
           ],
         ),
       ),

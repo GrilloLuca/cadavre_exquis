@@ -158,15 +158,22 @@ service cloud.firestore {
         return signedIn() && myEmail().lower() == emailKey;
       }
 
+      function isValidProfile() {
+        return request.resource.data.keys().hasOnly(['nickname', 'updatedAt'])
+          && request.resource.data.nickname is string
+          && request.resource.data.nickname.size() >= 2
+          && request.resource.data.nickname.size() <= 20
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // The nickname can be chosen only once: a profile is written only
+      // while its nickname is missing or empty. Deleting it (which would
+      // allow choosing again) is left to the anonymizeDeletedUser function.
       allow get: if signedIn();
-      allow list: if false;
-      allow delete: if isProfileOwner();
-      allow create, update: if isProfileOwner()
-        && request.resource.data.keys().hasOnly(['nickname', 'updatedAt'])
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() >= 2
-        && request.resource.data.nickname.size() <= 20
-        && request.resource.data.updatedAt == request.time;
+      allow list, delete: if false;
+      allow create: if isProfileOwner() && isValidProfile();
+      allow update: if isProfileOwner() && isValidProfile()
+        && resource.data.get('nickname', '') == '';
     }
 
     // ---------------------------------------------------------------------
