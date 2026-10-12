@@ -1,15 +1,17 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/ui/private_room/view_models/create_private_room_view_model.dart';
 
+/// Form to create a new private room. Pops with the created
+/// [PrivateRoom]. Owns [viewModel] and disposes it.
 class CreatePrivateRoomScreen extends StatefulWidget {
-  const CreatePrivateRoomScreen({super.key});
+  const CreatePrivateRoomScreen({super.key, required this.viewModel});
+
+  final CreatePrivateRoomViewModel viewModel;
 
   @override
   State<CreatePrivateRoomScreen> createState() =>
@@ -20,49 +22,62 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
   String _name = '';
   String _password = '';
-  bool _isSubmitting = false;
 
-  Future<void> _submit() async {
-    final l10n = AppLocalizations.of(context)!;
+  CreatePrivateRoomViewModel get _viewModel => widget.viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.create.addListener(_onCreateChanged);
+  }
+
+  @override
+  void dispose() {
+    _viewModel.create.removeListener(_onCreateChanged);
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    _viewModel.create.execute((name: _name, password: _password));
+  }
 
-    final email = context.read<AuthRepository>().currentEmail;
-    if (email == null) return;
-
-    setState(() => _isSubmitting = true);
-    try {
-      final room = await context.read<PrivateRoomRepository>().createRoom(
-        name: _name,
-        password: _password,
-        createdBy: email,
-      );
-      if (!mounted) return;
-      Navigator.pop(context, room);
-    } on PrivateRoomException catch (e) {
-      if (!mounted) return;
+  void _onCreateChanged() {
+    final create = _viewModel.create;
+    if (create.running) return;
+    final l10n = AppLocalizations.of(context)!;
+    final error = create.error;
+    if (error != null) {
+      create.clearResult();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.code == PrivateRoomErrorCode.nameTaken
+            error is PrivateRoomException &&
+                    error.code == PrivateRoomErrorCode.nameTaken
                 ? l10n.errorRoomNameTaken
                 : l10n.genericError,
           ),
           backgroundColor: Colors.red,
         ),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.genericError), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      return;
     }
+    final room = create.value;
+    if (create.completed && room != null) Navigator.pop(context, room);
   }
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _viewModel.create,
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isSubmitting = _viewModel.create.running;
 
     return Scaffold(
       appBar: AppBar(
@@ -115,13 +130,13 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
                   ChatButton(
                     text: l10n.createRoomButton,
                     color: AppColors.primary,
-                    onPressed: _isSubmitting ? null : _submit,
+                    onPressed: isSubmitting ? null : _submit,
                   ),
                 ],
               ),
             ),
           ),
-          if (_isSubmitting) const Center(child: CircularProgressIndicator()),
+          if (isSubmitting) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

@@ -1,10 +1,16 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
-import 'package:cadavre_exquisite/screens/create_private_room_screen.dart';
-import 'package:cadavre_exquisite/screens/join_private_room_screen.dart';
+import 'package:cadavre_exquisite/ui/private_room/view_models/create_private_room_view_model.dart';
+import 'package:cadavre_exquisite/ui/private_room/view_models/join_private_room_view_model.dart';
+import 'package:cadavre_exquisite/ui/private_room/widgets/create_private_room_screen.dart';
+import 'package:cadavre_exquisite/ui/private_room/widgets/join_private_room_screen.dart';
 
 /// Entry point for private rooms: lets the user create a new room or join
 /// an existing one. Pops with the resulting [PrivateRoom] so the caller
@@ -47,7 +53,12 @@ class PrivateRoomScreen extends StatelessWidget {
                 final room = await Navigator.push<PrivateRoom>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const CreatePrivateRoomScreen(),
+                    builder: (_) => CreatePrivateRoomScreen(
+                      viewModel: CreatePrivateRoomViewModel(
+                        roomRepository: context.read<PrivateRoomRepository>(),
+                        authRepository: context.read<AuthRepository>(),
+                      ),
+                    ),
                   ),
                 );
                 if (room != null && context.mounted) {
@@ -62,7 +73,11 @@ class PrivateRoomScreen extends StatelessWidget {
                 final room = await Navigator.push<PrivateRoom>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const JoinPrivateRoomScreen(),
+                    builder: (_) => JoinPrivateRoomScreen(
+                      viewModel: JoinPrivateRoomViewModel(
+                        roomRepository: context.read<PrivateRoomRepository>(),
+                      ),
+                    ),
                   ),
                 );
                 if (room != null && context.mounted) {

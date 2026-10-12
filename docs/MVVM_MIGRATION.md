@@ -114,7 +114,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 ### Phase 3: ViewModels, one feature per PR (simplest to riskiest)
 - [x] `ChatScreen` (pilot): `ui/chat/view_models/chat_view_model.dart` (`lock` Command0 started on creation, `submit` Command1<bool, String> whose value is true only when a part was stored; unlock on `dispose`) + `ui/chat/widgets/chat_screen.dart` (only listens to the commands: pop/snackbar on lock error, snackbar on submit error, pop on submit). The screen owns and disposes its ViewModel. Tests in `test/ui/chat/`
 - [x] `IncompleteStoriesScreen`: `IncompleteStoriesViewModel` keeps one stream subscription per room (`setRoom` on room change; before, the stream was re-requested on every rebuild), sorts the list, exposes `statusOf(story)` (available / being written / waiting for others, computed at read time so expired locks free up) and a `createStory` command. Moved to `ui/incomplete_stories/`. Tests in `test/ui/incomplete_stories/`
-- [ ] `JoinPrivateRoomScreen` / `CreatePrivateRoomScreen`
+- [x] `JoinPrivateRoomScreen` / `CreatePrivateRoomScreen`: `JoinPrivateRoomViewModel` (`join` command) and `CreatePrivateRoomViewModel` (`create` command, value null when nobody is signed in); form validation stays in the Views (presentation, needs l10n). The two forms and the `PrivateRoomScreen` menu (no ViewModel: it only navigates; it builds the forms' ViewModels) moved to `ui/private_room/`. Tests in `test/ui/private_room/`
 - [ ] `WelcomeScreen` / `LoginScreen` / `RegistrationScreen`
 - [ ] `StoryReadScreen`
 - [ ] `HomeScreen` + `RoomRepository` (remove callbacks to Account)
@@ -145,3 +145,4 @@ Pattern set by the pilot: the caller builds the ViewModel with repositories from
 - 2026-10-12: Phase 2 verified on a real device by the owner: email login, registration, Google sign-in, sign-out, account deletion all work.
 - 2026-10-12: Phase 3, ChatScreen pilot done. `Command` no longer notifies after dispose. Behaviour change: closing the chat while the lock is still being taken now releases the lock as soon as it lands (before, it stayed held until it expired). Analyze clean, all tests green. Verified on a real device by the owner.
 - 2026-10-12: Phase 3, `IncompleteStoriesScreen` done. Only change visible to users: the list no longer resubscribes to Firestore on every rebuild. Analyze clean, all tests green. Verified on a real device by the owner.
+- 2026-10-12: Phase 3, private room screens done. No behaviour change. Analyze clean, all tests green. Verified on a real device by the owner.

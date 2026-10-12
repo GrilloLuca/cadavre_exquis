@@ -10,7 +10,7 @@ import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
-import 'package:cadavre_exquisite/screens/private_room_screen.dart';
+import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
