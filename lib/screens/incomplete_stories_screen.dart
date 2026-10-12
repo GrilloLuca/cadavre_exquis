@@ -8,7 +8,8 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
-import 'package:cadavre_exquisite/screens/chat_screen.dart';
+import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
+import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
 import 'package:cadavre_exquisite/ui/core/ui/typing_indicator.dart';
 
 class IncompleteStoriesScreen extends StatefulWidget {
@@ -37,6 +38,22 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
       context.read<StoryRepository>();
   bool _isCreating = false;
 
+  /// Opens the chat screen to write the next part of [story].
+  void _openChat(Story story) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          viewModel: ChatViewModel(
+            story: story,
+            storyRepository: _storyRepository,
+            authRepository: context.read<AuthRepository>(),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Creates a new empty story and opens it right away, so the creator
   /// writes its introduction.
   Future<void> _createAndOpenStory() async {
@@ -47,10 +64,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
         roomId: widget.roomId,
       );
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ChatScreen(story: story)),
-      );
+      _openChat(story);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,14 +159,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
                     enabled: !isDisabled,
                     onTap: isDisabled
                         ? null
-                        : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(story: story),
-                              ),
-                            );
-                          },
+                        : () => _openChat(story),
                   ),
                 );
               },

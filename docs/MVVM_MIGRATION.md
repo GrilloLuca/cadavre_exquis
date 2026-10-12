@@ -112,7 +112,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [x] `AuthWrapper` watches `AuthRepository`; no `firebase_auth`, `google_sign_in` or `*RepositoryFirestore()` outside `lib/data` and `lib/config`. `FakeAuthRepository` in `testing/fakes/`; `test/auth_wrapper_test.dart`
 
 ### Phase 3: ViewModels, one feature per PR (simplest to riskiest)
-- [ ] `ChatScreen` (pilot: lock + submit)
+- [x] `ChatScreen` (pilot): `ui/chat/view_models/chat_view_model.dart` (`lock` Command0 started on creation, `submit` Command1<bool, String> whose value is true only when a part was stored; unlock on `dispose`) + `ui/chat/widgets/chat_screen.dart` (only listens to the commands: pop/snackbar on lock error, snackbar on submit error, pop on submit). The screen owns and disposes its ViewModel. Tests in `test/ui/chat/`
 - [ ] `IncompleteStoriesScreen`
 - [ ] `JoinPrivateRoomScreen` / `CreatePrivateRoomScreen`
 - [ ] `WelcomeScreen` / `LoginScreen` / `RegistrationScreen`
@@ -121,7 +121,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [ ] `CompleteStoriesScreen` + `ResolveAgeAccess` use case
 - [ ] `AccountScreen` (split into sub-widgets: nickname, room, language, account deletion; one ViewModel)
 
-Per feature: ViewModel unit tests with fakes; update existing widget tests (`account_screen_test`, `mature_story_lock_test`, `story_read_screen_test`) to get dependencies via providers.
+Pattern set by the pilot: the caller builds the ViewModel with repositories from `context.read` and passes it to the screen, which owns and disposes it; tests go in `test/ui/<feature>/`. Per feature: ViewModel unit tests with fakes; update existing widget tests (`account_screen_test`, `mature_story_lock_test`, `story_read_screen_test`) to get dependencies via providers.
 
 ### Phase 4: routing (optional)
 - [ ] `go_router` with `redirect` on `AuthRepository`; drop `AuthWrapper`, named routes, `pushNamedAndRemoveUntil` on sign-out/delete
@@ -142,3 +142,5 @@ Per feature: ViewModel unit tests with fakes; update existing widget tests (`acc
 - 2026-10-12: Phase 1, step 1: models moved to `lib/domain/models/` and made pure Dart (no Firestore, no Flutter). No behaviour change; analyze clean, all tests green.
 - 2026-10-12: Phase 1, step 2: repositories (abstract + Firestore), domain errors/rules, fakes. No behaviour change; analyze clean, all tests green. Phase 1 done.
 - 2026-10-12: Phase 2: `AuthRepository`, providers, screens read dependencies from context. Only intended behaviour difference: during account deletion a `user-not-found` reauth error now shows "invalid credentials" (as login already did) instead of the generic error. Analyze clean, all tests green; sign-in flows not yet verified on a device.
+- 2026-10-12: Phase 2 verified on a real device by the owner: email login, registration, Google sign-in, sign-out, account deletion all work.
+- 2026-10-12: Phase 3, ChatScreen pilot done. `Command` no longer notifies after dispose. Behaviour change: closing the chat while the lock is still being taken now releases the lock as soon as it lands (before, it stayed held until it expired). Analyze clean, all tests green. Verified on a real device by the owner.

@@ -59,4 +59,15 @@ void main() {
     expect(command.completed, isFalse);
     expect(notifications, 3);
   });
+
+  test('finishing after dispose does not notify', () async {
+    final gate = Completer<void>();
+    final command = Command0<void>(() => gate.future);
+
+    final running = command.execute();
+    command.dispose();
+    gate.complete();
+
+    await expectLater(running, completes);
+  });
 }

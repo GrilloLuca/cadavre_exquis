@@ -29,6 +29,8 @@ abstract class Command<T> extends ChangeNotifier {
 
   bool _completed = false;
 
+  bool _disposed = false;
+
   /// Whether the last execution finished without throwing.
   bool get completed => _completed;
 
@@ -55,8 +57,16 @@ abstract class Command<T> extends ChangeNotifier {
       _error = e;
     } finally {
       _running = false;
-      notifyListeners();
+      // The View may have gone (and disposed its ViewModel) while the
+      // action was running.
+      if (!_disposed) notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
 

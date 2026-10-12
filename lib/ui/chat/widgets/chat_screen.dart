@@ -1,110 +1,83 @@
-import 'dart:async';
-
-import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
-import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
-import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
-import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
+
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
-import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
+import 'package:cadavre_exquisite/ui/core/ui/background.dart';
+import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 
 /// Chat screen used to write the next part of a single incomplete story.
+///
+/// Owns [viewModel]: disposing the screen disposes it, which gives the
+/// story's lock back if the part wasn't submitted.
 class ChatScreen extends StatefulWidget {
-  final Story story;
+  const ChatScreen({super.key, required this.viewModel});
 
-  const ChatScreen({super.key, required this.story});
+  final ChatViewModel viewModel;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late final StoryRepository _storyRepository;
-  late final AuthRepository _auth;
   final _messageTextController = TextEditingController();
   final _messageFocusNode = FocusNode();
-  String _messageText = '';
-  bool _isSending = false;
-  bool _isLocking = true;
-  bool _lockAcquired = false;
+
+  ChatViewModel get _viewModel => widget.viewModel;
 
   @override
   void initState() {
     super.initState();
-    _storyRepository = context.read<StoryRepository>();
-    _auth = context.read<AuthRepository>();
-    _acquireLock();
+    _viewModel.lock.addListener(_onLockChanged);
+    _viewModel.submit.addListener(_onSubmitChanged);
   }
 
-  Future<void> _acquireLock() async {
-    final email = _auth.currentEmail;
-    if (email == null) return;
-    try {
-      await _storyRepository.lockStory(
-          storyId: widget.story.id, authorEmail: email);
-      if (!mounted) return;
-      setState(() {
-        _lockAcquired = true;
-        _isLocking = false;
-      });
+  @override
+  void dispose() {
+    _viewModel.lock.removeListener(_onLockChanged);
+    _viewModel.submit.removeListener(_onSubmitChanged);
+    _viewModel.dispose();
+    _messageTextController.dispose();
+    _messageFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onLockChanged() {
+    final lock = _viewModel.lock;
+    if (lock.running) return;
+    final error = lock.error;
+    if (error != null) {
+      final message = _errorMessage(context, error);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      return;
+    }
+    if (_viewModel.canWrite) {
       // The field is disabled until the lock is held; focus it once the
       // rebuild has enabled it so the keyboard opens straight away.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _messageFocusNode.requestFocus();
       });
-    } catch (e) {
-      if (!mounted) return;
-      final message = _errorMessage(context, e);
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
     }
   }
 
-  @override
-  void dispose() {
-    _messageTextController.dispose();
-    _messageFocusNode.dispose();
-    if (_lockAcquired) {
-      final email = _auth.currentEmail;
-      if (email != null) {
-        // Fire and forget: dispose can't wait. A failure (e.g. offline) must
-        // not surface as an uncaught async error; the lock stays until the
-        // next unlock attempt.
-        unawaited(_storyRepository
-            .unlockStory(storyId: widget.story.id, authorEmail: email)
-            .catchError((Object _) {}));
-      }
-    }
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final email = _auth.currentEmail;
-    if (_messageText.trim().isEmpty || email == null || !_lockAcquired) return;
-
-    setState(() => _isSending = true);
-    try {
-      await _storyRepository.submitPart(
-        storyId: widget.story.id,
-        expectedPosition: widget.story.currentPosition,
-        text: _messageText.trim(),
-        authorEmail: email,
-      );
-      _lockAcquired = false;
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isSending = false);
+  void _onSubmitChanged() {
+    final submit = _viewModel.submit;
+    if (submit.running) return;
+    final error = submit.error;
+    if (error != null) {
+      submit.clearResult();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_errorMessage(context, e))),
+        SnackBar(content: Text(_errorMessage(context, error))),
       );
+      return;
     }
+    if (submit.completed && submit.value == true) Navigator.pop(context);
   }
 
   String _errorMessage(BuildContext context, Object error) {
@@ -126,7 +99,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final story = widget.story;
+    return ListenableBuilder(
+      listenable:
+          Listenable.merge([_viewModel, _viewModel.lock, _viewModel.submit]),
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
+    final story = _viewModel.story;
+    final canWrite = _viewModel.canWrite;
     final l10n = AppLocalizations.of(context)!;
     final position = positionLabel(context, story.currentPosition);
 
@@ -207,10 +189,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: TextField(
                               controller: _messageTextController,
                               focusNode: _messageFocusNode,
-                              enabled: !_isSending && _lockAcquired,
+                              enabled: canWrite,
                               minLines: 1,
                               maxLines: 5,
-                              onChanged: (value) => _messageText = value,
                               decoration: kMessageTextFieldDecoration.copyWith(
                                 hintText: l10n
                                     .chatMessageHint(position.toLowerCase()),
@@ -218,8 +199,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed:
-                                (_isSending || !_lockAcquired) ? null : _submit,
+                            onPressed: canWrite
+                                ? () => _viewModel.submit
+                                    .execute(_messageTextController.text)
+                                : null,
                             child: Text(l10n.sendButton,
                                 style: kSendButtonTextStyle),
                           ),
@@ -229,7 +212,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
               ),
-              if (_isLocking) const Center(child: CircularProgressIndicator()),
+              if (_viewModel.lock.running)
+                const Center(child: CircularProgressIndicator()),
             ],
           ),
         ),
