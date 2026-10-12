@@ -8,7 +8,7 @@ How to use this file: tick a task when its PR is merged, add a line to the [Prog
 
 A light layered architecture with **logic in `StatefulWidget`s**: no state-management library, no dependency injection, no ViewModels.
 
-```
+``` 
 screens/   StatefulWidget: UI + state + logic + navigation + error mapping
    │  instantiate directly
    ▼
@@ -94,8 +94,8 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 ## 3. Roadmap
 
 ### Phase 0: foundations (1 PR)
-- [ ] Add `provider`; add `Command0`/`Command1` (adapted from the guide's *compass_app* to catch exceptions, see D1)
-- [ ] Create `lib/{config,data,domain,ui,utils}`; move shared widgets to `ui/core/`
+- [x] Add `provider`; add `Command0`/`Command1` in `lib/utils/command.dart` (adapted from the guide's *compass_app* to catch exceptions, see D1; tests in `test/command_test.dart`)
+- [x] Create `lib/ui/core/{themes,ui}` and `lib/utils`; move `AppColors`, `constants.dart` to `ui/core/themes/`, shared widgets (`Background`, `ChatButton`, `CreamCard`, `MessageBubble`, `TypingIndicator`) to `ui/core/ui/`, theme from `main.dart` to `AppTheme` in `ui/core/themes/theme.dart`. `config/`, `data/`, `domain/` are created when Phase 1–2 add their first file
 - [x] Decide D1 (exceptions vs `Result`), record it below
 - [ ] Decide D2 (domain layer scope)
 
@@ -135,3 +135,4 @@ Per feature: ViewModel unit tests with fakes; update existing widget tests (`acc
 
 ## Progress log
 - 2026-10-12: architecture analysis and roadmap written (this file). D1 decided: keep coded exceptions.
+- 2026-10-12: Phase 0 on `feature/mvvm-migration`: `provider` added, `Command` utility, shared UI moved to `lib/ui/core/`. No behaviour change; analyze clean, all tests green. D2 still to decide.

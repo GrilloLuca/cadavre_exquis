@@ -1,4 +1,3 @@
-import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:cadavre_exquisite/screens/login_screen.dart';
 import 'package:cadavre_exquisite/screens/registration_screen.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
+import 'package:cadavre_exquisite/ui/core/themes/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,41 +24,7 @@ class CadavreExquisiteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cadavre Exquisite',
-      theme: ThemeData.light().copyWith(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        scaffoldBackgroundColor: AppColors.sage,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.cream,
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: AppColors.cream,
-          selectedItemColor: AppColors.primaryDark,
-          unselectedItemColor: AppColors.ink,
-        ),
-        textTheme: TextTheme(
-          bodyLarge: TextStyle(color: Colors.black54),
-        ),
-        // The textTheme above has no title/body styles, so dialogs would
-        // otherwise render light text on their light background.
-        dialogTheme: const DialogThemeData(
-          backgroundColor: AppColors.cream,
-          titleTextStyle: TextStyle(
-            color: AppColors.ink,
-            fontSize: 22.0,
-            fontWeight: FontWeight.w600,
-          ),
-          contentTextStyle: TextStyle(
-            color: AppColors.ink,
-            fontSize: 16.0,
-            height: 1.4,
-          ),
-        ),
-      ),
+      theme: AppTheme.light,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const AuthWrapper(),

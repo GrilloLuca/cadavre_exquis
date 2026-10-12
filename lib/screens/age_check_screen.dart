@@ -1,6 +1,6 @@
-import 'package:cadavre_exquisite/app_colors.dart';
-import 'package:cadavre_exquisite/background.dart';
-import 'package:cadavre_exquisite/cream_card.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/ui/background.dart';
+import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/services/age_check_service.dart';
 import 'package:flutter/material.dart';

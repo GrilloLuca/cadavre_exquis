@@ -1,13 +1,13 @@
-import 'package:cadavre_exquisite/app_colors.dart';
-import 'package:cadavre_exquisite/background.dart';
-import 'package:cadavre_exquisite/cream_card.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/ui/background.dart';
+import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 import 'package:cadavre_exquisite/screens/chat_screen.dart';
-import 'package:cadavre_exquisite/typing_indicator.dart';
+import 'package:cadavre_exquisite/ui/core/ui/typing_indicator.dart';
 
 class IncompleteStoriesScreen extends StatefulWidget {
   /// Language code of the room the user has joined: only stories in this

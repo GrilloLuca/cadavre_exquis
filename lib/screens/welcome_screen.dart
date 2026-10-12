@@ -1,6 +1,6 @@
-import 'package:cadavre_exquisite/app_colors.dart';
-import 'package:cadavre_exquisite/background.dart';
-import 'package:cadavre_exquisite/button.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/ui/background.dart';
+import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';

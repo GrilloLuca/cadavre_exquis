@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:cadavre_exquisite/app_colors.dart';
-import 'package:cadavre_exquisite/background.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cadavre_exquisite/constants.dart';
+import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/message_bubble.dart';
+import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 import 'package:cadavre_exquisite/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 

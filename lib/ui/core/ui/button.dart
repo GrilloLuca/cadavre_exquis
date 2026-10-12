@@ -1,4 +1,4 @@
-import 'package:cadavre_exquisite/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ChatButton extends StatelessWidget {
