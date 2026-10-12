@@ -50,7 +50,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return Scaffold(
       body: Background(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 200),
+          padding: EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.stretch,
