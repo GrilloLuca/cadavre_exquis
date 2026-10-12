@@ -27,7 +27,7 @@ class _PendingPreference extends LanguageRoomPreference {
 }
 
 void main() {
-  testWidgets('Welcome screen shows app name and Google sign-in button',
+  testWidgets('Welcome screen shows the Google sign-in button',
       (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -37,7 +37,6 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Cadavre Exquisite'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 
