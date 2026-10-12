@@ -9,3 +9,16 @@ class PrivateRoom {
 
   const PrivateRoom({required this.id, required this.name});
 }
+
+enum PrivateRoomErrorCode { nameTaken, roomNotFound, wrongPassword }
+
+/// Thrown by `PrivateRoomRepository` operations. The UI layer maps [code] to
+/// a localized message, so no user-facing text lives here. [roomNotFound]
+/// and [wrongPassword] are deliberately kept distinct only at this layer:
+/// the UI should show the same generic message for both, so a join attempt
+/// can't be used to probe whether a room name exists.
+class PrivateRoomException implements Exception {
+  final PrivateRoomErrorCode code;
+
+  const PrivateRoomException(this.code);
+}

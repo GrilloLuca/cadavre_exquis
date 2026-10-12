@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/services/private_room_service.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
 class CreatePrivateRoomScreen extends StatefulWidget {
   const CreatePrivateRoomScreen({super.key});
@@ -16,7 +17,7 @@ class CreatePrivateRoomScreen extends StatefulWidget {
 
 class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _roomService = PrivateRoomService();
+  final _roomRepository = PrivateRoomRepositoryFirestore();
   String _name = '';
   String _password = '';
   bool _isSubmitting = false;
@@ -30,19 +31,19 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final room = await _roomService.createRoom(
+      final room = await _roomRepository.createRoom(
         name: _name,
         password: _password,
         createdBy: email,
       );
       if (!mounted) return;
       Navigator.pop(context, room);
-    } on PrivateRoomServiceException catch (e) {
+    } on PrivateRoomException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.code == PrivateRoomServiceErrorCode.nameTaken
+            e.code == PrivateRoomErrorCode.nameTaken
                 ? l10n.errorRoomNameTaken
                 : l10n.genericError,
           ),
@@ -89,8 +90,8 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
                       }
                       return null;
                     },
-                    decoration:
-                        kTextFieldDecoration.copyWith(hintText: l10n.roomNameHint),
+                    decoration: kTextFieldDecoration.copyWith(
+                        hintText: l10n.roomNameHint),
                   ),
                   const SizedBox(height: 8.0),
                   TextFormField(
@@ -105,9 +106,8 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
                   const SizedBox(height: 8.0),
                   TextFormField(
                     obscureText: true,
-                    validator: (value) => value != _password
-                        ? l10n.roomPasswordMismatch
-                        : null,
+                    validator: (value) =>
+                        value != _password ? l10n.roomPasswordMismatch : null,
                     decoration: kTextFieldDecoration.copyWith(
                         hintText: l10n.roomPasswordConfirmHint),
                   ),

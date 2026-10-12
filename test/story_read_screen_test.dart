@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 void main() {
   final timestamp = DateTime.fromMillisecondsSinceEpoch(0);
@@ -31,13 +32,14 @@ void main() {
         ],
       );
 
-  Widget buildApp(UserProfileService service, {String? title}) => MaterialApp(
+  Widget buildApp(UserProfileRepository service, {String? title}) =>
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
         home: StoryReadScreen(
           story: buildStory(title: title),
-          profileService: service,
+          profileRepository: service,
         ),
       );
 
@@ -50,7 +52,7 @@ void main() {
         .set({'nickname': 'Supermario'});
 
     await tester.pumpWidget(
-      buildApp(UserProfileService(firestore: firestore)),
+      buildApp(UserProfileRepositoryFirestore(firestore: firestore)),
     );
     await tester.pumpAndSettle();
 
@@ -74,7 +76,7 @@ void main() {
         .set({'nickname': 'Supermario'});
 
     await tester.pumpWidget(
-      buildApp(UserProfileService(firestore: firestore)),
+      buildApp(UserProfileRepositoryFirestore(firestore: firestore)),
     );
 
     // First frame: no spinner, parts and masked fallbacks already visible.
@@ -89,7 +91,8 @@ void main() {
 
   testWidgets('shows the AI title above the parts when the story has one',
       (tester) async {
-    final service = UserProfileService(firestore: FakeFirebaseFirestore());
+    final service =
+        UserProfileRepositoryFirestore(firestore: FakeFirebaseFirestore());
 
     await tester.pumpWidget(buildApp(service, title: 'The Seated Cat'));
     await tester.pumpAndSettle();

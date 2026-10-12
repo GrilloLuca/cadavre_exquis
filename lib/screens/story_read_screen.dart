@@ -5,15 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 class StoryReadScreen extends StatefulWidget {
   final Story story;
 
   /// Source of the authors' nicknames; injectable for tests.
-  final UserProfileService? profileService;
+  final UserProfileRepository? profileRepository;
 
-  const StoryReadScreen({super.key, required this.story, this.profileService});
+  const StoryReadScreen(
+      {super.key, required this.story, this.profileRepository});
 
   @override
   State<StoryReadScreen> createState() => _StoryReadScreenState();
@@ -27,7 +29,8 @@ class _StoryReadScreenState extends State<StoryReadScreen> {
   @override
   void initState() {
     super.initState();
-    final service = widget.profileService ?? UserProfileService();
+    final service =
+        widget.profileRepository ?? UserProfileRepositoryFirestore();
     _nicknames = service
         .nicknamesFor(widget.story.parts.map((p) => p.author))
         .catchError((Object _) => const <String, String>{});

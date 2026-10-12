@@ -2,7 +2,7 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/services/age_check_service.dart';
+import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:flutter/material.dart';
 
 /// Neutral age screen: asks for the birth year without hinting at the age
@@ -80,7 +80,7 @@ class _AgeCheckScreenState extends State<AgeCheckScreen> {
                     ),
                     items: [
                       for (var year = currentYear;
-                          year >= AgeCheckService.oldestBirthYear;
+                          year >= AgeRules.oldestBirthYear;
                           year--)
                         DropdownMenuItem(value: year, child: Text('$year')),
                     ],

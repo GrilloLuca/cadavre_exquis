@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/services/private_room_service.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
 class JoinPrivateRoomScreen extends StatefulWidget {
   const JoinPrivateRoomScreen({super.key});
@@ -14,7 +15,7 @@ class JoinPrivateRoomScreen extends StatefulWidget {
 
 class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _roomService = PrivateRoomService();
+  final _roomRepository = PrivateRoomRepositoryFirestore();
   String _name = '';
   String _password = '';
   bool _isSubmitting = false;
@@ -25,10 +26,11 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final room = await _roomService.joinRoom(name: _name, password: _password);
+      final room =
+          await _roomRepository.joinRoom(name: _name, password: _password);
       if (!mounted) return;
       Navigator.pop(context, room);
-    } on PrivateRoomServiceException {
+    } on PrivateRoomException {
       // Room-not-found and wrong-password both show the same message, so a
       // join attempt can't be used to probe whether a room name is taken.
       if (!mounted) return;
@@ -70,11 +72,12 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
                 children: <Widget>[
                   TextFormField(
                     onChanged: (value) => _name = value,
-                    validator: (value) => (value == null || value.trim().isEmpty)
-                        ? l10n.roomNameRequired
-                        : null,
-                    decoration:
-                        kTextFieldDecoration.copyWith(hintText: l10n.roomNameHint),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                            ? l10n.roomNameRequired
+                            : null,
+                    decoration: kTextFieldDecoration.copyWith(
+                        hintText: l10n.roomNameHint),
                   ),
                   const SizedBox(height: 8.0),
                   TextFormField(

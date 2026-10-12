@@ -100,12 +100,15 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [ ] Decide D2 (domain layer scope)
 
 ### Phase 1: data layer and models (2–3 PRs)
-- [x] Pure-Dart models in `lib/domain/models/`: `Timestamp` → `DateTime`; Firestore mapping in `data/repositories/story/story_firestore_mapping.dart` (used by `StoryService` until it becomes the repository); `positionLabel` → `ui/core/position_label.dart`
-- [ ] Abstract repositories + Firestore impls from current services (move logic, don't rewrite); make `PrivateRoomService`/`AuthService` injectable
-- [ ] Fakes in `testing/fakes/`; service tests become repository tests
+- [x] Pure-Dart models in `lib/domain/models/`: `Timestamp` → `DateTime`; Firestore mapping in `data/repositories/story/story_firestore_mapping.dart`; `positionLabel` → `ui/core/position_label.dart`
+- [x] Abstract repositories + Firestore impls from current services (moved with `git mv`, logic unchanged): `StoryRepository`, `UserProfileRepository`, `AgeCheckRepository`, `PrivateRoomRepository` (now injectable, `firestore:` param). Screens take the abstract type and default to the Firestore impl until Phase 2 adds providers
+- [x] Domain errors and rules out of the services: `StoryException`/`StoryErrorCode`, `PrivateRoomException`/`PrivateRoomErrorCode`, `UserProfileException`/`UserProfileErrorCode` (the `Service` infix dropped) in `domain/models/`; `Nickname` (normalize/validate/min/max), `emailKey()`, `AgeRules` (isAdult/adultAge/oldestBirthYear)
+- [x] `age_signals_source.dart` → `data/services/`
+- [x] Fakes in `testing/fakes/repositories/` (story, user profile, age check, private room); `test/fake_story_repository_test.dart` checks the story fake follows the turn rules. Service tests renamed to `*_repository_firestore_test.dart`
+- Left in `lib/services/` on purpose: `auth_service.dart` (→ Phase 2), `language_room_preference.dart` (→ Phase 3 with `RoomRepository`), `age_gate.dart` (→ Phase 3, use case, D2)
 
 ### Phase 2: auth and central DI (1 PR)
-- [ ] `AuthRepository` (ChangeNotifier) + `MultiProvider` in `main.dart`
+- [ ] `AuthRepository` (ChangeNotifier, replaces static `AuthService`) + `MultiProvider` in `main.dart` providing all repositories; screens stop defaulting to `*RepositoryFirestore()`
 - [ ] `AuthWrapper` listens to `AuthRepository`; no `FirebaseAuth.instance` left under `lib/ui`
 
 ### Phase 3: ViewModels, one feature per PR (simplest to riskiest)
@@ -137,3 +140,4 @@ Per feature: ViewModel unit tests with fakes; update existing widget tests (`acc
 - 2026-10-12: architecture analysis and roadmap written (this file). D1 decided: keep coded exceptions.
 - 2026-10-12: Phase 0 on `feature/mvvm-migration`: `provider` added, `Command` utility, shared UI moved to `lib/ui/core/`. No behaviour change; analyze clean, all tests green. D2 still to decide.
 - 2026-10-12: Phase 1, step 1: models moved to `lib/domain/models/` and made pure Dart (no Firestore, no Flutter). No behaviour change; analyze clean, all tests green.
+- 2026-10-12: Phase 1, step 2: repositories (abstract + Firestore), domain errors/rules, fakes. No behaviour change; analyze clean, all tests green. Phase 1 done.

@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cadavre_exquisite/services/age_check_service.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
-import 'package:cadavre_exquisite/services/age_signals_source.dart';
+import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 
 class _FakeSource implements AgeSignalsSource {
   _FakeSource(this._answer);
@@ -30,12 +31,12 @@ const minorYear = 2012;
 
 void main() {
   late FakeFirebaseFirestore firestore;
-  late AgeCheckService storage;
+  late AgeCheckRepository storage;
 
   setUp(() {
     AgeGate.clearSessionCache();
     firestore = FakeFirebaseFirestore();
-    storage = AgeCheckService(firestore: firestore);
+    storage = AgeCheckRepositoryFirestore(firestore: firestore);
   });
 
   AgeGate gate(AgeSignalsSource source, {Duration? timeout}) => AgeGate(

@@ -14,6 +14,22 @@ String? nextPosition(String position) {
   return kStoryPositions[index + 1];
 }
 
+enum StoryErrorCode {
+  alreadyCompleted,
+  positionTaken,
+  lockedByOther,
+  consecutiveTurnNotAllowed,
+}
+
+/// Thrown by `StoryRepository` operations on invalid story state. The UI
+/// layer maps [code] to a localized message, so no user-facing text lives
+/// here.
+class StoryException implements Exception {
+  final StoryErrorCode code;
+
+  const StoryException(this.code);
+}
+
 class StoryPart {
   final String position;
   final String text;

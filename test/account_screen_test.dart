@@ -11,16 +11,17 @@ import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
 const _docId = 'luca.grillo@gmail.com';
 
-/// A [UserProfileService] whose [getNickname] fails while [failLoads] is
+/// A [UserProfileRepository] whose [getNickname] fails while [failLoads] is
 /// set, so a test can recover from a load failure (mock_exceptions has no
 /// public way to unregister a throw).
-class _FlakyProfileService extends UserProfileService {
-  _FlakyProfileService({required super.firestore});
+class _FlakyProfileRepository extends UserProfileRepositoryFirestore {
+  _FlakyProfileRepository({required super.firestore});
 
   bool failLoads = true;
 
@@ -56,17 +57,17 @@ void main() {
     };
   }
 
-  Widget buildApp(UserProfileService service) => MaterialApp(
+  Widget buildApp(UserProfileRepository service) => MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('it'),
-        home: AccountScreen(profileService: service, email: _email),
+        home: AccountScreen(profileRepository: service, email: _email),
       );
 
   Future<void> pumpScreen(WidgetTester tester,
-      [UserProfileService? service]) async {
+      [UserProfileRepository? service]) async {
     await tester.pumpWidget(
-      buildApp(service ?? UserProfileService(firestore: firestore)),
+      buildApp(service ?? UserProfileRepositoryFirestore(firestore: firestore)),
     );
     await tester.pumpAndSettle();
   }
@@ -297,7 +298,7 @@ void main() {
   testWidgets('retrying after a load failure prefills the saved nickname',
       (tester) async {
     await seedNickname('Supermario');
-    final service = _FlakyProfileService(firestore: firestore);
+    final service = _FlakyProfileRepository(firestore: firestore);
     await pumpScreen(tester, service);
 
     expect(find.text('Impossibile caricare il nickname.'), findsOneWidget);
@@ -324,7 +325,7 @@ void main() {
 
   testWidgets('retrying after a load failure with no nickname enables saving',
       (tester) async {
-    final service = _FlakyProfileService(firestore: firestore);
+    final service = _FlakyProfileRepository(firestore: firestore);
     await pumpScreen(tester, service);
     expect(isSaveEnabled(tester), isFalse);
 
@@ -362,7 +363,8 @@ void main() {
         locale: const Locale('it'),
         home: StatefulBuilder(
           builder: (context, setState) => AccountScreen(
-            profileService: UserProfileService(firestore: firestore),
+            profileRepository:
+                UserProfileRepositoryFirestore(firestore: firestore),
             email: email,
             currentEmail: () => null,
             languageCode: currentLanguage,

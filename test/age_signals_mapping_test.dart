@@ -1,7 +1,7 @@
 import 'package:age_range_signals/age_range_signals.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cadavre_exquisite/services/age_signals_source.dart';
+import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 
 /// Stands in for the plugin singleton; unused methods fall to noSuchMethod.
 class _FakePlugin implements AgeRangeSignals {

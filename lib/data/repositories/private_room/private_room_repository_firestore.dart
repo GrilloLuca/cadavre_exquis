@@ -4,23 +4,14 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
-enum PrivateRoomServiceErrorCode { nameTaken, roomNotFound, wrongPassword }
+class PrivateRoomRepositoryFirestore implements PrivateRoomRepository {
+  PrivateRoomRepositoryFirestore({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
-/// Thrown by [PrivateRoomService] operations. The UI layer maps [code] to a
-/// localized message, so no user-facing text lives here. [roomNotFound] and
-/// [wrongPassword] are deliberately kept distinct only at this layer: the UI
-/// should show the same generic message for both, so a join attempt can't be
-/// used to probe whether a room name exists.
-class PrivateRoomServiceException implements Exception {
-  final PrivateRoomServiceErrorCode code;
-
-  const PrivateRoomServiceException(this.code);
-}
-
-class PrivateRoomService {
-  final _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> get _rooms =>
       _firestore.collection('privateRooms');
@@ -32,8 +23,9 @@ class PrivateRoomService {
   static String normalizeName(String name) => name.trim().toLowerCase();
 
   /// Creates a new private room, salting and hashing [password] rather than
-  /// storing it as plain text. Throws [PrivateRoomServiceErrorCode.nameTaken]
+  /// storing it as plain text. Throws [PrivateRoomErrorCode.nameTaken]
   /// if a room with the same (case-insensitive) name already exists.
+  @override
   Future<PrivateRoom> createRoom({
     required String name,
     required String password,
@@ -48,8 +40,7 @@ class PrivateRoomService {
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
       if (snapshot.exists) {
-        throw const PrivateRoomServiceException(
-            PrivateRoomServiceErrorCode.nameTaken);
+        throw const PrivateRoomException(PrivateRoomErrorCode.nameTaken);
       }
       transaction.set(docRef, {
         'name': trimmedName,
@@ -64,6 +55,7 @@ class PrivateRoomService {
   }
 
   /// Looks up a room by name and checks [password] against its stored hash.
+  @override
   Future<PrivateRoom> joinRoom({
     required String name,
     required String password,
@@ -71,16 +63,14 @@ class PrivateRoomService {
     final id = normalizeName(name);
     final snapshot = await _rooms.doc(id).get();
     if (!snapshot.exists) {
-      throw const PrivateRoomServiceException(
-          PrivateRoomServiceErrorCode.roomNotFound);
+      throw const PrivateRoomException(PrivateRoomErrorCode.roomNotFound);
     }
 
     final data = snapshot.data()!;
     final salt = data['salt'] as String;
     final expectedHash = data['passwordHash'] as String;
     if (_hashPassword(password, salt) != expectedHash) {
-      throw const PrivateRoomServiceException(
-          PrivateRoomServiceErrorCode.wrongPassword);
+      throw const PrivateRoomException(PrivateRoomErrorCode.wrongPassword);
     }
 
     return PrivateRoom(id: id, name: data['name'] as String);
@@ -89,7 +79,8 @@ class PrivateRoomService {
 
 String _generateSalt([int length = 16]) {
   final random = Random.secure();
-  return base64UrlEncode(List<int>.generate(length, (_) => random.nextInt(256)));
+  return base64UrlEncode(
+      List<int>.generate(length, (_) => random.nextInt(256)));
 }
 
 String _hashPassword(String password, String salt) =>

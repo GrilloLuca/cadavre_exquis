@@ -10,11 +10,13 @@ import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/screens/age_check_screen.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
-import 'package:cadavre_exquisite/services/age_check_service.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
-import 'package:cadavre_exquisite/services/age_signals_source.dart';
-import 'package:cadavre_exquisite/services/story_service.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 /// An [AgeSignalsSource] answering with [_answer] and counting its calls.
 class _FakeSource implements AgeSignalsSource {
@@ -68,7 +70,7 @@ const _unreviewedTitle = 'Not reviewed yet';
 
 void main() {
   late FakeFirebaseFirestore firestore;
-  late AgeCheckService storage;
+  late AgeCheckRepository storage;
   late AppLocalizations l10n;
 
   Future<void> addStory(
@@ -104,7 +106,7 @@ void main() {
     AgeGate.clearSessionCache();
     CompleteStoriesScreen.clearSessionState();
     firestore = FakeFirebaseFirestore();
-    storage = AgeCheckService(firestore: firestore);
+    storage = AgeCheckRepositoryFirestore(firestore: firestore);
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
     // Service order (newest completed first): mature-new, normal,
@@ -131,12 +133,12 @@ void main() {
       (await firestore.collection('ageChecks').doc(_docId).get())
           .data()?['birthYear'] as int?;
 
-  /// The screen in an app. Pass the same [storyService] and [gate] across
+  /// The screen in an app. Pass the same [storyRepository] and [gate] across
   /// pumps to exercise `didUpdateWidget` rather than a fresh state.
   Widget app(
     _FakeSource source, {
     AgeGate? gate,
-    StoryService? storyService,
+    StoryRepository? storyRepository,
     String language = 'en',
     String? roomId,
   }) {
@@ -147,10 +149,11 @@ void main() {
       home: CompleteStoriesScreen(
         language: language,
         roomId: roomId,
-        storyService: storyService ?? StoryService(firestore: firestore),
+        storyRepository:
+            storyRepository ?? StoryRepositoryFirestore(firestore: firestore),
         ageGate: gate ?? AgeGate(signals: source, storage: storage),
-        ageCheckService: storage,
-        profileService: UserProfileService(firestore: firestore),
+        ageCheckRepository: storage,
+        profileRepository: UserProfileRepositoryFirestore(firestore: firestore),
         email: _email,
       ),
     );
@@ -635,10 +638,11 @@ void main() {
     testWidgets('re-pumping with another room or language swaps the list',
         (tester) async {
       final source = _FakeSource.value(AgeSignal.adult);
-      final service = StoryService(firestore: firestore);
+      final service = StoryRepositoryFirestore(firestore: firestore);
       final gate = AgeGate(signals: source, storage: storage);
 
-      await tester.pumpWidget(app(source, gate: gate, storyService: service));
+      await tester
+          .pumpWidget(app(source, gate: gate, storyRepository: service));
       await tester.pumpAndSettle();
       expect(find.text(_normalTitle), findsOneWidget);
       expect(find.text(otherRoomTitle), findsNothing);
@@ -646,7 +650,7 @@ void main() {
       expect(locked(), findsNWidgets(2));
 
       await tester.pumpWidget(
-          app(source, gate: gate, storyService: service, roomId: 'room-1'));
+          app(source, gate: gate, storyRepository: service, roomId: 'room-1'));
       await tester.pumpAndSettle();
       expect(find.text(otherRoomTitle), findsOneWidget);
       expect(find.text(_normalTitle), findsNothing);
@@ -654,7 +658,7 @@ void main() {
       expect(find.text(otherRoomMatureTitle), findsOneWidget);
 
       await tester.pumpWidget(
-          app(source, gate: gate, storyService: service, language: 'it'));
+          app(source, gate: gate, storyRepository: service, language: 'it'));
       await tester.pumpAndSettle();
       expect(find.text(italianTitle), findsOneWidget);
       expect(find.text(_normalTitle), findsNothing);
@@ -665,10 +669,11 @@ void main() {
     testWidgets('an adult unlock persists across a room change',
         (tester) async {
       final source = _FakeSource.value(AgeSignal.adult);
-      final service = StoryService(firestore: firestore);
+      final service = StoryRepositoryFirestore(firestore: firestore);
       final gate = AgeGate(signals: source, storage: storage);
 
-      await tester.pumpWidget(app(source, gate: gate, storyService: service));
+      await tester
+          .pumpWidget(app(source, gate: gate, storyRepository: service));
       await tester.pumpAndSettle();
       await tester.tap(locked().first);
       await tester.pumpAndSettle();
@@ -676,7 +681,7 @@ void main() {
       await goBack(tester);
 
       await tester.pumpWidget(
-          app(source, gate: gate, storyService: service, roomId: 'room-1'));
+          app(source, gate: gate, storyRepository: service, roomId: 'room-1'));
       await tester.pumpAndSettle();
       expect(locked(), findsNothing);
       expect(find.text(otherRoomMatureTitle), findsOneWidget);

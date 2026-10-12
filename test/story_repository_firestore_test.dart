@@ -3,11 +3,12 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
-import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 
 void main() {
   late FakeFirebaseFirestore firestore;
-  late StoryService service;
+  late StoryRepository service;
 
   Future<void> addStory(String id,
       {String status = 'complete',
@@ -36,7 +37,7 @@ void main() {
 
   setUp(() async {
     firestore = FakeFirebaseFirestore();
-    service = StoryService(firestore: firestore);
+    service = StoryRepositoryFirestore(firestore: firestore);
     await addStory('it-public');
     await addStory('en-public', language: 'en');
     await addStory('it-room', roomId: 'amici');
@@ -79,7 +80,8 @@ void main() {
     expect(open.map((s) => s.id), [story.id]);
   });
 
-  test('complete list includes reviewed mature and non-mature stories, '
+  test(
+      'complete list includes reviewed mature and non-mature stories, '
       'excludes unreviewed', () async {
     await addStory('it-mature', mature: true);
     await addStory('it-unreviewed', mature: null);
@@ -126,7 +128,8 @@ void main() {
       expect(story('x', []).completedAt, isNull);
     });
 
-    test('sorts newest first, ties by id, partless last; input order '
+    test(
+        'sorts newest first, ties by id, partless last; input order '
         'does not matter', () {
       final expected = ['c', 'a', 'b', 'd', 'e', 'f'];
       final stories = [

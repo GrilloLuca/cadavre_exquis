@@ -1,7 +1,7 @@
 import 'package:age_range_signals/age_range_signals.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:cadavre_exquisite/services/age_check_service.dart';
+import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 
 /// What the platform says about the current user's age, reduced to the only
 /// question the app asks: may they read mature stories?
@@ -127,11 +127,11 @@ class PluginAgeSignalsSource implements AgeSignalsSource {
     final ageLower = result.ageLower;
     final isMinor = _minorStatuses.contains(result.status) ||
         result.ageRangeSource == AgeRangeSource.tierB ||
-        (ageLower != null && ageLower < AgeCheckService.adultAge);
+        (ageLower != null && ageLower < AgeRules.adultAge);
     if (isMinor) return AgeSignal.minor;
     if (result.status == AgeSignalsStatus.verified &&
         ageLower != null &&
-        ageLower >= AgeCheckService.adultAge) {
+        ageLower >= AgeRules.adultAge) {
       return AgeSignal.adult;
     }
     return AgeSignal.unavailable;

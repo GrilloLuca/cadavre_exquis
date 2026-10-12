@@ -3,7 +3,8 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
-import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 
 const _holder = 'holder@example.com';
 const _other = 'other@example.com';
@@ -50,10 +51,10 @@ void main() {
     });
   });
 
-  group('StoryService locks', () {
+  group('StoryRepository locks', () {
     late FakeFirebaseFirestore firestore;
     late DateTime now;
-    late StoryService service;
+    late StoryRepository service;
 
     DocumentReference<Map<String, dynamic>> doc() =>
         firestore.collection('stories').doc('s');
@@ -70,13 +71,13 @@ void main() {
           'roomId': null,
         });
 
-    Matcher throwsLockedByOther() => throwsA(isA<StoryServiceException>()
-        .having((e) => e.code, 'code', StoryServiceErrorCode.lockedByOther));
+    Matcher throwsLockedByOther() => throwsA(isA<StoryException>()
+        .having((e) => e.code, 'code', StoryErrorCode.lockedByOther));
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
       now = _lockedAt;
-      service = StoryService(firestore: firestore, now: () => now);
+      service = StoryRepositoryFirestore(firestore: firestore, now: () => now);
     });
 
     test('lockStory records who locked it and when', () async {

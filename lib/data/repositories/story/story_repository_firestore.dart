@@ -1,25 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_firestore_mapping.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 
-enum StoryServiceErrorCode {
-  alreadyCompleted,
-  positionTaken,
-  lockedByOther,
-  consecutiveTurnNotAllowed,
-}
-
-/// Thrown by [StoryService] operations on invalid story state. The UI layer
-/// maps [code] to a localized message, so no user-facing text lives here.
-class StoryServiceException implements Exception {
-  final StoryServiceErrorCode code;
-
-  const StoryServiceException(this.code);
-}
-
-class StoryService {
+class StoryRepositoryFirestore implements StoryRepository {
   /// [now] decides whether a lock has expired; tests pass a fixed clock.
-  StoryService({FirebaseFirestore? firestore, DateTime Function()? now})
+  StoryRepositoryFirestore(
+      {FirebaseFirestore? firestore, DateTime Function()? now})
       : _firestore = firestore ?? FirebaseFirestore.instance,
         _now = now ?? DateTime.now;
 
@@ -46,6 +33,7 @@ class StoryService {
         .where('roomId', isNull: true);
   }
 
+  @override
   Stream<List<Story>> incompleteStoriesStream({
     required String language,
     String? roomId,
@@ -65,6 +53,7 @@ class StoryService {
   /// `(status, language, roomId, mature)` and `(status, roomId, mature)`
   /// cover it. Sorted newest completed first, see
   /// [Story.compareByCompletedAtDesc].
+  @override
   Stream<List<Story>> completeStoriesStream({
     required String language,
     String? roomId,
@@ -78,6 +67,7 @@ class StoryService {
 
   /// Creates an empty story and returns it, so the caller can open it
   /// straight away.
+  @override
   Future<Story> createStory({required String language, String? roomId}) async {
     final docRef = await _stories.add({
       'status': 'incomplete',
@@ -103,10 +93,11 @@ class StoryService {
   /// Exclusively locks the story for [authorEmail] so no one else can open
   /// or edit it while they're writing their part. The lock expires after
   /// [Story.lockDuration], so an abandoned turn doesn't block the story
-  /// forever. Throws a [StoryServiceException] if the story was completed,
+  /// forever. Throws a [StoryException] if the story was completed,
   /// has an unexpired lock held by someone else, or the author wrote the
   /// immediately preceding part (two consecutive turns by the same author
   /// aren't allowed).
+  @override
   Future<void> lockStory({
     required String storyId,
     required String authorEmail,
@@ -117,15 +108,13 @@ class StoryService {
       final story = storyFromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw const StoryServiceException(
-            StoryServiceErrorCode.alreadyCompleted);
+        throw const StoryException(StoryErrorCode.alreadyCompleted);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
-        throw const StoryServiceException(
-            StoryServiceErrorCode.consecutiveTurnNotAllowed);
+        throw const StoryException(StoryErrorCode.consecutiveTurnNotAllowed);
       }
       if (story.isLockedFor(authorEmail, now: _now())) {
-        throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
+        throw const StoryException(StoryErrorCode.lockedByOther);
       }
 
       transaction.update(docRef, {
@@ -138,6 +127,7 @@ class StoryService {
   /// Releases the exclusive lock held by [authorEmail], returning the story
   /// to its starting (unlocked) state. No-op if it's unlocked already or
   /// held by someone else.
+  @override
   Future<void> unlockStory({
     required String storyId,
     required String authorEmail,
@@ -155,9 +145,10 @@ class StoryService {
 
   /// Appends the next part of the story inside a transaction, so two players
   /// submitting at the same time can't both write the same position. Throws
-  /// a [StoryServiceException] if the story moved on, was completed, is
+  /// a [StoryException] if the story moved on, was completed, is
   /// locked by someone else, or the author wrote the immediately preceding
   /// part (two consecutive turns by the same author aren't allowed).
+  @override
   Future<void> submitPart({
     required String storyId,
     required String expectedPosition,
@@ -170,18 +161,16 @@ class StoryService {
       final story = storyFromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
-        throw const StoryServiceException(
-            StoryServiceErrorCode.alreadyCompleted);
+        throw const StoryException(StoryErrorCode.alreadyCompleted);
       }
       if (story.currentPosition != expectedPosition) {
-        throw const StoryServiceException(StoryServiceErrorCode.positionTaken);
+        throw const StoryException(StoryErrorCode.positionTaken);
       }
       if (story.isLockedFor(authorEmail, now: _now())) {
-        throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
+        throw const StoryException(StoryErrorCode.lockedByOther);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
-        throw const StoryServiceException(
-            StoryServiceErrorCode.consecutiveTurnNotAllowed);
+        throw const StoryException(StoryErrorCode.consecutiveTurnNotAllowed);
       }
 
       final newPart = StoryPart(

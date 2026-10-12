@@ -13,21 +13,23 @@ import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/nickname.dart';
 
 /// Localized message for a nickname validation/service error [code].
 String _nicknameErrorMessage(
   AppLocalizations l10n,
-  UserProfileServiceErrorCode code,
+  UserProfileErrorCode code,
 ) {
   switch (code) {
-    case UserProfileServiceErrorCode.nicknameTooShort:
-      return l10n.errorNicknameTooShort(UserProfileService.minNicknameLength);
-    case UserProfileServiceErrorCode.nicknameTooLong:
-      return l10n.errorNicknameTooLong(UserProfileService.maxNicknameLength);
-    case UserProfileServiceErrorCode.nicknameInvalidCharacters:
+    case UserProfileErrorCode.nicknameTooShort:
+      return l10n.errorNicknameTooShort(Nickname.minLength);
+    case UserProfileErrorCode.nicknameTooLong:
+      return l10n.errorNicknameTooLong(Nickname.maxLength);
+    case UserProfileErrorCode.nicknameInvalidCharacters:
       return l10n.errorNicknameInvalidCharacters;
-    case UserProfileServiceErrorCode.nicknameAlreadySet:
+    case UserProfileErrorCode.nicknameAlreadySet:
       return l10n.errorNicknameAlreadySet;
   }
 }
@@ -35,7 +37,7 @@ String _nicknameErrorMessage(
 class AccountScreen extends StatefulWidget {
   const AccountScreen({
     super.key,
-    this.profileService,
+    this.profileRepository,
     this.email,
     this.currentEmail,
     this.languageCode = kFallbackRoomLanguage,
@@ -46,8 +48,8 @@ class AccountScreen extends StatefulWidget {
   });
 
   /// Service used to read/write the nickname. Defaults to a
-  /// [UserProfileService] backed by the default Firestore instance.
-  final UserProfileService? profileService;
+  /// [UserProfileRepository] backed by the default Firestore instance.
+  final UserProfileRepository? profileRepository;
 
   /// Email of the signed-in user. Defaults to [currentEmail]; when provided,
   /// [FirebaseAuth] is never accessed while building.
@@ -85,7 +87,7 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nicknameController = TextEditingController();
-  late final UserProfileService _profileService;
+  late final UserProfileRepository _profileRepository;
 
   String? _email;
   bool _isLoadingNickname = false;
@@ -103,7 +105,8 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   void initState() {
     super.initState();
-    _profileService = widget.profileService ?? UserProfileService();
+    _profileRepository =
+        widget.profileRepository ?? UserProfileRepositoryFirestore();
     _email = widget.email ??
         (widget.currentEmail ??
             () => FirebaseAuth.instance.currentUser?.email)();
@@ -130,7 +133,7 @@ class _AccountScreenState extends State<AccountScreen> {
     }
     var failed = false;
     try {
-      final nickname = await _profileService.getNickname(email);
+      final nickname = await _profileRepository.getNickname(email);
       if (!mounted) return;
       _nicknameController.text = nickname ?? '';
       _hasNickname = nickname != null;
@@ -158,8 +161,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final l10n = AppLocalizations.of(context)!;
-    final normalized =
-        UserProfileService.normalizeNickname(_nicknameController.text);
+    final normalized = Nickname.normalize(_nicknameController.text);
     if (normalized.isEmpty) return;
 
     // The choice is final, so it is confirmed first.
@@ -184,14 +186,14 @@ class _AccountScreenState extends State<AccountScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await _profileService.setNickname(email: email, nickname: normalized);
+      await _profileRepository.setNickname(email: email, nickname: normalized);
       if (!mounted) return;
       _nicknameController.text = normalized;
       setState(() => _hasNickname = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.nicknameSaved)),
       );
-    } on UserProfileServiceException catch (e) {
+    } on UserProfileException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -200,7 +202,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
       );
       // Set meanwhile (e.g. on another device): show the stored one.
-      if (e.code == UserProfileServiceErrorCode.nicknameAlreadySet) {
+      if (e.code == UserProfileErrorCode.nicknameAlreadySet) {
         _loadNickname();
       }
     } catch (_) {
@@ -281,12 +283,12 @@ class _AccountScreenState extends State<AccountScreen> {
               enabled: canEdit,
               // Show the counter but let the validator report "too long":
               // the limit applies to the normalized text, not the raw input.
-              maxLength: UserProfileService.maxNicknameLength,
+              maxLength: Nickname.maxLength,
               maxLengthEnforcement: MaxLengthEnforcement.none,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _saveNickname(),
               validator: (value) {
-                final code = UserProfileService.validateNickname(value ?? '');
+                final code = Nickname.validate(value ?? '');
                 return code == null ? null : _nicknameErrorMessage(l10n, code);
               },
               decoration: InputDecoration(
@@ -294,8 +296,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 helperText: _hasNickname
                     ? l10n.nicknameLockedNote
                     : '${l10n.nicknameHelper(
-                        UserProfileService.minNicknameLength,
-                        UserProfileService.maxNicknameLength,
+                        Nickname.minLength,
+                        Nickname.maxLength,
                       )}\n${l10n.nicknameOnceNote}',
                 helperMaxLines: 2,
                 errorMaxLines: 2,
@@ -319,12 +321,9 @@ class _AccountScreenState extends State<AccountScreen> {
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _nicknameController,
               builder: (context, value, _) {
-                final isValid =
-                    UserProfileService.validateNickname(value.text) == null;
+                final isValid = Nickname.validate(value.text) == null;
                 final name = authorDisplayName(
-                      nickname: isValid
-                          ? UserProfileService.normalizeNickname(value.text)
-                          : null,
+                      nickname: isValid ? Nickname.normalize(value.text) : null,
                       email: _email,
                     ) ??
                     l10n.anonymousAuthor;

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
-import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 import 'package:cadavre_exquisite/screens/chat_screen.dart';
 import 'package:cadavre_exquisite/ui/core/ui/typing_indicator.dart';
 
@@ -32,7 +32,7 @@ class IncompleteStoriesScreen extends StatefulWidget {
 }
 
 class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
-  final _storyService = StoryService();
+  final _storyRepository = StoryRepositoryFirestore();
   bool _isCreating = false;
 
   /// Creates a new empty story and opens it right away, so the creator
@@ -40,7 +40,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
   Future<void> _createAndOpenStory() async {
     setState(() => _isCreating = true);
     try {
-      final story = await _storyService.createStory(
+      final story = await _storyRepository.createStory(
         language: widget.language,
         roomId: widget.roomId,
       );
@@ -71,7 +71,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
       body: Background(
         opacity: 0.2,
         child: StreamBuilder<List<Story>>(
-          stream: _storyService.incompleteStoriesStream(
+          stream: _storyRepository.incompleteStoriesStream(
             language: widget.language,
             roomId: widget.roomId,
           ),

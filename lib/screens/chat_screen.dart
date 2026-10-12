@@ -9,7 +9,7 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
-import 'package:cadavre_exquisite/services/story_service.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 
 /// Chat screen used to write the next part of a single incomplete story.
 class ChatScreen extends StatefulWidget {
@@ -22,7 +22,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _storyService = StoryService();
+  final _storyRepository = StoryRepositoryFirestore();
   final _messageTextController = TextEditingController();
   final _messageFocusNode = FocusNode();
   String _messageText = '';
@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final email = FirebaseAuth.instance.currentUser?.email;
     if (email == null) return;
     try {
-      await _storyService.lockStory(
+      await _storyRepository.lockStory(
           storyId: widget.story.id, authorEmail: email);
       if (!mounted) return;
       setState(() {
@@ -72,7 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
         // Fire and forget: dispose can't wait. A failure (e.g. offline) must
         // not surface as an uncaught async error; the lock stays until the
         // next unlock attempt.
-        unawaited(_storyService
+        unawaited(_storyRepository
             .unlockStory(storyId: widget.story.id, authorEmail: email)
             .catchError((Object _) {}));
       }
@@ -86,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() => _isSending = true);
     try {
-      await _storyService.submitPart(
+      await _storyRepository.submitPart(
         storyId: widget.story.id,
         expectedPosition: widget.story.currentPosition,
         text: _messageText.trim(),
@@ -105,15 +105,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _errorMessage(BuildContext context, Object error) {
     final l10n = AppLocalizations.of(context)!;
-    if (error is StoryServiceException) {
+    if (error is StoryException) {
       switch (error.code) {
-        case StoryServiceErrorCode.alreadyCompleted:
+        case StoryErrorCode.alreadyCompleted:
           return l10n.errorStoryAlreadyCompleted;
-        case StoryServiceErrorCode.positionTaken:
+        case StoryErrorCode.positionTaken:
           return l10n.errorStoryPositionTaken;
-        case StoryServiceErrorCode.lockedByOther:
+        case StoryErrorCode.lockedByOther:
           return l10n.errorStoryLockedByOther;
-        case StoryServiceErrorCode.consecutiveTurnNotAllowed:
+        case StoryErrorCode.consecutiveTurnNotAllowed:
           return l10n.errorConsecutiveTurnNotAllowed;
       }
     }

@@ -1,6 +1,8 @@
-import 'package:cadavre_exquisite/services/age_check_service.dart';
-import 'package:cadavre_exquisite/services/age_signals_source.dart';
-import 'package:cadavre_exquisite/services/user_profile_service.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/age_rules.dart';
+import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
+import 'package:cadavre_exquisite/domain/models/email_key.dart';
 
 /// The gate's answer for opening a mature story.
 enum AgeVerdict {
@@ -11,13 +13,13 @@ enum AgeVerdict {
   minor,
 
   /// Nothing is known yet: show the neutral birth-year screen, store the
-  /// answer with [AgeCheckService.setBirthYear] and decide with
-  /// [AgeCheckService.isAdult].
+  /// answer with [AgeCheckRepository.setBirthYear] and decide with
+  /// [AgeRules.isAdult].
   askBirthYear,
 }
 
 /// Decides whether a user may open mature stories, combining
-/// platform age signals with the birth year stored by [AgeCheckService].
+/// platform age signals with the birth year stored by [AgeCheckRepository].
 ///
 /// Any minor verdict wins: a stored minor year denies access without asking
 /// the platform, and a minor signal overrides a stored adult year. Signal
@@ -27,11 +29,11 @@ enum AgeVerdict {
 class AgeGate {
   AgeGate({
     AgeSignalsSource? signals,
-    AgeCheckService? storage,
+    AgeCheckRepository? storage,
     this.timeout = defaultTimeout,
     DateTime Function()? clock,
   })  : _signals = signals ?? PluginAgeSignalsSource.shared,
-        _storage = storage ?? AgeCheckService(),
+        _storage = storage ?? AgeCheckRepositoryFirestore(),
         _clock = clock ?? DateTime.now;
 
   /// Long enough for the user to answer a system sheet, short enough that a
@@ -39,7 +41,7 @@ class AgeGate {
   static const Duration defaultTimeout = Duration(seconds: 20);
 
   final AgeSignalsSource _signals;
-  final AgeCheckService _storage;
+  final AgeCheckRepository _storage;
   final DateTime Function() _clock;
 
   /// How long to wait for the platform before falling back to asking.
@@ -65,7 +67,7 @@ class AgeGate {
   Future<AgeVerdict> resolve(String email) async {
     final birthYear = await storedBirthYear(email);
     final storedAdult =
-        birthYear == null ? null : AgeCheckService.isAdult(birthYear, _clock());
+        birthYear == null ? null : AgeRules.isAdult(birthYear, _clock());
     if (storedAdult == false) return AgeVerdict.minor;
 
     final signal = await _signal(email);
@@ -77,7 +79,7 @@ class AgeGate {
   }
 
   Future<AgeSignal> _signal(String email) async {
-    final key = UserProfileService.profileKey(email);
+    final key = emailKey(email);
     final cached = _sessionSignals[key];
     if (cached != null) return cached;
 
