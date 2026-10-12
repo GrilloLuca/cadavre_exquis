@@ -626,10 +626,10 @@ abstract class AppLocalizations {
   /// **'Usa solo lettere, numeri, spazi e _ - .'**
   String get errorNicknameInvalidCharacters;
 
-  /// Title shown instead of the real title on a locked mature story in the completed stories list.
+  /// Label of a locked mature story in the completed stories list: shown next to the authors count, and as the title when the story has no AI title.
   ///
   /// In it, this message translates to:
-  /// **'Storia per adulti'**
+  /// **'Contenuto esplicito'**
   String get matureStoryLockedTitle;
 
   /// Screen-reader label of the padlock on a locked mature story.
@@ -647,7 +647,7 @@ abstract class AppLocalizations {
   /// Screen-reader label of the open padlock on an unlocked mature story.
   ///
   /// In it, this message translates to:
-  /// **'contenuto per adulti'**
+  /// **'contenuto esplicito'**
   String get matureStoryAdultContent;
 
   /// Snackbar when an age check denies a mature story.

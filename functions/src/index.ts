@@ -69,12 +69,20 @@ export interface StoryReview {
 
 // Players are mostly children and teenagers, so the bar is deliberately low:
 // anything a parent wouldn't want a 10-year-old to read counts as mature.
+// The app shows the title even on mature stories, so the title itself must
+// always be suitable for a 10-year-old.
 const REVIEW_INSTRUCTION = (language: string) =>
   "You review short stories written collaboratively by several players, " +
   "each continuing the previous part without seeing the whole text. Most " +
   "players are children and teenagers.\n\n" +
   "1. title: a title for the story, at most 8 words, in " +
-  `${language}, no quotes, no trailing punctuation.\n` +
+  `${language}, no quotes, no trailing punctuation. Everyone sees the ` +
+  "title, even when the story is mature, so the title must always be " +
+  "suitable for a 10-year-old: no sexual or suggestive words, graphic " +
+  "violence, gore, profanity, slurs, drugs, alcohol, self-harm or " +
+  "suicide. If the story contains such content, allude to its plot, " +
+  "characters or setting in neutral terms instead of quoting or " +
+  "describing the explicit parts.\n" +
   "2. mature: true if the story is unsuitable for a 10-year-old: sexual " +
   "or sexually suggestive content, graphic violence or gore, strong " +
   "profanity or slurs, drug or alcohol abuse, self-harm or suicide, hate " +

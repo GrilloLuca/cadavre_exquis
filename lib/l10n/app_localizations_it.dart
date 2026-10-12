@@ -323,7 +323,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Usa solo lettere, numeri, spazi e _ - .';
 
   @override
-  String get matureStoryLockedTitle => 'Storia per adulti';
+  String get matureStoryLockedTitle => 'Contenuto esplicito';
 
   @override
   String get matureStoryLockedLabel => 'bloccata';
@@ -332,7 +332,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get matureStoryUnlockHint => 'sbloccare';
 
   @override
-  String get matureStoryAdultContent => 'contenuto per adulti';
+  String get matureStoryAdultContent => 'contenuto esplicito';
 
   @override
   String get matureStoryUnavailable => 'Questa storia non è disponibile.';

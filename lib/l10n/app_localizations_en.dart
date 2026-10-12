@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use only letters, numbers, spaces and _ - .';
 
   @override
-  String get matureStoryLockedTitle => 'Story for adults';
+  String get matureStoryLockedTitle => 'Explicit content';
 
   @override
   String get matureStoryLockedLabel => 'locked';
@@ -329,7 +329,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get matureStoryUnlockHint => 'unlock';
 
   @override
-  String get matureStoryAdultContent => 'adult content';
+  String get matureStoryAdultContent => 'explicit content';
 
   @override
   String get matureStoryUnavailable => 'This story isn\'t available.';

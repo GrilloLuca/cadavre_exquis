@@ -57,7 +57,8 @@ const _docId = 'luca@example.com';
 const _adultYear = 1990;
 const _minorYear = 2015;
 
-// Mature stories: their AI titles and texts must never leak while locked.
+// Mature stories: their texts must never leak while locked; their
+// (child-safe) AI titles are shown, but not to known minors.
 const _matureNewTitle = 'Spicy newest title';
 const _matureNewText = 'spicy newest first part';
 const _matureOldTitle = 'Spicy older title';
@@ -72,7 +73,7 @@ void main() {
 
   Future<void> addStory(
     String id, {
-    required String title,
+    required String? title,
     required int seconds,
     bool? mature = false,
     String firstText = 'first part',
@@ -162,7 +163,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder locked() => find.text(l10n.matureStoryLockedTitle);
+  Finder locked() => find.byIcon(Icons.lock);
   Finder lockIcons() => find.byIcon(Icons.lock);
   Finder unavailable() => find.text(l10n.matureStoryUnavailable);
 
@@ -178,26 +179,36 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// No part text of a mature story is on screen.
   void expectNoMatureContent() {
-    for (final text in [
-      _matureNewTitle,
-      _matureNewText,
-      _matureOldTitle,
-      _matureOldText,
-    ]) {
+    for (final text in [_matureNewText, _matureOldText]) {
+      expect(find.text(text), findsNothing, reason: text);
+    }
+  }
+
+  /// Nothing at all of a mature story is on screen, title included.
+  void expectNoMatureStories() {
+    expectNoMatureContent();
+    for (final text in [_matureNewTitle, _matureOldTitle]) {
       expect(find.text(text), findsNothing, reason: text);
     }
   }
 
   testWidgets(
       'mature stories are inline and locked, in the service order, '
-      'with no title or text and no adult section', (tester) async {
+      'with their title but no text and no adult section', (tester) async {
     final source = _FakeSource.value(AgeSignal.adult);
     await pumpScreen(tester, source);
 
     expect(locked(), findsNWidgets(2));
     expect(lockIcons(), findsNWidgets(2));
-    expect(find.text(l10n.authorsCount(1)), findsNWidgets(3));
+    expect(find.text(l10n.authorsCount(1)), findsOneWidget);
+    expect(
+      find.text('${l10n.matureStoryLockedTitle} · ${l10n.authorsCount(1)}'),
+      findsNWidgets(2),
+    );
+    expect(find.text(_matureNewTitle), findsOneWidget);
+    expect(find.text(_matureOldTitle), findsOneWidget);
     expectNoMatureContent();
     expect(find.text(_normalTitle), findsOneWidget);
     expect(find.text(_unreviewedTitle), findsNothing);
@@ -231,9 +242,10 @@ void main() {
     final icon = tester.widget<Icon>(lockIcons().first);
     expect(icon.semanticLabel, l10n.matureStoryLockedLabel);
     expect(icon.size, 24.0);
-    // ListTile merges its children: the screen reader gets the generic
-    // title, the authors count, "locked" and the "unlock" hint together.
+    // ListTile merges its children: the screen reader gets the title, the
+    // explicit-content label, "locked" and the "unlock" hint together.
     final data = tester.getSemantics(locked().first).getSemanticsData();
+    expect(data.label, contains(_matureNewTitle));
     expect(data.label, contains(l10n.matureStoryLockedTitle));
     expect(data.label, contains(l10n.authorsCount(1)));
     expect(data.label, contains(l10n.matureStoryLockedLabel));
@@ -340,7 +352,7 @@ void main() {
     expect(unavailable(), findsOneWidget);
     expect(locked(), findsNothing);
     expect(lockIcons(), findsNothing);
-    expectNoMatureContent();
+    expectNoMatureStories();
     expect(find.text(_normalTitle), findsOneWidget);
   });
 
@@ -399,7 +411,7 @@ void main() {
 
     expect(locked(), findsNothing);
     expect(lockIcons(), findsNothing);
-    expectNoMatureContent();
+    expectNoMatureStories();
     expect(find.text(_normalTitle), findsOneWidget);
     expect(source.calls, 0);
   });
@@ -493,6 +505,22 @@ void main() {
     expect(source.calls, 1);
   });
 
+  testWidgets('a locked story with no title shows the explicit-content label',
+      (tester) async {
+    // A story the model refused to read is mature with no title.
+    await addStory('untitled-mature',
+        title: null,
+        seconds: 50,
+        mature: true,
+        firstText: 'untitled spicy part');
+    await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
+
+    expect(locked(), findsNWidgets(3));
+    expect(find.text(l10n.matureStoryLockedTitle), findsOneWidget);
+    expect(find.text('untitled spicy part'), findsNothing);
+    expectNoMatureContent();
+  });
+
   testWidgets('a mature story the user co-wrote is under theirs, still locked',
       (tester) async {
     await addStory('mine-mature',
@@ -504,7 +532,7 @@ void main() {
     await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
 
     expect(find.text(l10n.yourStoriesHeading), findsOneWidget);
-    expect(find.text('My spicy story'), findsNothing);
+    expect(find.text('My spicy story'), findsOneWidget);
     expect(find.text('my spicy part'), findsNothing);
     expect(locked(), findsNWidgets(3));
 
@@ -527,7 +555,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 16));
         expect(locked(), findsNothing, reason: 'frame $i');
         expect(lockIcons(), findsNothing, reason: 'frame $i');
-        expectNoMatureContent();
+        expectNoMatureStories();
       }
     }
 
@@ -623,7 +651,7 @@ void main() {
       expect(find.text(otherRoomTitle), findsOneWidget);
       expect(find.text(_normalTitle), findsNothing);
       expect(locked(), findsOneWidget);
-      expect(find.text(otherRoomMatureTitle), findsNothing);
+      expect(find.text(otherRoomMatureTitle), findsOneWidget);
 
       await tester.pumpWidget(
           app(source, gate: gate, storyService: service, language: 'it'));
