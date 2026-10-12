@@ -1,7 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/widgets.dart';
-import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 
 const List<String> kStoryPositions = [
   'introduzione',
@@ -9,22 +6,6 @@ const List<String> kStoryPositions = [
   'sviluppo2',
   'epilogo',
 ];
-
-String positionLabel(BuildContext context, String position) {
-  final l10n = AppLocalizations.of(context)!;
-  switch (position) {
-    case 'introduzione':
-      return l10n.positionIntroduction;
-    case 'sviluppo1':
-      return l10n.positionDevelopment1;
-    case 'sviluppo2':
-      return l10n.positionDevelopment2;
-    case 'epilogo':
-      return l10n.positionEpilogue;
-    default:
-      return position;
-  }
-}
 
 /// Returns the position that follows [position], or null if [position] is the last one.
 String? nextPosition(String position) {
@@ -37,7 +18,7 @@ class StoryPart {
   final String position;
   final String text;
   final String author;
-  final Timestamp timestamp;
+  final DateTime timestamp;
 
   StoryPart({
     required this.position,
@@ -45,24 +26,6 @@ class StoryPart {
     required this.author,
     required this.timestamp,
   });
-
-  factory StoryPart.fromMap(Map<String, dynamic> map) {
-    return StoryPart(
-      position: map['position'] as String,
-      text: map['text'] as String,
-      author: map['author'] as String,
-      timestamp: map['timestamp'] as Timestamp,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'position': position,
-      'text': text,
-      'author': author,
-      'timestamp': timestamp,
-    };
-  }
 }
 
 class Story {
@@ -75,7 +38,7 @@ class Story {
   /// When [lockedBy] took the lock. Null for an unlocked story, and for
   /// locks taken by app versions older than lock expiry, which count as
   /// expired (see [isLockExpired]).
-  final Timestamp? lockedAt;
+  final DateTime? lockedAt;
 
   final String language;
 
@@ -105,30 +68,12 @@ class Story {
     this.mature,
   });
 
-  factory Story.fromSnapshot(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Story(
-      id: doc.id,
-      status: data['status'] as String,
-      currentPosition: data['currentPosition'] as String,
-      parts: (data['parts'] as List<dynamic>? ?? [])
-          .map((p) => StoryPart.fromMap(p as Map<String, dynamic>))
-          .toList(),
-      lockedBy: data['lockedBy'] as String?,
-      lockedAt: data['lockedAt'] as Timestamp?,
-      language: data['language'] as String? ?? kDefaultStoryLanguage,
-      roomId: data['roomId'] as String?,
-      title: data['title'] as String?,
-      mature: data['mature'] as bool?,
-    );
-  }
-
   bool get isComplete => status == 'complete';
 
   /// When the story was completed: the timestamp of its last part, or null
   /// if no part has been written. Part timestamps exist on every story,
   /// including those from older app versions, unlike `updatedAt`.
-  Timestamp? get completedAt => parts.isEmpty ? null : parts.last.timestamp;
+  DateTime? get completedAt => parts.isEmpty ? null : parts.last.timestamp;
 
   /// Orders stories newest completed first ([completedAt] descending),
   /// stories without parts last, ties broken by [id] ascending, so the
@@ -168,7 +113,7 @@ class Story {
   bool isLockExpired({DateTime? now}) {
     final at = lockedAt;
     if (at == null) return true;
-    return !(now ?? DateTime.now()).isBefore(at.toDate().add(lockDuration));
+    return !(now ?? DateTime.now()).isBefore(at.add(lockDuration));
   }
 
   /// Whether the story is currently locked by a different user than [email]

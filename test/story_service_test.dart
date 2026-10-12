@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 
 void main() {
@@ -115,14 +115,14 @@ void main() {
                 position: 'epilogo',
                 text: '',
                 author: 'a@example.com',
-                timestamp: Timestamp.fromMillisecondsSinceEpoch(seconds * 1000),
+                timestamp: DateTime.fromMillisecondsSinceEpoch(seconds * 1000),
               ),
           ],
         );
 
     test('completedAt is the last part timestamp, null without parts', () {
       expect(story('x', [5, 9]).completedAt,
-          Timestamp.fromMillisecondsSinceEpoch(9000));
+          DateTime.fromMillisecondsSinceEpoch(9000));
       expect(story('x', []).completedAt, isNull);
     });
 

@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 
-import 'package:cadavre_exquisite/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
 enum PrivateRoomServiceErrorCode { nameTaken, roomNotFound, wrongPassword }
 

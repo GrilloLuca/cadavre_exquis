@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/screens/age_check_screen.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';

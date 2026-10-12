@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:cadavre_exquisite/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 
 /// The room matching the user's device languages: the first locale (in the
 /// user's order of preference) whose language has a room, otherwise

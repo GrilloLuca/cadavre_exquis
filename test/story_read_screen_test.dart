@@ -1,15 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/screens/story_read_screen.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
 void main() {
-  final timestamp = Timestamp.fromMillisecondsSinceEpoch(0);
+  final timestamp = DateTime.fromMillisecondsSinceEpoch(0);
 
   Story buildStory({String? title}) => Story(
         id: 'story-1',

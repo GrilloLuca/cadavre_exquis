@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 
 const _holder = 'holder@example.com';
@@ -16,7 +16,7 @@ Story _story({String? lockedBy = _holder, DateTime? lockedAt}) => Story(
       currentPosition: kStoryPositions.first,
       parts: const [],
       lockedBy: lockedBy,
-      lockedAt: lockedAt == null ? null : Timestamp.fromDate(lockedAt),
+      lockedAt: lockedAt,
     );
 
 void main() {

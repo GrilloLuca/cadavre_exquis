@@ -4,7 +4,7 @@ import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/services/age_check_service.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';

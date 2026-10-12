@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/private_room.dart';
-import 'package:cadavre_exquisite/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';

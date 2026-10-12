@@ -3,8 +3,8 @@ import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/author_name.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/author_name.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
 class StoryReadScreen extends StatefulWidget {

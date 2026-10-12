@@ -2,7 +2,7 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/screens/create_private_room_screen.dart';
 import 'package:cadavre_exquisite/screens/join_private_room_screen.dart';
 

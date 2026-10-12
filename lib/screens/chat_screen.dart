@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/ui/core/position_label.dart';
 import 'package:cadavre_exquisite/services/story_service.dart';
 
 /// Chat screen used to write the next part of a single incomplete story.

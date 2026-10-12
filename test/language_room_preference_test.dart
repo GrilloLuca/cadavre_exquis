@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:cadavre_exquisite/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
 
 Future<LanguageRoomPreference> _preference({

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cadavre_exquisite/models/story.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_firestore_mapping.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
 
 enum StoryServiceErrorCode {
   alreadyCompleted,
@@ -51,7 +52,7 @@ class StoryService {
   }) {
     return _roomQuery('incomplete', language: language, roomId: roomId)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList());
+        .map((snapshot) => snapshot.docs.map(storyFromSnapshot).toList());
   }
 
   /// Completed stories of the room that the AI review has already judged,
@@ -71,7 +72,7 @@ class StoryService {
     return _roomQuery('complete', language: language, roomId: roomId)
         .where('mature', whereIn: [false, true])
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(Story.fromSnapshot).toList()
+        .map((snapshot) => snapshot.docs.map(storyFromSnapshot).toList()
           ..sort(Story.compareByCompletedAtDesc));
   }
 
@@ -113,7 +114,7 @@ class StoryService {
     final docRef = _stories.doc(storyId);
     return _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
-      final story = Story.fromSnapshot(snapshot);
+      final story = storyFromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
         throw const StoryServiceException(
@@ -144,7 +145,7 @@ class StoryService {
     final docRef = _stories.doc(storyId);
     return _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
-      final story = Story.fromSnapshot(snapshot);
+      final story = storyFromSnapshot(snapshot);
 
       if (story.lockedBy == authorEmail) {
         transaction.update(docRef, {'lockedBy': null, 'lockedAt': null});
@@ -166,7 +167,7 @@ class StoryService {
     final docRef = _stories.doc(storyId);
     return _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
-      final story = Story.fromSnapshot(snapshot);
+      final story = storyFromSnapshot(snapshot);
 
       if (story.status != 'incomplete') {
         throw const StoryServiceException(
@@ -187,13 +188,13 @@ class StoryService {
         position: expectedPosition,
         text: text,
         author: authorEmail,
-        timestamp: Timestamp.now(),
+        timestamp: DateTime.now(),
       );
       final updatedParts = [...story.parts, newPart];
       final next = nextPosition(expectedPosition);
 
       transaction.update(docRef, {
-        'parts': updatedParts.map((p) => p.toMap()).toList(),
+        'parts': updatedParts.map(storyPartToMap).toList(),
         'currentPosition': next ?? expectedPosition,
         'status': next == null ? 'complete' : 'incomplete',
         'lockedBy': null,

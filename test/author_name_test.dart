@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cadavre_exquisite/models/author_name.dart';
+import 'package:cadavre_exquisite/domain/models/author_name.dart';
 
 void main() {
   group('maskEmail', () {

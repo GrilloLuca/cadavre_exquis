@@ -1,8 +1,8 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/models/private_room.dart';
-import 'package:cadavre_exquisite/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/incomplete_stories_screen.dart';

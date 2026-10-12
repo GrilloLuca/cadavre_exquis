@@ -100,7 +100,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [ ] Decide D2 (domain layer scope)
 
 ### Phase 1: data layer and models (2–3 PRs)
-- [ ] Pure-Dart models: `Timestamp` → `DateTime`, Firestore mapping moved into repositories; `positionLabel` → `ui/core`
+- [x] Pure-Dart models in `lib/domain/models/`: `Timestamp` → `DateTime`; Firestore mapping in `data/repositories/story/story_firestore_mapping.dart` (used by `StoryService` until it becomes the repository); `positionLabel` → `ui/core/position_label.dart`
 - [ ] Abstract repositories + Firestore impls from current services (move logic, don't rewrite); make `PrivateRoomService`/`AuthService` injectable
 - [ ] Fakes in `testing/fakes/`; service tests become repository tests
 
@@ -136,3 +136,4 @@ Per feature: ViewModel unit tests with fakes; update existing widget tests (`acc
 ## Progress log
 - 2026-10-12: architecture analysis and roadmap written (this file). D1 decided: keep coded exceptions.
 - 2026-10-12: Phase 0 on `feature/mvvm-migration`: `provider` added, `Command` utility, shared UI moved to `lib/ui/core/`. No behaviour change; analyze clean, all tests green. D2 still to decide.
+- 2026-10-12: Phase 1, step 1: models moved to `lib/domain/models/` and made pure Dart (no Firestore, no Flutter). No behaviour change; analyze clean, all tests green.
