@@ -67,14 +67,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String privateRoomLeftSnackbar(String name) {
-    return 'You left “$name”.';
-  }
-
-  @override
-  String get undoButton => 'Undo';
-
-  @override
   String roomIndicatorLanguage(String language) {
     return 'Room: $language. Change it in Profile.';
   }

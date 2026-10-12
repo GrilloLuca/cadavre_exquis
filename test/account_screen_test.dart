@@ -538,7 +538,7 @@ void main() {
       );
     });
 
-    testWidgets('Leave clears the private room and Undo restores it',
+    testWidgets('Leave clears the private room without a message',
         (tester) async {
       final calls = <PrivateRoom?>[];
       await pumpRoomCard(tester, privateRoom: room, privateRoomCalls: calls);
@@ -548,14 +548,8 @@ void main() {
       expect(calls, [null]);
       expect(notice(), findsNothing);
       expect(leaveButton(), findsNothing);
-      expect(find.text('Hai lasciato “Gli Amici”.'), findsOneWidget);
       expect(trailingOf('Italiano', Icons.check_circle), findsOneWidget);
-
-      await tester.tap(find.widgetWithText(SnackBarAction, 'Annulla'));
-      await tester.pumpAndSettle();
-
-      expect(calls, [null, same(room)]);
-      expect(notice(), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     testWidgets('tapping a language in a private room leaves it',
@@ -575,15 +569,7 @@ void main() {
       expect(notice(), findsNothing);
       expect(leaveButton(), findsNothing);
       expect(trailingOf('Español', Icons.check_circle), findsOneWidget);
-      expect(find.text('Hai lasciato “Gli Amici”.'), findsOneWidget);
-
-      // Undo goes back into the room; the new language is kept for later.
-      await tester.tap(find.widgetWithText(SnackBarAction, 'Annulla'));
-      await tester.pumpAndSettle();
-
-      expect(roomCalls, [same(room)]);
-      expect(notice(), findsOneWidget);
-      expect(trailingOf('Español', Icons.check), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     testWidgets('fits a 320dp screen at 2x text', (tester) async {

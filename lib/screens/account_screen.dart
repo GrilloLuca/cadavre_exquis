@@ -387,12 +387,9 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   /// Picks a language room. Like the old room menu, this also leaves the
-  /// private room (the home screen clears it); the snackbar's Undo goes
-  /// back into it.
+  /// private room (the home screen clears it).
   void _selectLanguage(String code) {
-    final leftRoom = widget.privateRoom;
     widget.onLanguageChanged?.call(code);
-    if (leftRoom != null) _showLeftPrivateRoom(leftRoom);
   }
 
   Future<void> _openPrivateRoomPicker() async {
@@ -410,27 +407,8 @@ class _AccountScreenState extends State<AccountScreen> {
       );
   }
 
-  void _leavePrivateRoom(PrivateRoom room) {
+  void _leavePrivateRoom() {
     widget.onPrivateRoomChanged?.call(null);
-    _showLeftPrivateRoom(room);
-  }
-
-  /// Confirms leaving [room], with an Undo that rejoins it without asking
-  /// for the password again.
-  void _showLeftPrivateRoom(PrivateRoom room) {
-    final l10n = AppLocalizations.of(context)!;
-    final onPrivateRoomChanged = widget.onPrivateRoomChanged;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(l10n.privateRoomLeftSnackbar(room.name)),
-          action: SnackBarAction(
-            label: l10n.undoButton,
-            onPressed: () => onPrivateRoomChanged?.call(room),
-          ),
-        ),
-      );
   }
 
   Widget _buildLanguageRow(StoryLanguage language) {
@@ -656,7 +634,7 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
                 child: TextButton.icon(
-                  onPressed: () => _leavePrivateRoom(privateRoom),
+                  onPressed: _leavePrivateRoom,
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryDark,
                   ),

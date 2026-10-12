@@ -53,19 +53,6 @@
       }
     }
   },
-  "privateRoomLeftSnackbar": "Hai lasciato “{name}”.",
-  "@privateRoomLeftSnackbar": {
-    "description": "Snackbar after leaving a private room; offers Undo.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "undoButton": "Annulla",
-  "@undoButton": {
-    "description": "Snackbar action that undoes leaving a private room."
-  },
   "roomIndicatorLanguage": "Stanza: {language}. Cambiala nel Profilo.",
   "@roomIndicatorLanguage": {
     "description": "Tooltip and screen-reader label of the app bar room indicator in a language room; language is the room's native name.",
