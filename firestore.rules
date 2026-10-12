@@ -27,38 +27,57 @@ service cloud.firestore {
         return parts.size() > 0 && parts[parts.size() - 1].author == myEmail();
       }
 
+      // A lock holds for 1 hour (Story.lockDuration). One without
+      // `lockedAt`, taken by an app version older than lock expiry, counts
+      // as expired.
+      function lockExpired() {
+        return resource.data.get('lockedAt', null) == null
+          || request.time >= resource.data.lockedAt + duration.value(1, 'h');
+      }
+
       function freeForMe() {
         return resource.data.get('lockedBy', null) == null
-          || resource.data.lockedBy == myEmail();
+          || resource.data.lockedBy == myEmail()
+          || lockExpired();
       }
 
       // createStory
       function isValidCreate() {
         let d = request.resource.data;
         return d.keys().hasOnly(['status', 'currentPosition', 'parts',
-              'lockedBy', 'language', 'roomId', 'createdAt', 'updatedAt'])
+              'lockedBy', 'lockedAt', 'language', 'roomId', 'createdAt',
+              'updatedAt'])
           && d.status == 'incomplete'
           && d.currentPosition == positions()[0]
           && d.parts == []
           && d.lockedBy == null
+          && d.get('lockedAt', null) == null
           && d.language is string
           && (d.get('roomId', null) == null || exists(/databases/$(database)/documents/privateRooms/$(d.roomId)))
           && d.createdAt == request.time
           && d.updatedAt == request.time;
       }
 
-      // lockStory / unlockStory: only `lockedBy` changes.
+      // lockStory / unlockStory: only `lockedBy` and `lockedAt` change.
+      // Older app versions write `lockedBy` alone, which is still allowed.
       function isValidLockChange() {
         let newLock = request.resource.data.lockedBy;
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lockedBy'])
+        let newLockedAt = request.resource.data.get('lockedAt', null);
+        let lockedAtChanged = request.resource.data.diff(resource.data)
+          .affectedKeys().hasAny(['lockedAt']);
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lockedBy', 'lockedAt'])
           && (
-            // lock: story still open, not held by someone else, not my second turn in a row
+            // lock: story still open, not held by someone else (or held but
+            // expired), not my second turn in a row; `lockedAt` is now
             (newLock == myEmail()
               && resource.data.status == 'incomplete'
               && freeForMe()
-              && !wroteLastPart(resource.data.parts))
+              && !wroteLastPart(resource.data.parts)
+              && (!lockedAtChanged || newLockedAt == request.time))
             // unlock: only the holder can release it
-            || (newLock == null && resource.data.get('lockedBy', null) == myEmail())
+            || (newLock == null
+              && resource.data.get('lockedBy', null) == myEmail()
+              && (!lockedAtChanged || newLockedAt == null))
           );
       }
 
@@ -71,7 +90,8 @@ service cloud.firestore {
         let part = after.parts[n];
         let isLast = n == positions().size() - 1;
         return after.diff(before).affectedKeys()
-              .hasOnly(['parts', 'currentPosition', 'status', 'lockedBy', 'updatedAt'])
+              .hasOnly(['parts', 'currentPosition', 'status', 'lockedBy',
+                'lockedAt', 'updatedAt'])
           && before.status == 'incomplete'
           && n < positions().size()
           && before.currentPosition == positions()[n]
@@ -91,6 +111,9 @@ service cloud.firestore {
           && after.currentPosition == (isLast ? positions()[n] : positions()[n + 1])
           && after.status == (isLast ? 'complete' : 'incomplete')
           && after.lockedBy == null
+          // Cleared, or left as is by older app versions.
+          && (!after.diff(before).affectedKeys().hasAny(['lockedAt'])
+            || after.lockedAt == null)
           && after.updatedAt == request.time;
       }
 

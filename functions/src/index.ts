@@ -244,6 +244,7 @@ export const anonymizeDeletedUser = functionsV1
       const lockedBy = doc.get("lockedBy");
       if (typeof lockedBy === "string" && lockedBy.trim().toLowerCase() === key) {
         fields.lockedBy = null;
+        fields.lockedAt = null;
       }
       if (Object.keys(fields).length === 0) continue;
       storyCount++;

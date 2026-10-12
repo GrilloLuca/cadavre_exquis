@@ -71,6 +71,12 @@ class Story {
   final String currentPosition;
   final List<StoryPart> parts;
   final String? lockedBy;
+
+  /// When [lockedBy] took the lock. Null for an unlocked story, and for
+  /// locks taken by app versions older than lock expiry, which count as
+  /// expired (see [isLockExpired]).
+  final Timestamp? lockedAt;
+
   final String language;
 
   /// Id of the private room this story belongs to, or null for a story in
@@ -92,6 +98,7 @@ class Story {
     required this.currentPosition,
     required this.parts,
     this.lockedBy,
+    this.lockedAt,
     this.language = kDefaultStoryLanguage,
     this.roomId,
     this.title,
@@ -108,6 +115,7 @@ class Story {
           .map((p) => StoryPart.fromMap(p as Map<String, dynamic>))
           .toList(),
       lockedBy: data['lockedBy'] as String?,
+      lockedAt: data['lockedAt'] as Timestamp?,
       language: data['language'] as String? ?? kDefaultStoryLanguage,
       roomId: data['roomId'] as String?,
       title: data['title'] as String?,
@@ -149,8 +157,24 @@ class Story {
   bool hasPartBy(String? email) =>
       email != null && parts.any((part) => part.author == email);
 
-  /// Whether the story is currently locked by a different user than [email].
-  bool isLockedFor(String? email) => lockedBy != null && lockedBy != email;
+  /// How long a lock holds. A player who leaves the app mid-turn (or whose
+  /// unlock fails) blocks the story at most this long. Must match
+  /// `lockExpired()` in firestore.rules.
+  static const Duration lockDuration = Duration(hours: 1);
+
+  /// Whether the lock is older than [lockDuration], so anyone may take it.
+  /// A lock without [lockedAt] (taken by an older app version) is expired.
+  /// [now] defaults to the current time; tests pass a fixed one.
+  bool isLockExpired({DateTime? now}) {
+    final at = lockedAt;
+    if (at == null) return true;
+    return !(now ?? DateTime.now()).isBefore(at.toDate().add(lockDuration));
+  }
+
+  /// Whether the story is currently locked by a different user than [email]
+  /// and the lock hasn't expired.
+  bool isLockedFor(String? email, {DateTime? now}) =>
+      lockedBy != null && lockedBy != email && !isLockExpired(now: now);
 
   /// Last 5 words of the most recently written part, shown as a preview
   /// to the next player. Empty if no part has been written yet.

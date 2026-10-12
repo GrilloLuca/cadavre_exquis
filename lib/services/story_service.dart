@@ -17,10 +17,13 @@ class StoryServiceException implements Exception {
 }
 
 class StoryService {
-  StoryService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  /// [now] decides whether a lock has expired; tests pass a fixed clock.
+  StoryService({FirebaseFirestore? firestore, DateTime Function()? now})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _now = now ?? DateTime.now;
 
   final FirebaseFirestore _firestore;
+  final DateTime Function() _now;
 
   CollectionReference<Map<String, dynamic>> get _stories =>
       _firestore.collection('stories');
@@ -80,6 +83,7 @@ class StoryService {
       'currentPosition': kStoryPositions.first,
       'parts': [],
       'lockedBy': null,
+      'lockedAt': null,
       'language': language,
       'roomId': roomId,
       'createdAt': FieldValue.serverTimestamp(),
@@ -96,10 +100,12 @@ class StoryService {
   }
 
   /// Exclusively locks the story for [authorEmail] so no one else can open
-  /// or edit it while they're writing their part. Throws a
-  /// [StoryServiceException] if the story was completed, already has a lock
-  /// held by someone else, or the author wrote the immediately preceding
-  /// part (two consecutive turns by the same author aren't allowed).
+  /// or edit it while they're writing their part. The lock expires after
+  /// [Story.lockDuration], so an abandoned turn doesn't block the story
+  /// forever. Throws a [StoryServiceException] if the story was completed,
+  /// has an unexpired lock held by someone else, or the author wrote the
+  /// immediately preceding part (two consecutive turns by the same author
+  /// aren't allowed).
   Future<void> lockStory({
     required String storyId,
     required String authorEmail,
@@ -117,11 +123,14 @@ class StoryService {
         throw const StoryServiceException(
             StoryServiceErrorCode.consecutiveTurnNotAllowed);
       }
-      if (story.isLockedFor(authorEmail)) {
+      if (story.isLockedFor(authorEmail, now: _now())) {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
 
-      transaction.update(docRef, {'lockedBy': authorEmail});
+      transaction.update(docRef, {
+        'lockedBy': authorEmail,
+        'lockedAt': FieldValue.serverTimestamp(),
+      });
     });
   }
 
@@ -138,7 +147,7 @@ class StoryService {
       final story = Story.fromSnapshot(snapshot);
 
       if (story.lockedBy == authorEmail) {
-        transaction.update(docRef, {'lockedBy': null});
+        transaction.update(docRef, {'lockedBy': null, 'lockedAt': null});
       }
     });
   }
@@ -166,7 +175,7 @@ class StoryService {
       if (story.currentPosition != expectedPosition) {
         throw const StoryServiceException(StoryServiceErrorCode.positionTaken);
       }
-      if (story.isLockedFor(authorEmail)) {
+      if (story.isLockedFor(authorEmail, now: _now())) {
         throw const StoryServiceException(StoryServiceErrorCode.lockedByOther);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
@@ -188,6 +197,7 @@ class StoryService {
         'currentPosition': next ?? expectedPosition,
         'status': next == null ? 'complete' : 'incomplete',
         'lockedBy': null,
+        'lockedAt': null,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
