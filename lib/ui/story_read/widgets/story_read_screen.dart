@@ -3,43 +3,46 @@ import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/domain/models/author_name.dart';
-import 'package:cadavre_exquisite/domain/models/story.dart';
+
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/ui/story_read/view_models/story_read_view_model.dart';
 
+/// Reads a completed [story]. Parts show right away with masked authors;
+/// nicknames replace them once loaded. Creates its ViewModel once, in
+/// `initState` (see `ChatScreen`), and disposes it.
 class StoryReadScreen extends StatefulWidget {
+  const StoryReadScreen({super.key, required this.story});
+
   final Story story;
-
-  /// Source of the authors' nicknames; injectable for tests.
-  final UserProfileRepository? profileRepository;
-
-  const StoryReadScreen(
-      {super.key, required this.story, this.profileRepository});
 
   @override
   State<StoryReadScreen> createState() => _StoryReadScreenState();
 }
 
 class _StoryReadScreenState extends State<StoryReadScreen> {
-  /// Authors' nicknames, fetched once. Never fails: a failed lookup simply
-  /// leaves that author without a nickname.
-  late final Future<Map<String, String>> _nicknames;
+  late final StoryReadViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    final service =
-        widget.profileRepository ?? context.read<UserProfileRepository>();
-    _nicknames = service
-        .nicknamesFor(widget.story.parts.map((p) => p.author))
-        .catchError((Object _) => const <String, String>{});
+    _viewModel = StoryReadViewModel(
+      story: widget.story,
+      profileRepository: context.read<UserProfileRepository>(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final story = widget.story;
+    final story = _viewModel.story;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,11 +60,9 @@ class _StoryReadScreenState extends State<StoryReadScreen> {
               padding: const EdgeInsets.all(20.0),
               // Parts render immediately with the masked-email fallback;
               // nicknames replace it once they arrive.
-              child: FutureBuilder<Map<String, String>>(
-                future: _nicknames,
-                initialData: const <String, String>{},
-                builder: (context, snapshot) {
-                  final nicknames = snapshot.data ?? const <String, String>{};
+              child: ListenableBuilder(
+                listenable: _viewModel.loadNicknames,
+                builder: (context, _) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -96,10 +97,7 @@ class _StoryReadScreenState extends State<StoryReadScreen> {
                         const SizedBox(height: 4.0),
                         Text(
                           l10n.storyPartAuthor(
-                            authorDisplayName(
-                                  nickname: nicknames[part.author],
-                                  email: part.author,
-                                ) ??
+                            _viewModel.authorNameOf(part) ??
                                 l10n.anonymousAuthor,
                           ),
                           textAlign: TextAlign.right,

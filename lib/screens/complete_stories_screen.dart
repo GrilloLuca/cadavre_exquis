@@ -10,10 +10,9 @@ import 'package:cadavre_exquisite/data/repositories/age_check/age_check_reposito
 import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/email_key.dart';
 import 'package:cadavre_exquisite/screens/age_check_screen.dart';
-import 'package:cadavre_exquisite/screens/story_read_screen.dart';
+import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 
 /// Non-story rows in the complete stories list.
 enum _ListMarker { yourStoriesHeading, divider }
@@ -43,10 +42,6 @@ class CompleteStoriesScreen extends StatefulWidget {
   /// in tests.
   final AgeCheckRepository? ageCheckRepository;
 
-  /// Passed to [StoryReadScreen] for the authors' nicknames; injectable for
-  /// tests.
-  final UserProfileRepository? profileRepository;
-
   /// Email of the signed-in user. Defaults to [AuthRepository.currentEmail];
   /// when provided, [AuthRepository] is never read.
   final String? email;
@@ -58,7 +53,6 @@ class CompleteStoriesScreen extends StatefulWidget {
     this.storyRepository,
     this.ageGate,
     this.ageCheckRepository,
-    this.profileRepository,
     this.email,
   });
 
@@ -168,10 +162,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => StoryReadScreen(
-          story: story,
-          profileRepository: widget.profileRepository,
-        ),
+        builder: (_) => StoryReadScreen(story: story),
       ),
     );
   }
