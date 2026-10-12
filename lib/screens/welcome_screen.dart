@@ -50,32 +50,32 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return Scaffold(
       body: Background(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 200),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Hero(
-                    tag: "logo",
-                    child: SizedBox(
-                      height: animation.value * 100,
-                      child: Image.asset('images/logo.png'),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Cadavre Exquisite',
-                      style: TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 36.0,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   children: <Widget>[
+              //     Hero(
+              //       tag: "logo",
+              //       child: SizedBox(
+              //         height: animation.value * 100,
+              //         child: Image.asset('images/logo.png'),
+              //       ),
+              //     ),
+              //     Expanded(
+              //       child: Text(
+              //         'Cadavre Exquisite',
+              //         style: TextStyle(
+              //           color: AppColors.ink,
+              //           fontSize: 36.0,
+              //           fontWeight: FontWeight.w900,
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
               SizedBox(
                 height: 48.0,
               ),

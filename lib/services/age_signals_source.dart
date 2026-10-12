@@ -67,10 +67,13 @@ class PluginAgeSignalsSource implements AgeSignalsSource {
   /// failed initialization is forgotten so the next check retries it.
   Future<void> _ensureInitialized() {
     return _initialization ??=
-        _plugin.initialize(ageGates: ageGates).catchError((Object error) {
-      _initialization = null;
-      throw error;
-    });
+        _plugin.initialize(ageGates: ageGates).catchError(
+      (Object error, StackTrace stackTrace) {
+        _initialization = null;
+        // Keep the plugin's stack trace rather than starting a new one here.
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
   }
 
   @override

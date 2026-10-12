@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cadavre_exquisite/app_colors.dart';
 import 'package:cadavre_exquisite/background.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -66,7 +68,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_lockAcquired) {
       final email = FirebaseAuth.instance.currentUser?.email;
       if (email != null) {
-        _storyService.unlockStory(storyId: widget.story.id, authorEmail: email);
+        // Fire and forget: dispose can't wait. A failure (e.g. offline) must
+        // not surface as an uncaught async error; the lock stays until the
+        // next unlock attempt.
+        unawaited(_storyService
+            .unlockStory(storyId: widget.story.id, authorEmail: email)
+            .catchError((Object _) {}));
       }
     }
     super.dispose();
@@ -190,7 +197,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: SafeArea(
                       top: false,
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: <Widget>[
                           Expanded(
                             child: TextField(

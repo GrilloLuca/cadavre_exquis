@@ -310,7 +310,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
                       endIndent: 8.0,
                       color: AppColors.primaryDark,
                     );
-                  case Story story:
+                  case final Story story:
                     return _buildStoryCard(context, story);
                   default:
                     throw StateError('Unexpected list item: $item');
