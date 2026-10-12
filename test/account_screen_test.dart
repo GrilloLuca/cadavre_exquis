@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/models/private_room.dart';
+import 'package:cadavre_exquisite/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
+import 'package:cadavre_exquisite/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
@@ -257,5 +260,272 @@ void main() {
     await tapSave(tester);
     expect(find.text('Nickname salvato.'), findsOneWidget);
     expect(storedProfiles()[_docId]?['nickname'], 'Luca');
+  });
+
+  group('Room card', () {
+    const room = PrivateRoom(id: 'gli amici', name: 'Gli Amici');
+
+    /// Pumps the screen inside a host that owns the room state the way the
+    /// home screen does: picking a language also leaves the private room.
+    Future<void> pumpRoomCard(
+      WidgetTester tester, {
+      String? email,
+      String languageCode = 'it',
+      RoomLanguageSource languageSource = RoomLanguageSource.explicit,
+      PrivateRoom? privateRoom,
+      List<String>? languageCalls,
+      List<PrivateRoom?>? privateRoomCalls,
+    }) async {
+      var currentLanguage = languageCode;
+      var currentSource = languageSource;
+      var currentRoom = privateRoom;
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('it'),
+        home: StatefulBuilder(
+          builder: (context, setState) => AccountScreen(
+            profileService: UserProfileService(firestore: firestore),
+            email: email,
+            currentEmail: () => null,
+            languageCode: currentLanguage,
+            languageSource: currentSource,
+            privateRoom: currentRoom,
+            onLanguageChanged: (code) {
+              languageCalls?.add(code);
+              setState(() {
+                currentLanguage = code;
+                currentSource = RoomLanguageSource.explicit;
+                currentRoom = null;
+              });
+            },
+            onPrivateRoomChanged: (value) {
+              privateRoomCalls?.add(value);
+              setState(() => currentRoom = value);
+            },
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    Finder languageRow(String nativeName) =>
+        find.widgetWithText(ListTile, nativeName);
+    Finder notice() => find.text(
+        'Sei nella stanza privata “Gli Amici”. La stanza della lingua è in '
+        'pausa finché non esci.');
+    Finder leaveButton() => find.text('Esci dalla stanza privata');
+    Finder trailingOf(String nativeName, IconData icon) => find.descendant(
+        of: languageRow(nativeName), matching: find.byIcon(icon));
+
+    Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+      await tester.ensureVisible(finder);
+      await tester.pumpAndSettle();
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('renders without an email or profile', (tester) async {
+      await pumpRoomCard(tester);
+
+      expect(find.text('Stanza'), findsOneWidget);
+      expect(find.text('Stanza della lingua'), findsOneWidget);
+      for (final language in kStoryLanguages) {
+        expect(languageRow(language.nativeName), findsOneWidget);
+      }
+      expect(find.text('Stanza privata'), findsOneWidget);
+      expect(field(), findsNothing);
+      expect(find.text('Elimina account'), findsNothing);
+    });
+
+    testWidgets('is shown below the nickname card when signed in',
+        (tester) async {
+      await pumpRoomCard(tester, email: _email);
+
+      expect(field(), findsOneWidget);
+      expect(find.text('Stanza'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Stanza')).dy,
+        greaterThan(tester.getTopLeft(saveButton()).dy),
+      );
+    });
+
+    testWidgets('marks exactly the current language as selected',
+        (tester) async {
+      await pumpRoomCard(tester, languageCode: 'es');
+
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(trailingOf('Español', Icons.check_circle), findsOneWidget);
+      expect(
+        tester.getSemantics(languageRow('Español')),
+        isSemantics(
+          label: 'Español',
+          isButton: true,
+          hasCheckedState: true,
+          isChecked: true,
+          isInMutuallyExclusiveGroup: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(languageRow('English')),
+        isSemantics(
+          label: 'English',
+          isButton: true,
+          hasCheckedState: true,
+          isChecked: false,
+          isInMutuallyExclusiveGroup: true,
+          hasTapAction: true,
+        ),
+      );
+    });
+
+    testWidgets('selecting a language invokes the callback', (tester) async {
+      final calls = <String>[];
+      await pumpRoomCard(
+        tester,
+        languageSource: RoomLanguageSource.detected,
+        languageCalls: calls,
+      );
+      expect(find.text('Scelta in base alla lingua del dispositivo.'),
+          findsOneWidget);
+
+      await tapVisible(tester, languageRow('Français'));
+
+      expect(calls, ['fr']);
+      expect(trailingOf('Français', Icons.check_circle), findsOneWidget);
+      // An explicit choice ends auto mode, so the caption goes away.
+      expect(find.text('Scelta in base alla lingua del dispositivo.'),
+          findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('tapping the auto-detected language stores it explicitly',
+        (tester) async {
+      final calls = <String>[];
+      await pumpRoomCard(
+        tester,
+        languageSource: RoomLanguageSource.detected,
+        languageCalls: calls,
+      );
+
+      await tapVisible(tester, languageRow('Italiano'));
+
+      expect(calls, ['it']);
+      expect(find.text('Scelta in base alla lingua del dispositivo.'),
+          findsNothing);
+    });
+
+    testWidgets('explains the English fallback', (tester) async {
+      await pumpRoomCard(
+        tester,
+        languageCode: 'en',
+        languageSource: RoomLanguageSource.fallback,
+      );
+
+      expect(
+        find.text('Non c\'è ancora una stanza nella lingua del dispositivo, '
+            'quindi sei in quella inglese.'),
+        findsOneWidget,
+      );
+      expect(find.text('Scelta in base alla lingua del dispositivo.'),
+          findsNothing);
+    });
+
+    testWidgets('an explicit choice shows no caption', (tester) async {
+      await pumpRoomCard(tester);
+
+      expect(find.byIcon(Icons.smartphone), findsNothing);
+    });
+
+    testWidgets('shows the private room with its notice and Leave',
+        (tester) async {
+      await pumpRoomCard(tester, languageCode: 'de', privateRoom: room);
+
+      expect(notice(), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Gli Amici'), findsOneWidget);
+      expect(leaveButton(), findsOneWidget);
+      expect(find.text('Gioca solo con gli amici che ne conoscono nome e '
+          'password.'), findsNothing);
+      // The language rows show the room the user goes back to, without the
+      // "you are here" fill and check.
+      expect(find.byIcon(Icons.check_circle), findsNothing);
+      expect(trailingOf('Deutsch', Icons.check), findsOneWidget);
+      expect(
+        tester.widget<ListTile>(languageRow('Deutsch')).tileColor,
+        isNull,
+      );
+    });
+
+    testWidgets('Leave clears the private room and Undo restores it',
+        (tester) async {
+      final calls = <PrivateRoom?>[];
+      await pumpRoomCard(tester, privateRoom: room, privateRoomCalls: calls);
+
+      await tapVisible(tester, leaveButton());
+
+      expect(calls, [null]);
+      expect(notice(), findsNothing);
+      expect(leaveButton(), findsNothing);
+      expect(find.text('Hai lasciato “Gli Amici”.'), findsOneWidget);
+      expect(trailingOf('Italiano', Icons.check_circle), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Annulla'));
+      await tester.pumpAndSettle();
+
+      expect(calls, [null, same(room)]);
+      expect(notice(), findsOneWidget);
+    });
+
+    testWidgets('tapping a language in a private room leaves it',
+        (tester) async {
+      final languageCalls = <String>[];
+      final roomCalls = <PrivateRoom?>[];
+      await pumpRoomCard(
+        tester,
+        privateRoom: room,
+        languageCalls: languageCalls,
+        privateRoomCalls: roomCalls,
+      );
+
+      await tapVisible(tester, languageRow('Español'));
+
+      expect(languageCalls, ['es']);
+      expect(notice(), findsNothing);
+      expect(leaveButton(), findsNothing);
+      expect(trailingOf('Español', Icons.check_circle), findsOneWidget);
+      expect(find.text('Hai lasciato “Gli Amici”.'), findsOneWidget);
+
+      // Undo goes back into the room; the new language is kept for later.
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Annulla'));
+      await tester.pumpAndSettle();
+
+      expect(roomCalls, [same(room)]);
+      expect(notice(), findsOneWidget);
+      expect(trailingOf('Español', Icons.check), findsOneWidget);
+    });
+
+    testWidgets('fits a 320dp screen at 2x text', (tester) async {
+      tester.view.physicalSize = const Size(320.0, 640.0);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pumpRoomCard(
+        tester,
+        email: _email,
+        languageSource: RoomLanguageSource.fallback,
+        privateRoom: const PrivateRoom(
+          id: 'una stanza dal nome davvero molto lungo',
+          name: 'Una stanza dal nome davvero molto lungo',
+        ),
+      );
+      await tester.ensureVisible(leaveButton());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(leaveButton(), findsOneWidget);
+    });
   });
 }

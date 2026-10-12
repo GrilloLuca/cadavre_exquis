@@ -36,7 +36,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordTooShort => 'Password must be at least 6 characters.';
 
   @override
-  String get languageRoomTooltip => 'Choose the language room';
+  String get roomSectionTitle => 'Room';
+
+  @override
+  String get roomSectionDescription =>
+      'You only see and write stories in the room you\'re in.';
+
+  @override
+  String get languageRoomHeading => 'Language room';
+
+  @override
+  String get languageRoomAutoDetected => 'Picked from your device language.';
+
+  @override
+  String get languageRoomAutoFallback =>
+      'There\'s no room in your device language yet, so you\'re in the English one.';
+
+  @override
+  String get privateRoomRowSubtitle =>
+      'Play only with friends who know its name and password.';
+
+  @override
+  String privateRoomActiveNotice(String name) {
+    return 'You\'re in the private room “$name”. The language room is paused until you leave.';
+  }
+
+  @override
+  String privateRoomJoinedSnackbar(String name) {
+    return 'You\'re now in “$name”.';
+  }
+
+  @override
+  String privateRoomLeftSnackbar(String name) {
+    return 'You left “$name”.';
+  }
+
+  @override
+  String get undoButton => 'Undo';
+
+  @override
+  String roomIndicatorLanguage(String language) {
+    return 'Room: $language. Change it in Profile.';
+  }
+
+  @override
+  String roomIndicatorPrivate(String name) {
+    return 'Private room: $name. Change it in Profile.';
+  }
 
   @override
   String get homeTabIncomplete => 'Incomplete';

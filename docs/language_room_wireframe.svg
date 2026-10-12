@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" font-family="Helvetica, Arial, sans-serif">
+  <title>Language room wireframe: Account Room card (auto, private room) and AppBar indicator</title>
+  <rect width="1120" height="760" fill="#FFFFFF"/>
+
+  <!-- ============ Panel A: Account, auto-detected ============ -->
+  <text x="20" y="28" font-size="15" font-weight="bold" fill="#2E2E28">A. Account, auto-detected (es device)</text>
+  <rect x="20" y="40" width="360" height="700" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+  <circle cx="200" cy="90" r="30" fill="#5E7F55"/>
+  <text x="200" y="140" font-size="13" text-anchor="middle" fill="#666">user@example.com</text>
+  <rect x="44" y="156" width="312" height="40" rx="10" fill="#F4EEDA" stroke="#999" stroke-dasharray="4 3"/>
+  <text x="200" y="181" font-size="12" text-anchor="middle" fill="#666">nickname card (only with email)</text>
+
+  <!-- Room card -->
+  <rect x="44" y="220" width="312" height="420" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+  <text x="60" y="250" font-size="18" font-weight="bold" fill="#2E2E28">Room</text>
+  <text x="60" y="270" font-size="12" fill="#5E5C53">You only see and write stories in the</text>
+  <text x="60" y="285" font-size="12" fill="#5E5C53">room you're in.</text>
+  <text x="60" y="310" font-size="13" font-weight="bold" fill="#3F5A3A">Language room</text>
+
+  <text x="60" y="342" font-size="20">🇮🇹</text><text x="96" y="340" font-size="15" fill="#2E2E28">Italiano</text>
+  <text x="60" y="390" font-size="20">🇬🇧</text><text x="96" y="388" font-size="15" fill="#2E2E28">English</text>
+  <rect x="52" y="404" width="296" height="44" rx="10" fill="#D5E2C8"/>
+  <text x="60" y="434" font-size="20">🇪🇸</text><text x="96" y="432" font-size="15" font-weight="bold" fill="#2E2E28">Español</text>
+  <circle cx="328" cy="426" r="10" fill="#3F5A3A"/><path d="M323 426 l4 4 l7 -8" stroke="#F4EEDA" stroke-width="2" fill="none"/>
+  <text x="60" y="482" font-size="20">🇫🇷</text><text x="96" y="480" font-size="15" fill="#2E2E28">Français</text>
+  <text x="60" y="526" font-size="20">🇩🇪</text><text x="96" y="524" font-size="15" fill="#2E2E28">Deutsch</text>
+
+  <rect x="60" y="540" width="12" height="16" rx="2" fill="none" stroke="#3F5A3A"/>
+  <text x="80" y="553" font-size="12" fill="#5E5C53">Picked from your device language.</text>
+  <line x1="60" y1="570" x2="340" y2="570" stroke="#BBB"/>
+  <text x="60" y="600" font-size="16" fill="#5E7F55">🔓</text>
+  <text x="96" y="596" font-size="15" fill="#2E2E28">Private room</text>
+  <text x="96" y="614" font-size="11" fill="#5E5C53">Play only with friends who know its</text>
+  <text x="96" y="627" font-size="11" fill="#5E5C53">name and password.</text>
+  <text x="332" y="604" font-size="18" fill="#777">›</text>
+
+  <rect x="140" y="660" width="120" height="36" rx="18" fill="#FF5252"/>
+  <text x="200" y="683" font-size="13" text-anchor="middle" fill="#FFF">Logout</text>
+
+  <!-- ============ Panel B: Account, private room active ============ -->
+  <text x="400" y="28" font-size="15" font-weight="bold" fill="#2E2E28">B. Account, in a private room</text>
+  <rect x="400" y="40" width="360" height="700" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+  <text x="580" y="80" font-size="12" text-anchor="middle" fill="#666">(avatar, email, nickname card as in A)</text>
+
+  <rect x="424" y="100" width="312" height="560" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+  <text x="440" y="130" font-size="18" font-weight="bold" fill="#2E2E28">Room</text>
+  <text x="440" y="150" font-size="12" fill="#5E5C53">You only see and write stories in the</text>
+  <text x="440" y="165" font-size="12" fill="#5E5C53">room you're in.</text>
+
+  <rect x="440" y="178" width="280" height="64" rx="10" fill="#D5E2C8"/>
+  <text x="452" y="204" font-size="16">🔒</text>
+  <text x="478" y="200" font-size="12" fill="#2E2E28">You're in the private room “Book club”.</text>
+  <text x="478" y="216" font-size="12" fill="#2E2E28">The language room is paused until</text>
+  <text x="478" y="232" font-size="12" fill="#2E2E28">you leave.</text>
+
+  <text x="440" y="266" font-size="13" font-weight="bold" fill="#3F5A3A">Language room</text>
+  <g fill="#5E5C53" font-size="15">
+    <text x="440" y="298" font-size="20">🇮🇹</text><text x="476" y="296" font-weight="bold">Italiano</text>
+    <path d="M700 290 l4 4 l8 -9" stroke="#3F5A3A" stroke-width="2.5" fill="none"/>
+    <text x="440" y="342" font-size="20">🇬🇧</text><text x="476" y="340">English</text>
+    <text x="440" y="386" font-size="20">🇪🇸</text><text x="476" y="384">Español</text>
+    <text x="440" y="430" font-size="20">🇫🇷</text><text x="476" y="428">Français</text>
+    <text x="440" y="474" font-size="20">🇩🇪</text><text x="476" y="472">Deutsch</text>
+  </g>
+  <text x="560" y="500" font-size="10" fill="#999" text-anchor="middle">dimmed (ink 0.75), no fill, plain check = room you return to</text>
+
+  <line x1="440" y1="516" x2="720" y2="516" stroke="#BBB"/>
+  <text x="440" y="550" font-size="16">🔒</text>
+  <text x="476" y="546" font-size="15" font-weight="bold" fill="#2E2E28">Book club</text>
+  <text x="476" y="564" font-size="12" fill="#5E5C53">Private room</text>
+  <text x="712" y="554" font-size="18" fill="#777">›</text>
+  <text x="716" y="606" font-size="14" text-anchor="end" fill="#3F5A3A">⎋  Leave private room</text>
+  <rect x="540" y="586" width="186" height="30" rx="4" fill="none" stroke="#3F5A3A" stroke-dasharray="3 3"/>
+
+  <rect x="420" y="676" width="320" height="40" rx="4" fill="#323232"/>
+  <text x="432" y="701" font-size="12" fill="#FFF">You left “Book club”.</text>
+  <text x="728" y="701" font-size="12" text-anchor="end" fill="#C5E1A5">UNDO</text>
+  <text x="580" y="732" font-size="10" fill="#999" text-anchor="middle">snackbar after Leave</text>
+
+  <!-- ============ Panel C: AppBar indicator ============ -->
+  <text x="780" y="28" font-size="15" font-weight="bold" fill="#2E2E28">C. AppBar indicator (tabs 0/1)</text>
+
+  <text x="780" y="62" font-size="12" fill="#2E2E28">Language room</text>
+  <rect x="780" y="70" width="320" height="56" fill="#5E7F55"/>
+  <text x="796" y="104" font-size="17" fill="#FFF">Incomplete stories</text>
+  <rect x="1044" y="74" width="48" height="48" rx="24" fill="none" stroke="#FFF" stroke-dasharray="3 3"/>
+  <text x="1068" y="105" font-size="20" text-anchor="middle">🇬🇧</text>
+
+  <text x="780" y="160" font-size="12" fill="#2E2E28">Private room (width ≥ 360dp)</text>
+  <rect x="780" y="168" width="320" height="56" fill="#5E7F55"/>
+  <text x="796" y="202" font-size="17" fill="#FFF">Incomplete stories</text>
+  <rect x="960" y="172" width="136" height="48" rx="24" fill="none" stroke="#FFF" stroke-dasharray="3 3"/>
+  <circle cx="986" cy="196" r="14" fill="#F4EEDA"/><text x="986" y="201" font-size="13" text-anchor="middle">🔒</text>
+  <text x="1006" y="201" font-size="14" font-weight="bold" fill="#FFF">Book club…</text>
+
+  <text x="780" y="258" font-size="12" fill="#2E2E28">Private room (width &lt; 360dp): lock only</text>
+  <rect x="780" y="266" width="320" height="56" fill="#5E7F55"/>
+  <text x="796" y="300" font-size="17" fill="#FFF">Incomplete stories</text>
+  <rect x="1044" y="270" width="48" height="48" rx="24" fill="none" stroke="#FFF" stroke-dasharray="3 3"/>
+  <circle cx="1068" cy="294" r="14" fill="#F4EEDA"/><text x="1068" y="299" font-size="13" text-anchor="middle">🔒</text>
+
+  <g font-size="12" fill="#2E2E28">
+    <text x="780" y="360">• No dropdown arrow: it is not a menu.</text>
+    <text x="780" y="380">• Tap → switches to the Profile tab.</text>
+    <text x="780" y="400">• Target ≥ 48×48 (dashed outline).</text>
+    <text x="780" y="420">• Tooltip = semantics label, read once:</text>
+    <text x="792" y="438">“Room: English. Change it in Profile.”</text>
+    <text x="780" y="458">• Title no longer has “· room name”.</text>
+    <text x="780" y="478">• Hidden on the Profile tab.</text>
+  </g>
+</svg>
