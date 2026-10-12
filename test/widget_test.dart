@@ -9,11 +9,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
-import 'package:cadavre_exquisite/screens/welcome_screen.dart';
+import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
+
+import '../testing/fakes/repositories/fake_auth_repository.dart';
 
 /// A preference whose stored room is still being read.
 class _PendingPreference extends LanguageRoomPreference {
@@ -29,11 +34,14 @@ class _PendingPreference extends LanguageRoomPreference {
 void main() {
   testWidgets('Welcome screen shows the Google sign-in button',
       (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: WelcomeScreen(),
+    await tester.pumpWidget(ChangeNotifierProvider<AuthRepository>(
+      create: (_) => FakeAuthRepository(),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: WelcomeScreen(),
+      ),
     ));
     await tester.pumpAndSettle();
 

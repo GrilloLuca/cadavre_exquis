@@ -4,15 +4,18 @@ import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
+import 'package:cadavre_exquisite/ui/auth/view_models/login_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
+/// Email/password sign-in, offered in debug builds only. Owns [viewModel]
+/// and disposes it.
 class LoginScreen extends StatefulWidget {
   static String id = "login_screen";
 
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, required this.viewModel});
+
+  final LoginViewModel viewModel;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -21,11 +24,33 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   String email = '';
   String password = '';
-  bool showSpinner = false;
+
+  LoginViewModel get _viewModel => widget.viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.login.addListener(_onLoginChanged);
+  }
+
+  @override
+  void dispose() {
+    _viewModel.login.removeListener(_onLoginChanged);
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _viewModel.login,
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final showSpinner = _viewModel.login.running;
     return Scaffold(
       body: Background(
         child: Stack(
@@ -75,7 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ChatButton(
                     text: l10n.loginButton,
                     color: AppColors.primary,
-                    onPressed: showSpinner ? null : _signIn,
+                    onPressed: showSpinner
+                        ? null
+                        : () => _viewModel.login
+                            .execute((email: email, password: password)),
                   ),
                 ],
               ),
@@ -87,47 +115,34 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _signIn() async {
+  void _onLoginChanged() {
+    final login = _viewModel.login;
+    if (login.running) return;
     final l10n = AppLocalizations.of(context)!;
-    setState(() {
-      showSpinner = true;
-    });
-    try {
-      await context.read<AuthRepository>().signInWithEmail(
-        email: email,
-        password: password,
-      );
-      // The navigation below disposes this screen, so nothing may touch its
-      // state or context afterwards.
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        HomeScreen.id,
-        (route) => false,
-      );
-      return;
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      final message = e.code == AuthErrorCode.invalidCredentials
-          ? l10n.loginInvalidCredentials
-          : (e.message ?? l10n.loginFailed);
+    final error = login.error;
+    if (error != null) {
+      login.clearResult();
+      final message = error is AuthException
+          ? (error.code == AuthErrorCode.invalidCredentials
+              ? l10n.loginInvalidCredentials
+              : (error.message ?? l10n.loginFailed))
+          : l10n.loginFailed;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
           backgroundColor: Colors.red,
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.loginFailed),
-          backgroundColor: Colors.red,
-        ),
+      return;
+    }
+    if (login.completed) {
+      // This disposes the screen, so nothing may touch its state or
+      // context afterwards.
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        HomeScreen.id,
+        (route) => false,
       );
     }
-    setState(() {
-      showSpinner = false;
-    });
   }
 }

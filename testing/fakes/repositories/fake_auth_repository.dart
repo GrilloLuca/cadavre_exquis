@@ -16,6 +16,14 @@ class FakeAuthRepository extends AuthRepository {
   /// behave as if the user dismissed the Google account picker.
   bool googlePickerConfirms = true;
 
+  /// When set, signing in or registering throws it.
+  Object? failWith;
+
+  void _checkFailure() {
+    final failure = failWith;
+    if (failure != null) throw failure;
+  }
+
   @override
   bool usesPassword;
 
@@ -38,6 +46,7 @@ class FakeAuthRepository extends AuthRepository {
     required String email,
     required String password,
   }) async {
+    _checkFailure();
     if (password == wrongPassword) {
       throw const AuthException(AuthErrorCode.invalidCredentials);
     }
@@ -49,6 +58,7 @@ class FakeAuthRepository extends AuthRepository {
     required String email,
     required String password,
   }) async {
+    _checkFailure();
     if (password.length < 6) {
       throw const AuthException(AuthErrorCode.weakPassword);
     }
@@ -57,6 +67,7 @@ class FakeAuthRepository extends AuthRepository {
 
   @override
   Future<bool> signInWithGoogle() async {
+    _checkFailure();
     if (!googlePickerConfirms) return false;
     _signIn('google.user@example.com');
     return true;

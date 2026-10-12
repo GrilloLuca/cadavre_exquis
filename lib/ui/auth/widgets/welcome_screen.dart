@@ -3,13 +3,18 @@ import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
-import 'package:cadavre_exquisite/screens/login_screen.dart';
+import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+/// First screen for signed-out users: Google sign-in (and email login in
+/// debug builds). It is also built directly by `AuthWrapper`, whose build
+/// runs on every auth change, so it creates its own [WelcomeViewModel]
+/// instead of receiving one.
 class WelcomeScreen extends StatefulWidget {
   static String id = "welcome_screen";
 
@@ -23,11 +28,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController controller;
   late Animation animation;
-  bool showSpinner = false;
+  late final WelcomeViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel =
+        WelcomeViewModel(authRepository: context.read<AuthRepository>());
+    _viewModel.signInWithGoogle.addListener(_onSignInChanged);
     controller = AnimationController(
       duration: Duration(seconds: 1),
       vsync: this,
@@ -42,6 +50,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   void dispose() {
+    _viewModel.signInWithGoogle.removeListener(_onSignInChanged);
+    _viewModel.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -96,21 +106,24 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               //     Navigator.pushNamed(context, RegistrationScreen.id);
               //   },
               // ),
-              showSpinner
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : ChatButton(
-                      text: AppLocalizations.of(context)!.googleSignInButton,
-                      color: Colors.white,
-                      icon: SvgPicture.asset(
-                        'images/google_g.svg',
-                        height: 20.0,
-                        width: 20.0,
+              ListenableBuilder(
+                listenable: _viewModel.signInWithGoogle,
+                builder: (context, _) => _viewModel.signInWithGoogle.running
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : ChatButton(
+                        text: AppLocalizations.of(context)!.googleSignInButton,
+                        color: Colors.white,
+                        icon: SvgPicture.asset(
+                          'images/google_g.svg',
+                          height: 20.0,
+                          width: 20.0,
+                        ),
+                        onPressed: _viewModel.signInWithGoogle.execute,
                       ),
-                      onPressed: _signInWithGoogle,
-                    ),
+              ),
             ],
           ),
         ),
@@ -118,33 +131,26 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Future<void> _signInWithGoogle() async {
-    final l10n = AppLocalizations.of(context)!;
-    setState(() {
-      showSpinner = true;
-    });
-    try {
-      final signedIn = await context.read<AuthRepository>().signInWithGoogle();
-      if (!mounted) return;
-      if (signedIn) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          HomeScreen.id,
-          (route) => false,
-        );
-        return;
-      }
-    } catch (e) {
-      if (!mounted) return;
+  void _onSignInChanged() {
+    final signIn = _viewModel.signInWithGoogle;
+    if (signIn.running) return;
+    if (signIn.error != null) {
+      signIn.clearResult();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.loginFailed),
+          content: Text(AppLocalizations.of(context)!.loginFailed),
           backgroundColor: Colors.red,
         ),
       );
+      return;
     }
-    setState(() {
-      showSpinner = false;
-    });
+    // False: the user dismissed the account picker; stay here.
+    if (signIn.completed && signIn.value == true) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        HomeScreen.id,
+        (route) => false,
+      );
+    }
   }
 }

@@ -3,15 +3,17 @@ import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
+import 'package:cadavre_exquisite/ui/auth/view_models/registration_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = "registration_screen";
 
-  const RegistrationScreen({super.key});
+  const RegistrationScreen({super.key, required this.viewModel});
+
+  /// Owned by the screen, which disposes it.
+  final RegistrationViewModel viewModel;
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -21,56 +23,67 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   String email = '';
   String password = '';
-  bool showSpinner = false;
 
-  Future<void> _register() async {
-    final l10n = AppLocalizations.of(context)!;
+  RegistrationViewModel get _viewModel => widget.viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.register.addListener(_onRegisterChanged);
+  }
+
+  @override
+  void dispose() {
+    _viewModel.register.removeListener(_onRegisterChanged);
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  void _register() {
     if (!_formKey.currentState!.validate()) return;
+    _viewModel.register.execute((email: email, password: password));
+  }
 
-    setState(() {
-      showSpinner = true;
-    });
-    try {
-      await context.read<AuthRepository>().registerWithEmail(
-        email: email,
-        password: password,
-      );
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        HomeScreen.id,
-        (route) => false,
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      final message = e.code == AuthErrorCode.weakPassword
-          ? l10n.passwordTooShort
-          : (e.message ?? l10n.registrationFailed);
+  void _onRegisterChanged() {
+    final register = _viewModel.register;
+    if (register.running) return;
+    final l10n = AppLocalizations.of(context)!;
+    final error = register.error;
+    if (error != null) {
+      register.clearResult();
+      final message = error is AuthException
+          ? (error.code == AuthErrorCode.weakPassword
+              ? l10n.passwordTooShort
+              : (error.message ?? l10n.registrationFailed))
+          : l10n.registrationFailed;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
           backgroundColor: Colors.red,
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.registrationFailed),
-          backgroundColor: Colors.red,
-        ),
-      );
+      return;
     }
-    if (mounted) {
-      setState(() {
-        showSpinner = false;
-      });
+    if (register.completed) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        HomeScreen.id,
+        (route) => false,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _viewModel.register,
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final showSpinner = _viewModel.register.running;
     return Scaffold(
       body: Stack(
         children: <Widget>[
