@@ -111,7 +111,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatFirstWriterHint =>
-      'How it works:\n• Every story has 4 parts: Introduction, Development (1/2), Development (2/2) and Epilogue. You\'re writing the Introduction.\n• The next player only sees the last 5 words of your part, so end with a good hook!\n• You can\'t write two parts in a row: after your turn, someone else has to continue.\n• While you\'re writing, the story is locked for everyone else.\n• Once the Epilogue is written, the whole story appears in the Complete tab for everyone to read.';
+      'How it works:\n• Every story has 4 parts: Introduction, Development (1/2), Development (2/2) and Epilogue. You\'re writing the Introduction.\n• The next player only sees the last 20 letters of your part, so end with a good hook!\n• You can\'t write two parts in a row: after your turn, someone else has to continue.\n• While you\'re writing, the story is locked for everyone else.\n• Once the Epilogue is written, the whole story appears in the Complete tab for everyone to read.';
 
   @override
   String get storySoFarLabel => 'So far it reads...';
@@ -119,6 +119,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String chatMessageHint(String position) {
     return 'Write here: $position...';
+  }
+
+  @override
+  String chatMinLettersCounter(int count, int min) {
+    return '$count/$min letters (spaces not counted)';
   }
 
   @override

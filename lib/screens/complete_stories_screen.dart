@@ -218,7 +218,8 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
       } else {
         _showSnackBar(AppLocalizations.of(context)!.matureStoryUnavailable);
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[CompleteStories] age check failed: $e\n$st');
       if (!mounted) return;
       _showSnackBar(AppLocalizations.of(context)!.genericError);
     } finally {

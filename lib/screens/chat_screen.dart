@@ -49,7 +49,8 @@ class _ChatScreenState extends State<ChatScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _messageFocusNode.requestFocus();
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[ChatScreen] lockStory failed: $e\n$st');
       if (!mounted) return;
       final message = _errorMessage(context, e);
       Navigator.pop(context);
@@ -72,9 +73,11 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  bool get _hasEnoughLetters => countLetters(_messageText) >= kMinPartLetters;
+
   Future<void> _submit() async {
     final email = FirebaseAuth.instance.currentUser?.email;
-    if (_messageText.trim().isEmpty || email == null || !_lockAcquired) return;
+    if (!_hasEnoughLetters || email == null || !_lockAcquired) return;
 
     setState(() => _isSending = true);
     try {
@@ -178,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             )
                           : MessageBubble(
                               sender: l10n.storySoFarLabel,
-                              text: '"...${story.lastFiveWords}"',
+                              text: '"...${story.previewTail}"',
                               isMe: false,
                             ),
                     ),
@@ -199,16 +202,25 @@ class _ChatScreenState extends State<ChatScreen> {
                               enabled: !_isSending && _lockAcquired,
                               minLines: 1,
                               maxLines: 5,
-                              onChanged: (value) => _messageText = value,
+                              onChanged: (value) =>
+                                  setState(() => _messageText = value),
                               decoration: kMessageTextFieldDecoration.copyWith(
                                 hintText: l10n
                                     .chatMessageHint(position.toLowerCase()),
+                                helperText: _hasEnoughLetters
+                                    ? null
+                                    : l10n.chatMinLettersCounter(
+                                        countLetters(_messageText),
+                                        kMinPartLetters),
                               ),
                             ),
                           ),
                           TextButton(
-                            onPressed:
-                                (_isSending || !_lockAcquired) ? null : _submit,
+                            onPressed: (_isSending ||
+                                    !_lockAcquired ||
+                                    !_hasEnoughLetters)
+                                ? null
+                                : _submit,
                             child: Text(l10n.sendButton,
                                 style: kSendButtonTextStyle),
                           ),

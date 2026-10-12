@@ -3,6 +3,17 @@ import 'package:flutter/widgets.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/story_language.dart';
 
+/// How many letters (whitespace not counted) of the previous part the next
+/// player gets to see.
+const int kPreviewLetterCount = 20;
+
+/// Minimum number of letters (whitespace not counted) a part must contain.
+const int kMinPartLetters = 20;
+
+/// Number of non-whitespace characters in [text].
+int countLetters(String text) =>
+    text.characters.where((c) => c.trim().isNotEmpty).length;
+
 const List<String> kStoryPositions = [
   'introduzione',
   'sviluppo1',
@@ -152,14 +163,19 @@ class Story {
   /// Whether the story is currently locked by a different user than [email].
   bool isLockedFor(String? email) => lockedBy != null && lockedBy != email;
 
-  /// Last 5 words of the most recently written part, shown as a preview
-  /// to the next player. Empty if no part has been written yet.
-  String get lastFiveWords {
+  /// Last [kPreviewLetterCount] letters (whitespace not counted) of the most
+  /// recently written part, shown as a preview to the next player. Empty if
+  /// no part has been written yet.
+  String get previewTail {
     if (parts.isEmpty) return '';
-    final words = parts.last.text.trim().split(RegExp(r'\s+'));
-    final lastWords =
-        words.length <= 5 ? words : words.sublist(words.length - 5);
-    return lastWords.join(' ');
+    final chars = parts.last.text.trim().characters.toList();
+    var start = chars.length;
+    var letters = 0;
+    while (start > 0 && letters < kPreviewLetterCount) {
+      start--;
+      if (chars[start].trim().isNotEmpty) letters++;
+    }
+    return chars.sublist(start).join().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   String get fullText => parts.map((p) => p.text).join('\n\n');

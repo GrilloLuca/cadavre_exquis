@@ -281,7 +281,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatFirstWriterHint.
   ///
   /// In it, this message translates to:
-  /// **'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.'**
+  /// **'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 20 lettere della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.'**
   String get chatFirstWriterHint;
 
   /// No description provided for @storySoFarLabel.
@@ -295,6 +295,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Scrivi qui: {position}...'**
   String chatMessageHint(String position);
+
+  /// No description provided for @chatMinLettersCounter.
+  ///
+  /// In it, this message translates to:
+  /// **'{count}/{min} lettere (spazi esclusi)'**
+  String chatMinLettersCounter(int count, int min);
 
   /// No description provided for @sendButton.
   ///

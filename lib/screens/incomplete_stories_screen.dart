@@ -135,7 +135,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
                               ? l10n.storyWaitingForOthers
                               : story.parts.isEmpty
                                   ? l10n.storyNotStarted
-                                  : '"...${story.lastFiveWords}"',
+                                  : '"...${story.previewTail}"',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

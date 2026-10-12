@@ -112,7 +112,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chatFirstWriterHint =>
-      'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.';
+      'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 20 lettere della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.';
 
   @override
   String get storySoFarLabel => 'Finora è stato scritto...';
@@ -120,6 +120,11 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String chatMessageHint(String position) {
     return 'Scrivi qui: $position...';
+  }
+
+  @override
+  String chatMinLettersCounter(int count, int min) {
+    return '$count/$min lettere (spazi esclusi)';
   }
 
   @override

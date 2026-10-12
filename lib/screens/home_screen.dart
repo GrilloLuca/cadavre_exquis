@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.lock_outline, size: 20.0),
+                      const Icon(Icons.lock_outline, size: 20.0, color: Colors.black),
                       const SizedBox(width: 8.0),
                       Text(l10n.privateRoomMenuItem),
                     ],
