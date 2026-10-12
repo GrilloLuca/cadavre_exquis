@@ -1,0 +1,137 @@
+# Migration to MVVM (official Flutter app architecture guide)
+
+Status: analysis done, migration not started (2026-10-12). Target: https://docs.flutter.dev/app-architecture/guide
+
+How to use this file: tick a task when its PR is merged, add a line to the [Progress log](#progress-log), and record any decision under [Decisions](#decisions). One feature per PR, no behaviour change, existing tests stay green.
+
+## 1. Current architecture (as of 2026-10-12, master `aa380ac`)
+
+A light layered architecture with **logic in `StatefulWidget`s**: no state-management library, no dependency injection, no ViewModels.
+
+```
+screens/   StatefulWidget: UI + state + logic + navigation + error mapping
+   │  instantiate directly
+   ▼
+services/  Firestore / Auth / SharedPreferences access + some domain rules
+   │
+   ▼
+models/    Story, PrivateRoom… coupled to Firestore and partly to Flutter
+```
+
+State: `setState`, `StreamBuilder`, callbacks passed down (`HomeScreen` → `AccountScreen` via `onLanguageChanged` / `onPrivateRoomChanged`). Navigation: named routes + `Navigator.push`; `AuthWrapper` listens to `FirebaseAuth.authStateChanges()`.
+
+### Already aligned with the guide (keep)
+- Services throw **coded exceptions** (`StoryServiceErrorCode`, `PrivateRoomServiceErrorCode`, `UserProfileServiceErrorCode`) and the UI maps them to l10n strings: no user-facing text in the data layer.
+- `StoryService`, `UserProfileService`, `AgeCheckService`, `AgeGate` already take injectable dependencies (`firestore`, `now`, `clock`) and are tested with `fake_cloud_firestore`.
+- `AgeGate` is effectively a domain **use case** (combines two data sources, no UI).
+- Turn rules (`wasLastWrittenBy`, `isLockedFor`) live in the model, not the UI.
+
+### Gaps
+| Problem | Where |
+|---|---|
+| Business logic in views | `chat_screen.dart` (lock acquire/release in `dispose`), `complete_stories_screen.dart` (age-gate flow), `home_screen.dart` (language room resolution, private room state) |
+| `FirebaseAuth.instance` used directly in screens | `chat_screen`, `incomplete_stories_screen`, `create_private_room_screen`, `login_screen`, `registration_screen`, `complete_stories_screen`, `account_screen` |
+| Services created inside widgets, no DI | `ChatScreen` (`StoryService()`), `IncompleteStoriesScreen`, `Join/CreatePrivateRoomScreen` (`PrivateRoomService` is not even injectable) |
+| Static services / state | `AuthService` (static only), `AgeGate._sessionSignals` static cache |
+| Models depend on data layer and UI | `Story`/`StoryPart` use `Timestamp` and `fromSnapshot`; `positionLabel(BuildContext)` is in `models/story.dart` |
+| Shared state threaded by hand | private room and language live in `_HomeScreenState` and go down via callbacks |
+| Oversized screens | `account_screen.dart` (854 lines), `complete_stories_screen.dart` (408) |
+| Folders by technical type | shared widgets (`button.dart`, `cream_card.dart`, `background.dart`, `message_bubble.dart`, `typing_indicator.dart`) at the root of `lib/` |
+
+In short: today's `services/` play the guide's **Repository** role (source of truth + rules); the screens are both **View** and **ViewModel**.
+
+## 2. Target architecture
+
+```
+lib/
+  config/dependencies.dart          # providers (DI)
+  data/
+    repositories/                   # source of truth: abstract + Firestore impl
+      story/  auth/  user_profile/  private_room/  age_check/  room/
+    services/                       # stateless wrappers over external APIs
+      age_signals_service.dart, shared_preferences_service.dart, google_sign_in_service.dart
+  domain/
+    models/                         # pure Dart (DateTime, no Firestore types)
+    use_cases/                      # ResolveAgeAccess (today's AgeGate)
+  ui/
+    core/                           # theme, AppColors, shared widgets, l10n error mapping
+    <feature>/view_models/  <feature>/widgets/
+  routing/                          # optional, go_router
+  utils/ result.dart, command.dart
+testing/fakes/                      # FakeStoryRepository, …
+```
+
+### Mapping
+| Today | Target |
+|---|---|
+| `StoryService` | `StoryRepository` (abstract) + `StoryRepositoryFirestore`. The Firestore SDK is already the "service": no extra wrapper |
+| `AuthService` (static) + `FirebaseAuth.instance` | `AuthRepository extends ChangeNotifier` (`currentUserEmail`, sign-in, `signOut`, `deleteAccount`) + `GoogleSignInService` |
+| `UserProfileService` | `UserProfileRepository`; nickname validation → `domain/` |
+| `AgeCheckService` + `AgeGate` | `AgeCheckRepository` + `ResolveAgeAccess` use case; session cache becomes per-instance, cleared on sign-out |
+| `LanguageRoomPreference` + `HomeScreen` state | `SharedPreferencesService` + `RoomRepository` (ChangeNotifier: current language + private room), removing the callbacks |
+| `PrivateRoomService` | `PrivateRoomRepository` |
+| `_XxxScreenState` with logic | `XxxViewModel extends ChangeNotifier`, async actions as `Command`s |
+
+Pilot sketch:
+
+```dart
+class ChatViewModel extends ChangeNotifier {
+  ChatViewModel({required StoryRepository stories, required AuthRepository auth, required this.story})
+      : _stories = stories, _auth = auth {
+    lock = Command0(_lock)..execute();
+    submit = Command1<void, String>(_submit);
+  }
+  late final Command0 lock;
+  late final Command1<void, String> submit;
+  bool get canWrite => _lockAcquired && !submit.running;
+  @override
+  void dispose() { if (_lockAcquired) unawaited(_stories.unlockStory(...)); super.dispose(); }
+}
+```
+
+The view listens to the commands, shows snackbars and pops on completion/error. Only widgets and navigation remain in the view.
+
+## 3. Roadmap
+
+### Phase 0: foundations (1 PR)
+- [ ] Add `provider`; add `Command0`/`Command1` (adapted from the guide's *compass_app* to catch exceptions, see D1)
+- [ ] Create `lib/{config,data,domain,ui,utils}`; move shared widgets to `ui/core/`
+- [x] Decide D1 (exceptions vs `Result`), record it below
+- [ ] Decide D2 (domain layer scope)
+
+### Phase 1: data layer and models (2–3 PRs)
+- [ ] Pure-Dart models: `Timestamp` → `DateTime`, Firestore mapping moved into repositories; `positionLabel` → `ui/core`
+- [ ] Abstract repositories + Firestore impls from current services (move logic, don't rewrite); make `PrivateRoomService`/`AuthService` injectable
+- [ ] Fakes in `testing/fakes/`; service tests become repository tests
+
+### Phase 2: auth and central DI (1 PR)
+- [ ] `AuthRepository` (ChangeNotifier) + `MultiProvider` in `main.dart`
+- [ ] `AuthWrapper` listens to `AuthRepository`; no `FirebaseAuth.instance` left under `lib/ui`
+
+### Phase 3: ViewModels, one feature per PR (simplest to riskiest)
+- [ ] `ChatScreen` (pilot: lock + submit)
+- [ ] `IncompleteStoriesScreen`
+- [ ] `JoinPrivateRoomScreen` / `CreatePrivateRoomScreen`
+- [ ] `WelcomeScreen` / `LoginScreen` / `RegistrationScreen`
+- [ ] `StoryReadScreen`
+- [ ] `HomeScreen` + `RoomRepository` (remove callbacks to Account)
+- [ ] `CompleteStoriesScreen` + `ResolveAgeAccess` use case
+- [ ] `AccountScreen` (split into sub-widgets: nickname, room, language, account deletion; one ViewModel)
+
+Per feature: ViewModel unit tests with fakes; update existing widget tests (`account_screen_test`, `mature_story_lock_test`, `story_read_screen_test`) to get dependencies via providers.
+
+### Phase 4: routing (optional)
+- [ ] `go_router` with `redirect` on `AuthRepository`; drop `AuthWrapper`, named routes, `pushNamedAndRemoveUntil` on sign-out/delete
+
+### Phase 5: cleanup
+- [ ] Remove empty `services/` and `screens/`, static `AgeGate` cache
+- [ ] Import/lint rule: `lib/ui` must not import `cloud_firestore` / `firebase_auth`
+- [ ] Update CLAUDE.md / docs and the `pr-review` skill with the new conventions
+
+## Decisions
+- **D1 (decided 2026-10-12)** Error handling: keep the existing coded exceptions (`StoryServiceException` etc.). Repositories throw them as today; `Command` catches and exposes the error to the ViewModel/View, which maps the code to l10n. No `Result<T>`.
+- **D2 (proposed)** Domain layer only for the age check (`ResolveAgeAccess`); other ViewModels call repositories directly, as the guide allows for simple logic.
+- **D3 (proposed)** Finish the in-flight branches touching `complete_stories` and `account` (AdMob, mature stories) before Phase 3 reaches those screens.
+
+## Progress log
+- 2026-10-12: architecture analysis and roadmap written (this file). D1 decided: keep coded exceptions.
