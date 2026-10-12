@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/models/author_name.dart';
+import 'package:cadavre_exquisite/models/private_room.dart';
+import 'package:cadavre_exquisite/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
+import 'package:cadavre_exquisite/screens/private_room_screen.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/services/auth_service.dart';
+import 'package:cadavre_exquisite/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/services/user_profile_service.dart';
 
 /// Localized message for a nickname validation/service error [code].
@@ -27,15 +31,50 @@ String _nicknameErrorMessage(
 }
 
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key, this.profileService, this.email});
+  const AccountScreen({
+    super.key,
+    this.profileService,
+    this.email,
+    this.currentEmail,
+    this.languageCode = kFallbackRoomLanguage,
+    this.languageSource = RoomLanguageSource.explicit,
+    this.privateRoom,
+    this.onLanguageChanged,
+    this.onPrivateRoomChanged,
+  });
 
   /// Service used to read/write the nickname. Defaults to a
   /// [UserProfileService] backed by the default Firestore instance.
   final UserProfileService? profileService;
 
-  /// Email of the signed-in user. Defaults to the current Firebase user's
-  /// email; when provided, [FirebaseAuth] is never accessed while building.
+  /// Email of the signed-in user. Defaults to [currentEmail]; when provided,
+  /// [FirebaseAuth] is never accessed while building.
   final String? email;
+
+  /// Looks up the signed-in user's email when [email] is null. Defaults to
+  /// the current Firebase user's email; tests use it to have no email
+  /// without touching [FirebaseAuth].
+  final String? Function()? currentEmail;
+
+  /// The language room the user is in, or returns to when they leave
+  /// [privateRoom]. The state lives in the home screen, which owns it for
+  /// the story tabs too.
+  final String languageCode;
+
+  /// How [languageCode] was picked; anything but an explicit choice is
+  /// explained with a caption.
+  final RoomLanguageSource languageSource;
+
+  /// The private room the user is in, which takes precedence over
+  /// [languageCode], or null.
+  final PrivateRoom? privateRoom;
+
+  /// Called when the user picks a language room. The home screen also
+  /// leaves [privateRoom], if any.
+  final ValueChanged<String>? onLanguageChanged;
+
+  /// Called with the room the user joins, or null when they leave it.
+  final ValueChanged<PrivateRoom?>? onPrivateRoomChanged;
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -59,7 +98,9 @@ class _AccountScreenState extends State<AccountScreen> {
   void initState() {
     super.initState();
     _profileService = widget.profileService ?? UserProfileService();
-    _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
+    _email = widget.email ??
+        (widget.currentEmail ??
+            () => FirebaseAuth.instance.currentUser?.email)();
     _isLoadingNickname = _email != null;
     _loadNickname();
   }
@@ -309,6 +350,290 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  /// Picks a language room. Like the old room menu, this also leaves the
+  /// private room (the home screen clears it); the snackbar's Undo goes
+  /// back into it.
+  void _selectLanguage(String code) {
+    final leftRoom = widget.privateRoom;
+    widget.onLanguageChanged?.call(code);
+    if (leftRoom != null) _showLeftPrivateRoom(leftRoom);
+  }
+
+  Future<void> _openPrivateRoomPicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    final room = await Navigator.push<PrivateRoom>(
+      context,
+      MaterialPageRoute(builder: (_) => const PrivateRoomScreen()),
+    );
+    if (room == null || !mounted) return;
+    widget.onPrivateRoomChanged?.call(room);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(l10n.privateRoomJoinedSnackbar(room.name))),
+      );
+  }
+
+  void _leavePrivateRoom(PrivateRoom room) {
+    widget.onPrivateRoomChanged?.call(null);
+    _showLeftPrivateRoom(room);
+  }
+
+  /// Confirms leaving [room], with an Undo that rejoins it without asking
+  /// for the password again.
+  void _showLeftPrivateRoom(PrivateRoom room) {
+    final l10n = AppLocalizations.of(context)!;
+    final onPrivateRoomChanged = widget.onPrivateRoomChanged;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.privateRoomLeftSnackbar(room.name)),
+          action: SnackBarAction(
+            label: l10n.undoButton,
+            onPressed: () => onPrivateRoomChanged?.call(room),
+          ),
+        ),
+      );
+  }
+
+  Widget _buildLanguageRow(StoryLanguage language) {
+    final isSelected = language.code == widget.languageCode;
+    final inPrivateRoom = widget.privateRoom != null;
+    // In a private room the selected row only marks the room the user goes
+    // back to, so it drops the fill that means "you are here".
+    final isFilled = isSelected && !inPrivateRoom;
+    final ink =
+        inPrivateRoom ? AppColors.ink.withValues(alpha: 0.75) : AppColors.ink;
+
+    return MergeSemantics(
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: isSelected,
+        button: true,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: isFilled ? 8.0 : 0.0),
+          child: ListTile(
+            minTileHeight: 48.0,
+            contentPadding:
+                EdgeInsets.symmetric(horizontal: isFilled ? 8.0 : 16.0),
+            tileColor: isFilled ? AppColors.sage : null,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            leading: ExcludeSemantics(
+              child: Text(
+                language.flag,
+                style: const TextStyle(fontSize: 24.0),
+              ),
+            ),
+            title: Text(
+              language.nativeName,
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: ink,
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(
+                    inPrivateRoom ? Icons.check : Icons.check_circle,
+                    size: 24.0,
+                    color: AppColors.primaryDark,
+                  )
+                : null,
+            onTap: () => _selectLanguage(language.code),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoomCard(AppLocalizations l10n) {
+    final privateRoom = widget.privateRoom;
+    final secondaryStyle = TextStyle(
+      fontSize: 14.0,
+      color: AppColors.ink.withValues(alpha: 0.75),
+    );
+    final caption = switch (widget.languageSource) {
+      RoomLanguageSource.explicit => null,
+      RoomLanguageSource.detected => l10n.languageRoomAutoDetected,
+      RoomLanguageSource.fallback => l10n.languageRoomAutoFallback,
+    };
+    const chevron = Icon(Icons.chevron_right);
+
+    return CreamCard(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.roomSectionTitle,
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4.0),
+                Text(l10n.roomSectionDescription, style: secondaryStyle),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          if (privateRoom != null) ...[
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: AppColors.sage,
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              child: Row(
+                children: <Widget>[
+                  const ExcludeSemantics(
+                    child: Icon(
+                      Icons.lock,
+                      size: 20.0,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: Text(
+                      l10n.privateRoomActiveNotice(privateRoom.name),
+                      style: const TextStyle(
+                        fontSize: 14.0,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12.0),
+          ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.languageRoomHeading,
+                style: const TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4.0),
+          for (final language in kStoryLanguages) _buildLanguageRow(language),
+          if (caption != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 0.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const ExcludeSemantics(
+                    child: Icon(
+                      Icons.smartphone,
+                      size: 16.0,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(width: 6.0),
+                  Expanded(
+                    child: Text(
+                      caption,
+                      style: secondaryStyle.copyWith(fontSize: 13.0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const Divider(height: 24.0, indent: 16.0, endIndent: 16.0),
+          ListTileTheme.merge(
+            iconColor: AppColors.ink.withValues(alpha: 0.6),
+            child: privateRoom == null
+                ? ListTile(
+                    minTileHeight: 56.0,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16.0),
+                    leading: const Icon(
+                      Icons.lock_outline,
+                      size: 24.0,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      l10n.privateRoomMenuItem,
+                      style: const TextStyle(
+                        fontSize: 16.0,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    subtitle: Text(
+                      l10n.privateRoomRowSubtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: secondaryStyle,
+                    ),
+                    trailing: chevron,
+                    onTap: _openPrivateRoomPicker,
+                  )
+                : ListTile(
+                    minTileHeight: 56.0,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16.0),
+                    leading: const Icon(
+                      Icons.lock,
+                      size: 24.0,
+                      color: AppColors.primaryDark,
+                    ),
+                    title: Text(
+                      privateRoom.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    subtitle:
+                        Text(l10n.privateRoomMenuItem, style: secondaryStyle),
+                    trailing: chevron,
+                    onTap: _openPrivateRoomPicker,
+                  ),
+          ),
+          if (privateRoom != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
+                child: TextButton.icon(
+                  onPressed: () => _leavePrivateRoom(privateRoom),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                  ),
+                  icon: const Icon(Icons.logout),
+                  label: Text(l10n.leavePrivateRoomMenuItem),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -359,6 +684,8 @@ class _AccountScreenState extends State<AccountScreen> {
                         const SizedBox(height: 24.0),
                         _buildNicknameCard(l10n),
                       ],
+                      const SizedBox(height: 24.0),
+                      _buildRoomCard(l10n),
                       const SizedBox(height: 32.0),
                       Center(
                         child: ElevatedButton.icon(

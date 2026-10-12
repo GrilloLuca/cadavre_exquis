@@ -17,6 +17,11 @@ class StoryLanguage {
 /// in Firestore; they are treated as Italian, the app's original language.
 const String kDefaultStoryLanguage = 'it';
 
+/// The room a user starts in when none of their device locales matches a
+/// supported room. Not to be confused with [kDefaultStoryLanguage], which
+/// only describes legacy stories.
+const String kFallbackRoomLanguage = 'en';
+
 const List<StoryLanguage> kStoryLanguages = [
   StoryLanguage(code: 'it', flag: '🇮🇹', nativeName: 'Italiano'),
   StoryLanguage(code: 'en', flag: '🇬🇧', nativeName: 'English'),

@@ -152,11 +152,77 @@ abstract class AppLocalizations {
   /// **'La password deve avere almeno 6 caratteri.'**
   String get passwordTooShort;
 
-  /// No description provided for @languageRoomTooltip.
+  /// Title of the Room card on the Profile tab.
   ///
   /// In it, this message translates to:
-  /// **'Scegli la stanza della lingua'**
-  String get languageRoomTooltip;
+  /// **'Stanza'**
+  String get roomSectionTitle;
+
+  /// Explains what the room is, under the Room card title.
+  ///
+  /// In it, this message translates to:
+  /// **'Vedi e scrivi solo le storie della stanza in cui ti trovi.'**
+  String get roomSectionDescription;
+
+  /// Subheading above the list of language rooms.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza della lingua'**
+  String get languageRoomHeading;
+
+  /// Caption under the language rooms while the room was picked automatically from a matching device language.
+  ///
+  /// In it, this message translates to:
+  /// **'Scelta in base alla lingua del dispositivo.'**
+  String get languageRoomAutoDetected;
+
+  /// Caption under the language rooms when no room matches the device language and the English one is used.
+  ///
+  /// In it, this message translates to:
+  /// **'Non c\'è ancora una stanza nella lingua del dispositivo, quindi sei in quella inglese.'**
+  String get languageRoomAutoFallback;
+
+  /// Subtitle of the private-room row while not in a private room.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca solo con gli amici che ne conoscono nome e password.'**
+  String get privateRoomRowSubtitle;
+
+  /// Notice on the Room card while a private room is active.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei nella stanza privata “{name}”. La stanza della lingua è in pausa finché non esci.'**
+  String privateRoomActiveNotice(String name);
+
+  /// Snackbar after joining or creating a private room.
+  ///
+  /// In it, this message translates to:
+  /// **'Ora sei in “{name}”.'**
+  String privateRoomJoinedSnackbar(String name);
+
+  /// Snackbar after leaving a private room; offers Undo.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai lasciato “{name}”.'**
+  String privateRoomLeftSnackbar(String name);
+
+  /// Snackbar action that undoes leaving a private room.
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla'**
+  String get undoButton;
+
+  /// Tooltip and screen-reader label of the app bar room indicator in a language room; language is the room's native name.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza: {language}. Cambiala nel Profilo.'**
+  String roomIndicatorLanguage(String language);
+
+  /// Tooltip and screen-reader label of the app bar room indicator in a private room.
+  ///
+  /// In it, this message translates to:
+  /// **'Stanza privata: {name}. Cambiala nel Profilo.'**
+  String roomIndicatorPrivate(String name);
 
   /// No description provided for @homeTabIncomplete.
   ///

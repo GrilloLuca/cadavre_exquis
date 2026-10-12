@@ -17,6 +17,7 @@ let package = Package(
     dependencies: [
         .package(name: "firebase_core", path: "../.packages/firebase_core-4.12.1"),
         .package(name: "cloud_firestore", path: "../.packages/cloud_firestore-6.7.1"),
+        .package(name: "shared_preferences_foundation", path: "../.packages/shared_preferences_foundation-2.5.7"),
         .package(name: "google_sign_in_ios", path: "../.packages/google_sign_in_ios-6.3.6"),
         .package(name: "firebase_auth", path: "../.packages/firebase_auth-6.5.6"),
         .package(name: "age_range_signals", path: "../.packages/age_range_signals-0.10.1"),
@@ -28,6 +29,7 @@ let package = Package(
             dependencies: [
                 .product(name: "firebase-core", package: "firebase_core"),
                 .product(name: "cloud-firestore", package: "cloud_firestore"),
+                .product(name: "shared-preferences-foundation", package: "shared_preferences_foundation"),
                 .product(name: "google-sign-in-ios", package: "google_sign_in_ios"),
                 .product(name: "firebase-auth", package: "firebase_auth"),
                 .product(name: "age-range-signals", package: "age_range_signals"),

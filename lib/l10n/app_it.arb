@@ -11,7 +11,79 @@
   "googleSignInButton": "Continua con Google",
   "passwordTooShort": "La password deve avere almeno 6 caratteri.",
 
-  "languageRoomTooltip": "Scegli la stanza della lingua",
+  "roomSectionTitle": "Stanza",
+  "@roomSectionTitle": {
+    "description": "Title of the Room card on the Profile tab."
+  },
+  "roomSectionDescription": "Vedi e scrivi solo le storie della stanza in cui ti trovi.",
+  "@roomSectionDescription": {
+    "description": "Explains what the room is, under the Room card title."
+  },
+  "languageRoomHeading": "Stanza della lingua",
+  "@languageRoomHeading": {
+    "description": "Subheading above the list of language rooms."
+  },
+  "languageRoomAutoDetected": "Scelta in base alla lingua del dispositivo.",
+  "@languageRoomAutoDetected": {
+    "description": "Caption under the language rooms while the room was picked automatically from a matching device language."
+  },
+  "languageRoomAutoFallback": "Non c'è ancora una stanza nella lingua del dispositivo, quindi sei in quella inglese.",
+  "@languageRoomAutoFallback": {
+    "description": "Caption under the language rooms when no room matches the device language and the English one is used."
+  },
+  "privateRoomRowSubtitle": "Gioca solo con gli amici che ne conoscono nome e password.",
+  "@privateRoomRowSubtitle": {
+    "description": "Subtitle of the private-room row while not in a private room."
+  },
+  "privateRoomActiveNotice": "Sei nella stanza privata “{name}”. La stanza della lingua è in pausa finché non esci.",
+  "@privateRoomActiveNotice": {
+    "description": "Notice on the Room card while a private room is active.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "privateRoomJoinedSnackbar": "Ora sei in “{name}”.",
+  "@privateRoomJoinedSnackbar": {
+    "description": "Snackbar after joining or creating a private room.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "privateRoomLeftSnackbar": "Hai lasciato “{name}”.",
+  "@privateRoomLeftSnackbar": {
+    "description": "Snackbar after leaving a private room; offers Undo.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "undoButton": "Annulla",
+  "@undoButton": {
+    "description": "Snackbar action that undoes leaving a private room."
+  },
+  "roomIndicatorLanguage": "Stanza: {language}. Cambiala nel Profilo.",
+  "@roomIndicatorLanguage": {
+    "description": "Tooltip and screen-reader label of the app bar room indicator in a language room; language is the room's native name.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "roomIndicatorPrivate": "Stanza privata: {name}. Cambiala nel Profilo.",
+  "@roomIndicatorPrivate": {
+    "description": "Tooltip and screen-reader label of the app bar room indicator in a private room.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
 
   "homeTabIncomplete": "Incomplete",
   "homeTabComplete": "Complete",
