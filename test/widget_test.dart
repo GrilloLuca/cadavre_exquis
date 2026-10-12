@@ -14,22 +14,12 @@ import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/screens/home_screen.dart';
+import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
-import 'package:cadavre_exquisite/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 
 import '../testing/fakes/repositories/fake_auth_repository.dart';
-
-/// A preference whose stored room is still being read.
-class _PendingPreference extends LanguageRoomPreference {
-  _PendingPreference() : super(deviceLocales: () => const []);
-
-  final _resolved = Completer<({String code, RoomLanguageSource source})>();
-
-  @override
-  Future<({String code, RoomLanguageSource source})> resolveWithSource() =>
-      _resolved.future;
-}
+import '../testing/fakes/repositories/fake_room_repository.dart';
 
 void main() {
   testWidgets('Welcome screen shows the Google sign-in button',
@@ -50,11 +40,16 @@ void main() {
 
   testWidgets('Home screen waits for the language room before the stories',
       (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: HomeScreen(languageRoomPreference: _PendingPreference()),
+    // The stored room is still being read.
+    final stillLoading = Completer<void>();
+    await tester.pumpWidget(ChangeNotifierProvider<RoomRepository>(
+      create: (_) => FakeRoomRepository(pendingLoad: stillLoading.future),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: const HomeScreen(),
+      ),
     ));
     await tester.pump();
 

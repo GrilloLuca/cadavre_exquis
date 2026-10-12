@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
-import 'package:cadavre_exquisite/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/data/services/language_room_preference.dart';
 
 Future<LanguageRoomPreference> _preference({
   Map<String, Object> stored = const {},

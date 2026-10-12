@@ -13,7 +13,7 @@ import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
-import 'package:cadavre_exquisite/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
 
@@ -40,11 +40,6 @@ class AccountScreen extends StatefulWidget {
     this.profileRepository,
     this.email,
     this.currentEmail,
-    this.languageCode = kFallbackRoomLanguage,
-    this.languageSource = RoomLanguageSource.explicit,
-    this.privateRoom,
-    this.onLanguageChanged,
-    this.onPrivateRoomChanged,
   });
 
   /// Reads and writes the nickname. Defaults to the provided
@@ -59,26 +54,6 @@ class AccountScreen extends StatefulWidget {
   /// [AuthRepository.currentEmail]; tests use it to have no email without
   /// providing an [AuthRepository].
   final String? Function()? currentEmail;
-
-  /// The language room the user is in, or returns to when they leave
-  /// [privateRoom]. The state lives in the home screen, which owns it for
-  /// the story tabs too.
-  final String languageCode;
-
-  /// How [languageCode] was picked; anything but an explicit choice is
-  /// explained with a caption.
-  final RoomLanguageSource languageSource;
-
-  /// The private room the user is in, which takes precedence over
-  /// [languageCode], or null.
-  final PrivateRoom? privateRoom;
-
-  /// Called when the user picks a language room. The home screen also
-  /// leaves [privateRoom], if any.
-  final ValueChanged<String>? onLanguageChanged;
-
-  /// Called with the room the user joins, or null when they leave it.
-  final ValueChanged<PrivateRoom?>? onPrivateRoomChanged;
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -386,10 +361,18 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  /// The room state shown in the room card, from the provided
+  /// [RoomRepository]; rebuilds the screen when it changes. Build only.
+  RoomRepository get _room => context.watch<RoomRepository>();
+
+  /// The language room the user is in, or returns to when they leave the
+  /// private room.
+  String get _languageCode => _room.languageCode ?? kFallbackRoomLanguage;
+
   /// Picks a language room. Like the old room menu, this also leaves the
-  /// private room (the home screen clears it).
+  /// private room.
   void _selectLanguage(String code) {
-    widget.onLanguageChanged?.call(code);
+    context.read<RoomRepository>().selectLanguage(code);
   }
 
   Future<void> _openPrivateRoomPicker() async {
@@ -399,7 +382,7 @@ class _AccountScreenState extends State<AccountScreen> {
       MaterialPageRoute(builder: (_) => const PrivateRoomScreen()),
     );
     if (room == null || !mounted) return;
-    widget.onPrivateRoomChanged?.call(room);
+    context.read<RoomRepository>().enterPrivateRoom(room);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -408,12 +391,12 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   void _leavePrivateRoom() {
-    widget.onPrivateRoomChanged?.call(null);
+    context.read<RoomRepository>().leavePrivateRoom();
   }
 
   Widget _buildLanguageRow(StoryLanguage language) {
-    final isSelected = language.code == widget.languageCode;
-    final inPrivateRoom = widget.privateRoom != null;
+    final isSelected = language.code == _languageCode;
+    final inPrivateRoom = _room.privateRoom != null;
     // In a private room the selected row only marks the room the user goes
     // back to, so it drops the fill that means "you are here".
     final isFilled = isSelected && !inPrivateRoom;
@@ -464,12 +447,12 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _buildRoomCard(AppLocalizations l10n) {
-    final privateRoom = widget.privateRoom;
+    final privateRoom = _room.privateRoom;
     final secondaryStyle = TextStyle(
       fontSize: 14.0,
       color: AppColors.ink.withValues(alpha: 0.75),
     );
-    final caption = switch (widget.languageSource) {
+    final caption = switch (_room.languageSource) {
       RoomLanguageSource.explicit => null,
       RoomLanguageSource.detected => l10n.languageRoomAutoDetected,
       RoomLanguageSource.fallback => l10n.languageRoomAutoFallback,

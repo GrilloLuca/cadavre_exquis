@@ -4,15 +4,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
+import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
-import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
-import 'package:cadavre_exquisite/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+
+import '../testing/fakes/repositories/fake_room_repository.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
 const _docId = 'luca.grillo@gmail.com';
@@ -57,11 +60,15 @@ void main() {
     };
   }
 
-  Widget buildApp(UserProfileRepository service) => MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('it'),
-        home: AccountScreen(profileRepository: service, email: _email),
+  Widget buildApp(UserProfileRepository service) =>
+      ChangeNotifierProvider<RoomRepository>(
+        create: (_) => FakeRoomRepository(languageCode: kFallbackRoomLanguage),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('it'),
+          home: AccountScreen(profileRepository: service, email: _email),
+        ),
       );
 
   Future<void> pumpScreen(WidgetTester tester,
@@ -343,49 +350,36 @@ void main() {
   group('Room card', () {
     const room = PrivateRoom(id: 'gli amici', name: 'Gli Amici');
 
-    /// Pumps the screen inside a host that owns the room state the way the
-    /// home screen does: picking a language also leaves the private room.
-    Future<void> pumpRoomCard(
+    /// Pumps the screen with a [FakeRoomRepository] holding the room state;
+    /// picking a language also leaves the private room, as the real one does.
+    Future<FakeRoomRepository> pumpRoomCard(
       WidgetTester tester, {
       String? email,
       String languageCode = 'it',
       RoomLanguageSource languageSource = RoomLanguageSource.explicit,
       PrivateRoom? privateRoom,
-      List<String>? languageCalls,
-      List<PrivateRoom?>? privateRoomCalls,
     }) async {
-      var currentLanguage = languageCode;
-      var currentSource = languageSource;
-      var currentRoom = privateRoom;
-      await tester.pumpWidget(MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('it'),
-        home: StatefulBuilder(
-          builder: (context, setState) => AccountScreen(
+      final rooms = FakeRoomRepository(
+        languageCode: languageCode,
+        languageSource: languageSource,
+        privateRoom: privateRoom,
+      );
+      await tester.pumpWidget(ChangeNotifierProvider<RoomRepository>.value(
+        value: rooms,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('it'),
+          home: AccountScreen(
             profileRepository:
                 UserProfileRepositoryFirestore(firestore: firestore),
             email: email,
             currentEmail: () => null,
-            languageCode: currentLanguage,
-            languageSource: currentSource,
-            privateRoom: currentRoom,
-            onLanguageChanged: (code) {
-              languageCalls?.add(code);
-              setState(() {
-                currentLanguage = code;
-                currentSource = RoomLanguageSource.explicit;
-                currentRoom = null;
-              });
-            },
-            onPrivateRoomChanged: (value) {
-              privateRoomCalls?.add(value);
-              setState(() => currentRoom = value);
-            },
           ),
         ),
       ));
       await tester.pumpAndSettle();
+      return rooms;
     }
 
     Finder languageRow(String nativeName) =>
@@ -459,19 +453,17 @@ void main() {
       );
     });
 
-    testWidgets('selecting a language invokes the callback', (tester) async {
-      final calls = <String>[];
-      await pumpRoomCard(
+    testWidgets('selecting a language switches the room', (tester) async {
+      final rooms = await pumpRoomCard(
         tester,
         languageSource: RoomLanguageSource.detected,
-        languageCalls: calls,
       );
       expect(find.text('Scelta in base alla lingua del dispositivo.'),
           findsOneWidget);
 
       await tapVisible(tester, languageRow('Français'));
 
-      expect(calls, ['fr']);
+      expect(rooms.calls, ['language:fr']);
       expect(trailingOf('Français', Icons.check_circle), findsOneWidget);
       // An explicit choice ends auto mode, so the caption goes away.
       expect(find.text('Scelta in base alla lingua del dispositivo.'),
@@ -481,16 +473,14 @@ void main() {
 
     testWidgets('tapping the auto-detected language stores it explicitly',
         (tester) async {
-      final calls = <String>[];
-      await pumpRoomCard(
+      final rooms = await pumpRoomCard(
         tester,
         languageSource: RoomLanguageSource.detected,
-        languageCalls: calls,
       );
 
       await tapVisible(tester, languageRow('Italiano'));
 
-      expect(calls, ['it']);
+      expect(rooms.calls, ['language:it']);
       expect(find.text('Scelta in base alla lingua del dispositivo.'),
           findsNothing);
     });
@@ -540,12 +530,11 @@ void main() {
 
     testWidgets('Leave clears the private room without a message',
         (tester) async {
-      final calls = <PrivateRoom?>[];
-      await pumpRoomCard(tester, privateRoom: room, privateRoomCalls: calls);
+      final rooms = await pumpRoomCard(tester, privateRoom: room);
 
       await tapVisible(tester, leaveButton());
 
-      expect(calls, [null]);
+      expect(rooms.calls, ['leave']);
       expect(notice(), findsNothing);
       expect(leaveButton(), findsNothing);
       expect(trailingOf('Italiano', Icons.check_circle), findsOneWidget);
@@ -554,18 +543,12 @@ void main() {
 
     testWidgets('tapping a language in a private room leaves it',
         (tester) async {
-      final languageCalls = <String>[];
-      final roomCalls = <PrivateRoom?>[];
-      await pumpRoomCard(
-        tester,
-        privateRoom: room,
-        languageCalls: languageCalls,
-        privateRoomCalls: roomCalls,
-      );
+      final rooms = await pumpRoomCard(tester, privateRoom: room);
 
       await tapVisible(tester, languageRow('Español'));
 
-      expect(languageCalls, ['es']);
+      expect(rooms.calls, ['language:es']);
+      expect(rooms.privateRoom, isNull);
       expect(notice(), findsNothing);
       expect(leaveButton(), findsNothing);
       expect(trailingOf('Español', Icons.check_circle), findsOneWidget);

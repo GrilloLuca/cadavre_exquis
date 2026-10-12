@@ -1,21 +1,21 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
 import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/incomplete_stories/widgets/incomplete_stories_screen.dart';
-import 'package:cadavre_exquisite/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/ui/home/view_models/home_view_model.dart';
 
+/// The signed-in home: incomplete stories, complete stories and profile
+/// tabs for the current room. Creates its [HomeViewModel] once, in
+/// `initState` (see `ChatScreen`).
 class HomeScreen extends StatefulWidget {
   static String id = 'home_screen';
 
-  const HomeScreen({super.key, this.languageRoomPreference});
-
-  /// Where the language room choice is read from and saved to. Defaults to
-  /// a [LanguageRoomPreference] backed by the device's shared preferences.
-  final LanguageRoomPreference? languageRoomPreference;
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,60 +24,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const int _profileTabIndex = 2;
 
-  late final LanguageRoomPreference _preference;
+  late final HomeViewModel _viewModel;
 
   int _selectedIndex = 0;
-
-  /// Null until the stored/detected room is resolved, so the story tabs
-  /// build their first query for the right room only.
-  String? _languageCode;
-  RoomLanguageSource _languageSource = RoomLanguageSource.explicit;
-
-  /// Kept in memory only: a restart (or sign-out) puts the user back in
-  /// their language room.
-  PrivateRoom? _privateRoom;
 
   @override
   void initState() {
     super.initState();
-    _preference = widget.languageRoomPreference ?? LanguageRoomPreference();
-    _resolveLanguage();
+    _viewModel =
+        HomeViewModel(roomRepository: context.read<RoomRepository>());
   }
 
-  Future<void> _resolveLanguage() async {
-    ({String code, RoomLanguageSource source}) resolved;
-    try {
-      resolved = await _preference.resolveWithSource();
-    } catch (_) {
-      // Unreadable storage: behave as if nothing were stored.
-      resolved = detectRoomLanguageWithSource(
-        WidgetsBinding.instance.platformDispatcher.locales,
-      );
-    }
-    if (!mounted) return;
-    setState(() {
-      _languageCode = resolved.code;
-      _languageSource = resolved.source;
-    });
-  }
-
-  /// Switches to the [code] language room, leaving any private room, and
-  /// remembers it as the user's explicit choice.
-  Future<void> _selectLanguage(String code) async {
-    setState(() {
-      _languageCode = code;
-      _languageSource = RoomLanguageSource.explicit;
-      _privateRoom = null;
-    });
-    try {
-      await _preference.saveExplicit(code);
-    } catch (_) {
-      // Keep the choice for this session only.
-    }
-  }
-
-  void _setPrivateRoom(PrivateRoom? room) {
-    setState(() => _privateRoom = room);
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   Widget _buildRoomIndicator(
@@ -85,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     AppLocalizations l10n,
     StoryLanguage language,
   ) {
-    final privateRoom = _privateRoom;
+    final privateRoom = _viewModel.privateRoom;
     final label = privateRoom != null
         ? l10n.roomIndicatorPrivate(privateRoom.name)
         : l10n.roomIndicatorLanguage(language.nativeName);
@@ -156,11 +117,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final languageCode = _languageCode;
-    final language =
-        languageCode == null ? null : storyLanguageByCode(languageCode);
-    final privateRoom = _privateRoom;
+    final language = _viewModel.language;
+    final privateRoom = _viewModel.privateRoom;
     final titles = [
       l10n.titleIncompleteStories,
       l10n.titleCompleteStories,
@@ -190,13 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   language: language.code,
                   roomId: privateRoom?.id,
                 ),
-                AccountScreen(
-                  languageCode: language.code,
-                  languageSource: _languageSource,
-                  privateRoom: privateRoom,
-                  onLanguageChanged: _selectLanguage,
-                  onPrivateRoomChanged: _setPrivateRoom,
-                ),
+                const AccountScreen(),
               ],
             ),
       bottomNavigationBar: BottomNavigationBar(

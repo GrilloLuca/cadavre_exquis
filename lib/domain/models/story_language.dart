@@ -30,6 +30,11 @@ const List<StoryLanguage> kStoryLanguages = [
   StoryLanguage(code: 'de', flag: '🇩🇪', nativeName: 'Deutsch'),
 ];
 
+/// Where a resolved language room came from: the user's stored choice, a
+/// device locale that has a room, or [kFallbackRoomLanguage] because none
+/// does. The Account screen explains the last two with a caption.
+enum RoomLanguageSource { explicit, detected, fallback }
+
 StoryLanguage storyLanguageByCode(String code) {
   return kStoryLanguages.firstWhere(
     (language) => language.code == code,

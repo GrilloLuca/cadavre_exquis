@@ -24,11 +24,6 @@ String detectRoomLanguage(List<Locale> deviceLocales) =>
   return (code: kFallbackRoomLanguage, source: RoomLanguageSource.fallback);
 }
 
-/// Where a resolved language room came from: the user's stored choice, a
-/// device locale that has a room, or [kFallbackRoomLanguage] because none
-/// does. The Account screen explains the last two with a caption.
-enum RoomLanguageSource { explicit, detected, fallback }
-
 /// Which language room the user is in, kept on the device.
 ///
 /// Only an explicit choice is stored. Until the user picks a room, the room
