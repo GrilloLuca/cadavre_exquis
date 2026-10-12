@@ -572,11 +572,35 @@ abstract class AppLocalizations {
   /// **'Nickname salvato.'**
   String get nicknameSaved;
 
-  /// No description provided for @nicknameRemoved.
+  /// Helper line under the nickname field while no nickname is set.
   ///
   /// In it, this message translates to:
-  /// **'Nickname rimosso.'**
-  String get nicknameRemoved;
+  /// **'Puoi sceglierlo una sola volta.'**
+  String get nicknameOnceNote;
+
+  /// Helper text under the read-only nickname field once a nickname is set.
+  ///
+  /// In it, this message translates to:
+  /// **'Il nickname non può essere modificato.'**
+  String get nicknameLockedNote;
+
+  /// No description provided for @nicknameConfirmTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma nickname'**
+  String get nicknameConfirmTitle;
+
+  /// Body of the dialog confirming the one-time nickname choice.
+  ///
+  /// In it, this message translates to:
+  /// **'Nelle storie apparirai come «{name}». Non potrai più cambiarlo.'**
+  String nicknameConfirmMessage(String name);
+
+  /// No description provided for @nicknameConfirmButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma'**
+  String get nicknameConfirmButton;
 
   /// No description provided for @nicknameLoadFailed.
   ///
@@ -625,6 +649,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Usa solo lettere, numeri, spazi e _ - .'**
   String get errorNicknameInvalidCharacters;
+
+  /// Shown when saving a nickname while one is already stored (e.g. set from another device).
+  ///
+  /// In it, this message translates to:
+  /// **'Hai già scelto un nickname e non può essere cambiato.'**
+  String get errorNicknameAlreadySet;
 
   /// Label of a locked mature story in the completed stories list: shown next to the authors count, and as the title when the story has no AI title.
   ///

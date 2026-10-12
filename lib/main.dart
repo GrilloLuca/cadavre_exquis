@@ -43,6 +43,21 @@ class CadavreExquisiteApp extends StatelessWidget {
         textTheme: TextTheme(
           bodyLarge: TextStyle(color: Colors.black54),
         ),
+        // The textTheme above has no title/body styles, so dialogs would
+        // otherwise render light text on their light background.
+        dialogTheme: const DialogThemeData(
+          backgroundColor: AppColors.cream,
+          titleTextStyle: TextStyle(
+            color: AppColors.ink,
+            fontSize: 22.0,
+            fontWeight: FontWeight.w600,
+          ),
+          contentTextStyle: TextStyle(
+            color: AppColors.ink,
+            fontSize: 16.0,
+            height: 1.4,
+          ),
+        ),
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

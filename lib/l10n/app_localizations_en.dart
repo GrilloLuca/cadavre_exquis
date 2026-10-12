@@ -284,7 +284,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nicknameSaved => 'Nickname saved.';
 
   @override
-  String get nicknameRemoved => 'Nickname removed.';
+  String get nicknameOnceNote => 'You can choose it only once.';
+
+  @override
+  String get nicknameLockedNote => 'Your nickname can\'t be changed.';
+
+  @override
+  String get nicknameConfirmTitle => 'Confirm nickname';
+
+  @override
+  String nicknameConfirmMessage(String name) {
+    return 'You\'ll appear as \"$name\" in stories. You won\'t be able to change it later.';
+  }
+
+  @override
+  String get nicknameConfirmButton => 'Confirm';
 
   @override
   String get nicknameLoadFailed => 'Couldn\'t load your nickname.';
@@ -318,6 +332,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorNicknameInvalidCharacters =>
       'Use only letters, numbers, spaces and _ - .';
+
+  @override
+  String get errorNicknameAlreadySet =>
+      'You\'ve already chosen a nickname and it can\'t be changed.';
 
   @override
   String get matureStoryLockedTitle => 'Explicit content';

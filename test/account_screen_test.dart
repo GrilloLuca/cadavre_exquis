@@ -82,24 +82,47 @@ void main() {
   String fieldText(WidgetTester tester) =>
       tester.widget<TextField>(find.byType(TextField)).controller!.text;
 
+  Finder confirmButton() => find.widgetWithText(TextButton, 'Conferma');
+  Finder lockedNote() => find.text('Il nickname non può essere modificato.');
+
   Future<void> tapSave(WidgetTester tester) async {
     await tester.tap(saveButton(), warnIfMissed: false);
     await tester.pumpAndSettle();
   }
 
-  testWidgets('prefills the saved nickname and previews it', (tester) async {
+  /// Taps Save and confirms the one-time choice in the dialog.
+  Future<void> saveAndConfirm(WidgetTester tester) async {
+    await tapSave(tester);
+    await tester.tap(confirmButton());
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a saved nickname is shown read-only, with no save button',
+      (tester) async {
     await seedNickname('Supermario');
     await pumpScreen(tester);
 
     expect(fieldText(tester), 'Supermario');
     expect(
         find.text('Nelle storie apparirai come: Supermario'), findsOneWidget);
+    expect(lockedNote(), findsOneWidget);
+    expect(isFieldEnabled(tester), isFalse);
+    expect(saveButton(), findsNothing);
+    expect(find.text('Impossibile caricare il nickname.'), findsNothing);
+  });
+
+  testWidgets('without a nickname the field says it can be chosen once',
+      (tester) async {
+    await pumpScreen(tester);
+
     expect(
-      find.text('2–20 caratteri: lettere, numeri, spazi, _ - .'),
+      find.text('2–20 caratteri: lettere, numeri, spazi, _ - .\n'
+          'Puoi sceglierlo una sola volta.'),
       findsOneWidget,
     );
+    expect(isFieldEnabled(tester), isTrue);
     expect(isSaveEnabled(tester), isTrue);
-    expect(find.text('Impossibile caricare il nickname.'), findsNothing);
+    expect(lockedNote(), findsNothing);
   });
 
   testWidgets('without a nickname previews the masked email', (tester) async {
@@ -114,21 +137,62 @@ void main() {
 
     await tester.enterText(field(), '  Luca   Grillo ');
     await tapSave(tester);
+    expect(
+      find.text('Nelle storie apparirai come «Luca Grillo». '
+          'Non potrai più cambiarlo.'),
+      findsOneWidget,
+    );
+    await tester.tap(confirmButton());
+    await tester.pumpAndSettle();
 
     expect(find.text('Nickname salvato.'), findsOneWidget);
     expect(storedProfiles()[_docId]?['nickname'], 'Luca Grillo');
     expect(fieldText(tester), 'Luca Grillo');
+    // Chosen once: now read-only.
+    expect(lockedNote(), findsOneWidget);
+    expect(isFieldEnabled(tester), isFalse);
+    expect(saveButton(), findsNothing);
   });
 
-  testWidgets('clearing and saving deletes the profile', (tester) async {
-    await seedNickname('Supermario');
+  testWidgets('cancelling the confirmation writes nothing', (tester) async {
     await pumpScreen(tester);
 
-    await tester.enterText(field(), '');
+    await tester.enterText(field(), 'Luca');
+    await tapSave(tester);
+    await tester.tap(find.widgetWithText(TextButton, 'Annulla'));
+    await tester.pumpAndSettle();
+
+    expect(storedProfiles(), isEmpty);
+    expect(find.text('Nickname salvato.'), findsNothing);
+    expect(isFieldEnabled(tester), isTrue);
+    expect(isSaveEnabled(tester), isTrue);
+  });
+
+  testWidgets('saving an empty field does nothing', (tester) async {
+    await pumpScreen(tester);
+
     await tapSave(tester);
 
-    expect(find.text('Nickname rimosso.'), findsOneWidget);
+    expect(confirmButton(), findsNothing);
     expect(storedProfiles(), isEmpty);
+  });
+
+  testWidgets(
+      'a nickname set meanwhile elsewhere is reported and shown read-only',
+      (tester) async {
+    await pumpScreen(tester);
+    await seedNickname('Supermario');
+
+    await tester.enterText(field(), 'Luca');
+    await saveAndConfirm(tester);
+
+    expect(
+      find.text('Hai già scelto un nickname e non può essere cambiato.'),
+      findsOneWidget,
+    );
+    expect(storedProfiles()[_docId]?['nickname'], 'Supermario');
+    expect(fieldText(tester), 'Supermario');
+    expect(lockedNote(), findsOneWidget);
   });
 
   for (final (input, message) in [
@@ -137,7 +201,6 @@ void main() {
   ]) {
     testWidgets('invalid "$input" shows the error and writes nothing',
         (tester) async {
-      await seedNickname('Supermario');
       await pumpScreen(tester);
 
       await tester.enterText(field(), input);
@@ -149,8 +212,8 @@ void main() {
 
       await tapSave(tester);
 
-      expect(find.text('Nickname salvato.'), findsNothing);
-      expect(storedProfiles()[_docId]?['nickname'], 'Supermario');
+      expect(confirmButton(), findsNothing);
+      expect(storedProfiles(), isEmpty);
     });
   }
 
@@ -184,7 +247,7 @@ void main() {
       findsNothing,
     );
 
-    await tapSave(tester);
+    await saveAndConfirm(tester);
     expect(
       storedProfiles()[_docId]?['nickname'],
       'abcdefghi jklmnopqrs',
@@ -199,14 +262,14 @@ void main() {
         .thenThrow(FirebaseException(plugin: 'cloud_firestore'));
 
     await tester.enterText(field(), 'Luca');
-    await tapSave(tester);
+    await saveAndConfirm(tester);
 
     expect(find.text('Si è verificato un errore. Riprova.'), findsOneWidget);
     expect(find.text('Nickname salvato.'), findsNothing);
     expect(isSaveEnabled(tester), isTrue);
   });
 
-  testWidgets('a load failure disables the form and never deletes',
+  testWidgets('a load failure disables the form and never writes',
       (tester) async {
     await seedNickname('Supermario');
     whenCalling(Invocation.method(#get, null))
@@ -227,11 +290,11 @@ void main() {
         .onSubmitted!(fieldText(tester));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nickname rimosso.'), findsNothing);
+    expect(confirmButton(), findsNothing);
     expect(storedProfiles()[_docId]?['nickname'], 'Supermario');
   });
 
-  testWidgets('retrying after a load failure prefills and re-enables',
+  testWidgets('retrying after a load failure prefills the saved nickname',
       (tester) async {
     await seedNickname('Supermario');
     final service = _FlakyProfileService(firestore: firestore);
@@ -253,11 +316,25 @@ void main() {
     expect(find.text('Impossibile caricare il nickname.'), findsNothing);
     expect(retryButton(), findsNothing);
     expect(fieldText(tester), 'Supermario');
-    expect(isSaveEnabled(tester), isTrue);
-    expect(isFieldEnabled(tester), isTrue);
+    // Already chosen, so it stays read-only.
+    expect(lockedNote(), findsOneWidget);
+    expect(isFieldEnabled(tester), isFalse);
+    expect(saveButton(), findsNothing);
+  });
 
+  testWidgets('retrying after a load failure with no nickname enables saving',
+      (tester) async {
+    final service = _FlakyProfileService(firestore: firestore);
+    await pumpScreen(tester, service);
+    expect(isSaveEnabled(tester), isFalse);
+
+    service.failLoads = false;
+    await tester.tap(retryButton());
+    await tester.pumpAndSettle();
+
+    expect(isFieldEnabled(tester), isTrue);
     await tester.enterText(field(), 'Luca');
-    await tapSave(tester);
+    await saveAndConfirm(tester);
     expect(find.text('Nickname salvato.'), findsOneWidget);
     expect(storedProfiles()[_docId]?['nickname'], 'Luca');
   });
@@ -445,8 +522,10 @@ void main() {
       expect(notice(), findsOneWidget);
       expect(find.widgetWithText(ListTile, 'Gli Amici'), findsOneWidget);
       expect(leaveButton(), findsOneWidget);
-      expect(find.text('Gioca solo con gli amici che ne conoscono nome e '
-          'password.'), findsNothing);
+      expect(
+          find.text('Gioca solo con gli amici che ne conoscono nome e '
+              'password.'),
+          findsNothing);
       // The language rows show the room the user goes back to, without the
       // "you are here" fill and check.
       expect(find.byIcon(Icons.check_circle), findsNothing);
