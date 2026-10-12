@@ -173,7 +173,26 @@
   },
   "nicknameSaveButton": "Salva",
   "nicknameSaved": "Nickname salvato.",
-  "nicknameRemoved": "Nickname rimosso.",
+  "nicknameOnceNote": "Puoi sceglierlo una sola volta.",
+  "@nicknameOnceNote": {
+    "description": "Helper line under the nickname field while no nickname is set."
+  },
+  "nicknameLockedNote": "Il nickname non può essere modificato.",
+  "@nicknameLockedNote": {
+    "description": "Helper text under the read-only nickname field once a nickname is set."
+  },
+  "nicknameConfirmTitle": "Conferma nickname",
+  "nicknameConfirmMessage": "Nelle storie apparirai come «{name}». Non potrai più cambiarlo.",
+  "@nicknameConfirmMessage": {
+    "description": "Body of the dialog confirming the one-time nickname choice.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Supermario"
+      }
+    }
+  },
+  "nicknameConfirmButton": "Conferma",
   "nicknameLoadFailed": "Impossibile caricare il nickname.",
   "retryButton": "Riprova",
   "nicknamePublicPreview": "Nelle storie apparirai come: {name}",
@@ -210,6 +229,10 @@
     }
   },
   "errorNicknameInvalidCharacters": "Usa solo lettere, numeri, spazi e _ - .",
+  "errorNicknameAlreadySet": "Hai già scelto un nickname e non può essere cambiato.",
+  "@errorNicknameAlreadySet": {
+    "description": "Shown when saving a nickname while one is already stored (e.g. set from another device)."
+  },
 
   "matureStoryLockedTitle": "Contenuto esplicito",
   "@matureStoryLockedTitle": {

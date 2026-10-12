@@ -5,6 +5,9 @@ enum UserProfileServiceErrorCode {
   nicknameTooShort,
   nicknameTooLong,
   nicknameInvalidCharacters,
+
+  /// The user already has a nickname: it can only be chosen once.
+  nicknameAlreadySet,
 }
 
 /// Thrown by [UserProfileService] operations on invalid input. The UI layer
@@ -45,7 +48,8 @@ class UserProfileService {
       raw.trim().replaceAll(_whitespaceRun, ' ');
 
   /// Validates the normalized form of [raw]. Returns `null` when valid; an
-  /// empty value is valid and means "clear the nickname".
+  /// empty value is valid here (it means "no nickname yet"), but
+  /// [setNickname] refuses it.
   ///
   /// Checks run in this order and the first failure is returned: too short
   /// (< [minNicknameLength]), too long (> [maxNicknameLength]), then invalid
@@ -77,9 +81,14 @@ class UserProfileService {
   }
 
   /// Sets the nickname of the user with [email] to the normalized
-  /// [nickname], or removes it (deleting the profile) when that is empty.
-  /// Throws [UserProfileServiceException] without writing anything if the
-  /// nickname is invalid (see [validateNickname]).
+  /// [nickname]. A nickname can be chosen only once: throws
+  /// [UserProfileServiceException] with
+  /// [UserProfileServiceErrorCode.nicknameAlreadySet] if the stored one is
+  /// not empty. Throws without writing anything if the nickname is invalid
+  /// (see [validateNickname]) or empty.
+  ///
+  /// The Firestore rules enforce the same, so a concurrent write from
+  /// another device fails with a permission error instead of overwriting.
   Future<void> setNickname({
     required String email,
     required String nickname,
@@ -87,21 +96,20 @@ class UserProfileService {
     final normalized = normalizeNickname(nickname);
     final error = validateNickname(normalized);
     if (error != null) throw UserProfileServiceException(error);
-
-    final docRef = _profiles.doc(profileKey(email));
     if (normalized.isEmpty) {
-      await docRef.delete();
-      return;
+      throw const UserProfileServiceException(
+          UserProfileServiceErrorCode.nicknameTooShort);
     }
-    await docRef.set({
+
+    if (await getNickname(email) != null) {
+      throw const UserProfileServiceException(
+          UserProfileServiceErrorCode.nicknameAlreadySet);
+    }
+    await _profiles.doc(profileKey(email)).set({
       'nickname': normalized,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
-
-  /// Deletes the profile of the user with [email], if any.
-  Future<void> deleteProfile(String email) =>
-      _profiles.doc(profileKey(email)).delete();
 
   /// Nicknames for [emails], keyed by the original email strings passed in.
   /// Emails without a nickname are omitted. Duplicates are fetched once and

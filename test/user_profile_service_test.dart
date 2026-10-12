@@ -21,7 +21,7 @@ void main() {
   });
 
   group('UserProfileService.validateNickname', () {
-    test('empty and whitespace-only are valid (clear)', () {
+    test('empty and whitespace-only are valid (no nickname yet)', () {
       expect(UserProfileService.validateNickname(''), isNull);
       expect(UserProfileService.validateNickname('   '), isNull);
     });
@@ -110,24 +110,34 @@ void main() {
       expect(await service.getNickname('LUCA@gmail.com'), 'Luca');
     });
 
-    test('an empty nickname deletes the document', () async {
-      await service.setNickname(email: 'luca@gmail.com', nickname: 'Luca');
-      await service.setNickname(email: 'luca@gmail.com', nickname: '   ');
-
-      expect((await profileDoc('luca@gmail.com')).exists, isFalse);
-      expect(await service.getNickname('luca@gmail.com'), isNull);
-    });
-
-    test('deleteProfile removes the profile of a mixed-case email', () async {
-      await service.setNickname(email: 'luca@gmail.com', nickname: 'Luca');
-      await service.deleteProfile(' Luca@Gmail.com ');
-
+    test('an empty nickname throws and writes nothing', () async {
+      await expectLater(
+        service.setNickname(email: 'luca@gmail.com', nickname: '   '),
+        throwsA(isA<UserProfileServiceException>().having((e) => e.code, 'code',
+            UserProfileServiceErrorCode.nicknameTooShort)),
+      );
       expect((await profileDoc('luca@gmail.com')).exists, isFalse);
     });
 
-    test('clearing a nickname that was never set is a no-op', () async {
-      await service.setNickname(email: 'luca@gmail.com', nickname: '');
-      expect((await profileDoc('luca@gmail.com')).exists, isFalse);
+    test('a nickname can be set only once', () async {
+      await service.setNickname(email: 'luca@gmail.com', nickname: 'Luca');
+
+      await expectLater(
+        service.setNickname(email: 'Luca@Gmail.com', nickname: 'Other'),
+        throwsA(isA<UserProfileServiceException>().having((e) => e.code, 'code',
+            UserProfileServiceErrorCode.nicknameAlreadySet)),
+      );
+      expect(await service.getNickname('luca@gmail.com'), 'Luca');
+    });
+
+    test('an empty stored nickname can still be set', () async {
+      await firestore
+          .collection('userProfiles')
+          .doc('luca@gmail.com')
+          .set({'nickname': ''});
+
+      await service.setNickname(email: 'luca@gmail.com', nickname: 'Luca');
+      expect(await service.getNickname('luca@gmail.com'), 'Luca');
     });
 
     for (final (input, code) in [

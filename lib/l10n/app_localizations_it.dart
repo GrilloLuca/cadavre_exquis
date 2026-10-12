@@ -287,7 +287,21 @@ class AppLocalizationsIt extends AppLocalizations {
   String get nicknameSaved => 'Nickname salvato.';
 
   @override
-  String get nicknameRemoved => 'Nickname rimosso.';
+  String get nicknameOnceNote => 'Puoi sceglierlo una sola volta.';
+
+  @override
+  String get nicknameLockedNote => 'Il nickname non può essere modificato.';
+
+  @override
+  String get nicknameConfirmTitle => 'Conferma nickname';
+
+  @override
+  String nicknameConfirmMessage(String name) {
+    return 'Nelle storie apparirai come «$name». Non potrai più cambiarlo.';
+  }
+
+  @override
+  String get nicknameConfirmButton => 'Conferma';
 
   @override
   String get nicknameLoadFailed => 'Impossibile caricare il nickname.';
@@ -321,6 +335,10 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get errorNicknameInvalidCharacters =>
       'Usa solo lettere, numeri, spazi e _ - .';
+
+  @override
+  String get errorNicknameAlreadySet =>
+      'Hai già scelto un nickname e non può essere cambiato.';
 
   @override
   String get matureStoryLockedTitle => 'Contenuto esplicito';
