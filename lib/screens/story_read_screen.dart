@@ -2,11 +2,11 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 class StoryReadScreen extends StatefulWidget {
   final Story story;
@@ -30,7 +30,7 @@ class _StoryReadScreenState extends State<StoryReadScreen> {
   void initState() {
     super.initState();
     final service =
-        widget.profileRepository ?? UserProfileRepositoryFirestore();
+        widget.profileRepository ?? context.read<UserProfileRepository>();
     _nicknames = service
         .nicknamesFor(widget.story.parts.map((p) => p.author))
         .catchError((Object _) => const <String, String>{});

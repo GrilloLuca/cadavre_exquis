@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
-import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 
 /// Chat screen used to write the next part of a single incomplete story.
 class ChatScreen extends StatefulWidget {
@@ -22,7 +23,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _storyRepository = StoryRepositoryFirestore();
+  late final StoryRepository _storyRepository;
+  late final AuthRepository _auth;
   final _messageTextController = TextEditingController();
   final _messageFocusNode = FocusNode();
   String _messageText = '';
@@ -33,11 +35,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _storyRepository = context.read<StoryRepository>();
+    _auth = context.read<AuthRepository>();
     _acquireLock();
   }
 
   Future<void> _acquireLock() async {
-    final email = FirebaseAuth.instance.currentUser?.email;
+    final email = _auth.currentEmail;
     if (email == null) return;
     try {
       await _storyRepository.lockStory(
@@ -67,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageTextController.dispose();
     _messageFocusNode.dispose();
     if (_lockAcquired) {
-      final email = FirebaseAuth.instance.currentUser?.email;
+      final email = _auth.currentEmail;
       if (email != null) {
         // Fire and forget: dispose can't wait. A failure (e.g. offline) must
         // not surface as an uncaught async error; the lock stays until the
@@ -81,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _submit() async {
-    final email = FirebaseAuth.instance.currentUser?.email;
+    final email = _auth.currentEmail;
     if (_messageText.trim().isEmpty || email == null || !_lockAcquired) return;
 
     setState(() => _isSending = true);

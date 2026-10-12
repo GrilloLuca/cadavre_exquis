@@ -1,11 +1,13 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
 class LoginScreen extends StatefulWidget {
   static String id = "login_screen";
@@ -17,7 +19,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _auth = FirebaseAuth.instance;
   String email = '';
   String password = '';
   bool showSpinner = false;
@@ -92,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       showSpinner = true;
     });
     try {
-      await _auth.signInWithEmailAndPassword(
+      await context.read<AuthRepository>().signInWithEmail(
         email: email,
         password: password,
       );
@@ -105,14 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
         (route) => false,
       );
       return;
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       if (!mounted) return;
-      const wrongCredentialsCodes = {
-        'invalid-credential',
-        'wrong-password',
-        'user-not-found',
-      };
-      final message = wrongCredentialsCodes.contains(e.code)
+      final message = e.code == AuthErrorCode.invalidCredentials
           ? l10n.loginInvalidCredentials
           : (e.message ?? l10n.loginFailed);
       ScaffoldMessenger.of(context).showSnackBar(

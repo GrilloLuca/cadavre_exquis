@@ -1,5 +1,4 @@
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/domain/models/email_key.dart';
@@ -29,11 +28,11 @@ enum AgeVerdict {
 class AgeGate {
   AgeGate({
     AgeSignalsSource? signals,
-    AgeCheckRepository? storage,
+    required AgeCheckRepository storage,
     this.timeout = defaultTimeout,
     DateTime Function()? clock,
   })  : _signals = signals ?? PluginAgeSignalsSource.shared,
-        _storage = storage ?? AgeCheckRepositoryFirestore(),
+        _storage = storage,
         _clock = clock ?? DateTime.now;
 
   /// Long enough for the user to answer a system sheet, short enough that a

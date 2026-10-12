@@ -4,9 +4,10 @@ import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:cadavre_exquisite/screens/login_screen.dart';
-import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -123,9 +124,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       showSpinner = true;
     });
     try {
-      final result = await AuthService.signInWithGoogle();
+      final signedIn = await context.read<AuthRepository>().signInWithGoogle();
       if (!mounted) return;
-      if (result != null) {
+      if (signedIn) {
         Navigator.pushNamedAndRemoveUntil(
           context,
           HomeScreen.id,

@@ -1,9 +1,10 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
 class JoinPrivateRoomScreen extends StatefulWidget {
@@ -15,7 +16,6 @@ class JoinPrivateRoomScreen extends StatefulWidget {
 
 class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _roomRepository = PrivateRoomRepositoryFirestore();
   String _name = '';
   String _password = '';
   bool _isSubmitting = false;
@@ -26,8 +26,9 @@ class _JoinPrivateRoomScreenState extends State<JoinPrivateRoomScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final room =
-          await _roomRepository.joinRoom(name: _name, password: _password);
+      final room = await context
+          .read<PrivateRoomRepository>()
+          .joinRoom(name: _name, password: _password);
       if (!mounted) return;
       Navigator.pop(context, room);
     } on PrivateRoomException {

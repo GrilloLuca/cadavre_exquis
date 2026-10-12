@@ -1,10 +1,11 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 
 class CreatePrivateRoomScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class CreatePrivateRoomScreen extends StatefulWidget {
 
 class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _roomRepository = PrivateRoomRepositoryFirestore();
   String _name = '';
   String _password = '';
   bool _isSubmitting = false;
@@ -26,12 +26,12 @@ class _CreatePrivateRoomScreenState extends State<CreatePrivateRoomScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
-    final email = FirebaseAuth.instance.currentUser?.email;
+    final email = context.read<AuthRepository>().currentEmail;
     if (email == null) return;
 
     setState(() => _isSubmitting = true);
     try {
-      final room = await _roomRepository.createRoom(
+      final room = await context.read<PrivateRoomRepository>().createRoom(
         name: _name,
         password: _password,
         createdBy: email,

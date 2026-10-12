@@ -108,8 +108,8 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - Left in `lib/services/` on purpose: `auth_service.dart` (→ Phase 2), `language_room_preference.dart` (→ Phase 3 with `RoomRepository`), `age_gate.dart` (→ Phase 3, use case, D2)
 
 ### Phase 2: auth and central DI (1 PR)
-- [ ] `AuthRepository` (ChangeNotifier, replaces static `AuthService`) + `MultiProvider` in `main.dart` providing all repositories; screens stop defaulting to `*RepositoryFirestore()`
-- [ ] `AuthWrapper` listens to `AuthRepository`; no `FirebaseAuth.instance` left under `lib/ui`
+- [x] `AuthRepository` (ChangeNotifier) + `AuthRepositoryFirebase` replace static `AuthService`; Google SDK behind `data/services/google_sign_in_service.dart`; Firebase errors become `AuthException`/`AuthErrorCode` (`domain/models/auth_error.dart`, D1). `config/dependencies.dart` provides all repositories via `MultiProvider` in `main.dart`; screens `context.read` them (optional constructor params kept for existing tests until Phase 3). `AgeGate` now requires its `storage`
+- [x] `AuthWrapper` watches `AuthRepository`; no `firebase_auth`, `google_sign_in` or `*RepositoryFirestore()` outside `lib/data` and `lib/config`. `FakeAuthRepository` in `testing/fakes/`; `test/auth_wrapper_test.dart`
 
 ### Phase 3: ViewModels, one feature per PR (simplest to riskiest)
 - [ ] `ChatScreen` (pilot: lock + submit)
@@ -141,3 +141,4 @@ Per feature: ViewModel unit tests with fakes; update existing widget tests (`acc
 - 2026-10-12: Phase 0 on `feature/mvvm-migration`: `provider` added, `Command` utility, shared UI moved to `lib/ui/core/`. No behaviour change; analyze clean, all tests green. D2 still to decide.
 - 2026-10-12: Phase 1, step 1: models moved to `lib/domain/models/` and made pure Dart (no Firestore, no Flutter). No behaviour change; analyze clean, all tests green.
 - 2026-10-12: Phase 1, step 2: repositories (abstract + Firestore), domain errors/rules, fakes. No behaviour change; analyze clean, all tests green. Phase 1 done.
+- 2026-10-12: Phase 2: `AuthRepository`, providers, screens read dependencies from context. Only intended behaviour difference: during account deletion a `user-not-found` reauth error now shows "invalid credentials" (as login already did) instead of the generic error. Analyze clean, all tests green; sign-in flows not yet verified on a device.

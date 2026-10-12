@@ -1,12 +1,13 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
-import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/screens/chat_screen.dart';
 import 'package:cadavre_exquisite/ui/core/ui/typing_indicator.dart';
 
@@ -32,7 +33,8 @@ class IncompleteStoriesScreen extends StatefulWidget {
 }
 
 class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
-  final _storyRepository = StoryRepositoryFirestore();
+  late final StoryRepository _storyRepository =
+      context.read<StoryRepository>();
   bool _isCreating = false;
 
   /// Creates a new empty story and opens it right away, so the creator
@@ -64,7 +66,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
+    final currentUserEmail = context.watch<AuthRepository>().currentEmail;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(

@@ -1,16 +1,15 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/email_key.dart';
 import 'package:cadavre_exquisite/screens/age_check_screen.dart';
@@ -31,8 +30,8 @@ class CompleteStoriesScreen extends StatefulWidget {
   /// takes precedence over [language]: only stories in this room are listed.
   final String? roomId;
 
-  /// Source of the stories. Defaults to a [StoryRepository] on the default
-  /// Firestore instance; injectable for tests.
+  /// Source of the stories. Defaults to the provided [StoryRepository];
+  /// injectable for tests.
   final StoryRepository? storyRepository;
 
   /// Decides access to mature stories. Defaults to [AgeGate]; injectable
@@ -40,15 +39,16 @@ class CompleteStoriesScreen extends StatefulWidget {
   final AgeGate? ageGate;
 
   /// Stores the birth year asked when [ageGate] has no answer. Defaults to
-  /// [AgeCheckRepository]; inject the same storage as [ageGate] in tests.
+  /// the provided [AgeCheckRepository]; inject the same storage as [ageGate]
+  /// in tests.
   final AgeCheckRepository? ageCheckRepository;
 
   /// Passed to [StoryReadScreen] for the authors' nicknames; injectable for
   /// tests.
   final UserProfileRepository? profileRepository;
 
-  /// Email of the signed-in user. Defaults to the current [FirebaseAuth]
-  /// user's; when provided, [FirebaseAuth] is never accessed.
+  /// Email of the signed-in user. Defaults to [AuthRepository.currentEmail];
+  /// when provided, [AuthRepository] is never read.
   final String? email;
 
   const CompleteStoriesScreen({
@@ -83,7 +83,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
   static final Set<String> _sessionAdults = {};
 
   late final AgeCheckRepository _storage =
-      widget.ageCheckRepository ?? AgeCheckRepositoryFirestore();
+      widget.ageCheckRepository ?? context.read<AgeCheckRepository>();
   late final AgeGate _gate = widget.ageGate ?? AgeGate(storage: _storage);
   late Stream<List<Story>> _stories;
 
@@ -102,7 +102,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
   @override
   void initState() {
     super.initState();
-    _email = widget.email ?? FirebaseAuth.instance.currentUser?.email;
+    _email = widget.email ?? context.read<AuthRepository>().currentEmail;
     _stories = _subscribe();
     _loadBirthYear();
   }
@@ -120,7 +120,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
 
   /// Kept in the state so rebuilds (spinner, unlock) don't resubscribe.
   Stream<List<Story>> _subscribe() =>
-      (widget.storyRepository ?? StoryRepositoryFirestore())
+      (widget.storyRepository ?? context.read<StoryRepository>())
           .completeStoriesStream(
         language: widget.language,
         roomId: widget.roomId,

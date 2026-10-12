@@ -1,7 +1,9 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:flutter/services.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
@@ -11,10 +13,8 @@ import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/screens/private_room_screen.dart';
 import 'package:cadavre_exquisite/screens/welcome_screen.dart';
 import 'package:cadavre_exquisite/services/age_gate.dart';
-import 'package:cadavre_exquisite/services/auth_service.dart';
 import 'package:cadavre_exquisite/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
-import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
 
 /// Localized message for a nickname validation/service error [code].
@@ -47,17 +47,17 @@ class AccountScreen extends StatefulWidget {
     this.onPrivateRoomChanged,
   });
 
-  /// Service used to read/write the nickname. Defaults to a
-  /// [UserProfileRepository] backed by the default Firestore instance.
+  /// Reads and writes the nickname. Defaults to the provided
+  /// [UserProfileRepository].
   final UserProfileRepository? profileRepository;
 
   /// Email of the signed-in user. Defaults to [currentEmail]; when provided,
-  /// [FirebaseAuth] is never accessed while building.
+  /// [AuthRepository] is never read while building.
   final String? email;
 
   /// Looks up the signed-in user's email when [email] is null. Defaults to
-  /// the current Firebase user's email; tests use it to have no email
-  /// without touching [FirebaseAuth].
+  /// [AuthRepository.currentEmail]; tests use it to have no email without
+  /// providing an [AuthRepository].
   final String? Function()? currentEmail;
 
   /// The language room the user is in, or returns to when they leave
@@ -106,10 +106,10 @@ class _AccountScreenState extends State<AccountScreen> {
   void initState() {
     super.initState();
     _profileRepository =
-        widget.profileRepository ?? UserProfileRepositoryFirestore();
+        widget.profileRepository ?? context.read<UserProfileRepository>();
     _email = widget.email ??
         (widget.currentEmail ??
-            () => FirebaseAuth.instance.currentUser?.email)();
+            () => context.read<AuthRepository>().currentEmail)();
     _isLoadingNickname = _email != null;
     _loadNickname();
   }
@@ -221,7 +221,8 @@ class _AccountScreenState extends State<AccountScreen> {
     final email = _email;
     if (email == null || _isDeleting) return;
     final l10n = AppLocalizations.of(context)!;
-    final usesPassword = AuthService.usesPassword;
+    final auth = context.read<AuthRepository>();
+    final usesPassword = auth.usesPassword;
 
     final confirmation = await showDialog<_DeleteConfirmation>(
       context: context,
@@ -233,12 +234,12 @@ class _AccountScreenState extends State<AccountScreen> {
     setState(() => _isDeleting = true);
     try {
       final confirmed =
-          await AuthService.reauthenticate(password: confirmation.password);
+          await auth.reauthenticate(password: confirmation.password);
       if (!confirmed) return;
       // The anonymizeDeletedUser Cloud Function deletes the profile: the
       // rules don't let the user delete it, as that would free the
       // nickname to be chosen again.
-      await AuthService.deleteAccount();
+      await auth.deleteAccount();
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.accountDeleted)));
       Navigator.pushNamedAndRemoveUntil(
@@ -246,11 +247,11 @@ class _AccountScreenState extends State<AccountScreen> {
         WelcomeScreen.id,
         (route) => false,
       );
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            e.code == 'wrong-password' || e.code == 'invalid-credential'
+            e.code == AuthErrorCode.invalidCredentials
                 ? l10n.loginInvalidCredentials
                 : l10n.genericError,
           ),
@@ -725,7 +726,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Center(
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            await AuthService.signOut();
+                            await context.read<AuthRepository>().signOut();
                             // Mature stories lock again for the next user,
                             // and their age signals are asked afresh.
                             CompleteStoriesScreen.clearSessionState();

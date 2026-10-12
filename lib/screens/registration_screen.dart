@@ -1,10 +1,12 @@
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = "registration_screen";
@@ -16,7 +18,6 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  final _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
   String email = '';
   String password = '';
@@ -30,7 +31,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       showSpinner = true;
     });
     try {
-      await _auth.createUserWithEmailAndPassword(
+      await context.read<AuthRepository>().registerWithEmail(
         email: email,
         password: password,
       );
@@ -40,9 +41,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         HomeScreen.id,
         (route) => false,
       );
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       if (!mounted) return;
-      final message = e.code == 'weak-password'
+      final message = e.code == AuthErrorCode.weakPassword
           ? l10n.passwordTooShort
           : (e.message ?? l10n.registrationFailed);
       ScaffoldMessenger.of(context).showSnackBar(
