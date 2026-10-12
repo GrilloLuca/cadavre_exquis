@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
-import 'package:cadavre_exquisite/services/age_gate.dart';
+import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
+
+import '../testing/fakes/repositories/fake_auth_repository.dart';
 
 class _FakeSource implements AgeSignalsSource {
   _FakeSource(this._answer);
@@ -34,7 +36,6 @@ void main() {
   late AgeCheckRepository storage;
 
   setUp(() {
-    AgeGate.clearSessionCache();
     firestore = FakeFirebaseFirestore();
     storage = AgeCheckRepositoryFirestore(firestore: firestore);
   });
@@ -174,19 +175,21 @@ void main() {
   });
 
   group('session cache', () {
-    test('adult is cached across gates for the same user', () async {
+    test('adult is cached for the same user', () async {
       final source = _FakeSource.value(AgeSignal.adult);
+      final g = gate(source);
 
-      expect(await gate(source).resolve(email), AgeVerdict.adult);
-      expect(await gate(source).resolve('luca@example.com'), AgeVerdict.adult);
+      expect(await g.resolve(email), AgeVerdict.adult);
+      expect(await g.resolve('luca@example.com'), AgeVerdict.adult);
       expect(source.calls, 1);
     });
 
     test('minor is cached', () async {
       final source = _FakeSource.value(AgeSignal.minor);
+      final g = gate(source);
 
-      expect(await gate(source).resolve(email), AgeVerdict.minor);
-      expect(await gate(source).resolve(email), AgeVerdict.minor);
+      expect(await g.resolve(email), AgeVerdict.minor);
+      expect(await g.resolve(email), AgeVerdict.minor);
       expect(source.calls, 1);
     });
 
@@ -215,20 +218,56 @@ void main() {
 
     test('the cache is per user', () async {
       final source = _FakeSource.value(AgeSignal.adult);
+      final g = gate(source);
 
-      await gate(source).resolve(email);
-      await gate(source).resolve('someone@else.com');
+      await g.resolve(email);
+      await g.resolve('someone@else.com');
       expect(source.calls, 2);
     });
 
     test('a cached minor signal overrides a stored adult year', () async {
-      await gate(_FakeSource.value(AgeSignal.minor)).resolve(email);
+      var signal = AgeSignal.minor;
+      final g = gate(_FakeSource(() async => signal));
+      await g.resolve(email);
       await storage.setBirthYear(email: email, birthYear: adultYear);
+      signal = AgeSignal.adult;
 
-      expect(
-        await gate(_FakeSource.value(AgeSignal.adult)).resolve(email),
-        AgeVerdict.minor,
-      );
+      expect(await g.resolve(email), AgeVerdict.minor);
+    });
+
+    test('each gate has its own cache', () async {
+      final source = _FakeSource.value(AgeSignal.adult);
+
+      await gate(source).resolve(email);
+      await gate(source).resolve(email);
+      expect(source.calls, 2);
+    });
+
+    test('signing out forgets signals and verdicts', () async {
+      final auth = FakeAuthRepository(email: email);
+      final source = _FakeSource.value(AgeSignal.adult);
+      final g =
+          AgeGate(signals: source, storage: storage, authRepository: auth);
+      await g.resolve(email);
+      g.rememberVerdict(email, adult: true);
+      expect(g.isSessionAdult(email), isTrue);
+
+      await auth.signOut();
+
+      expect(g.isSessionAdult(email), isFalse);
+      await g.resolve(email);
+      expect(source.calls, 2);
+      g.dispose();
+    });
+
+    test('a verdict replaces the opposite one', () {
+      final g = gate(_FakeSource.value(AgeSignal.adult));
+
+      g.rememberVerdict(email, adult: false);
+      g.rememberVerdict('LUCA@example.com', adult: true);
+
+      expect(g.isSessionAdult(email), isTrue);
+      expect(g.isSessionMinor(email), isFalse);
     });
   });
 
@@ -240,5 +279,17 @@ void main() {
     await storage.setBirthYear(email: email, birthYear: adultYear);
     expect(await g.storedBirthYear(email), adultYear);
     expect(source.calls, 0);
+  });
+
+  test('recordBirthYear stores the year and tells whether it is adult',
+      () async {
+    final g = gate(_FakeSource.value(AgeSignal.unavailable));
+
+    expect(await g.recordBirthYear(email, adultYear), isTrue);
+    expect(await g.storedBirthYear(email), adultYear);
+    expect(
+        await gate(_FakeSource.value(AgeSignal.unavailable))
+            .recordBirthYear('kid@example.com', minorYear),
+        isFalse);
   });
 }

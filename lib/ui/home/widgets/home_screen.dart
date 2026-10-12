@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/screens/account_screen.dart';
-import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
+import 'package:cadavre_exquisite/ui/complete_stories/widgets/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/incomplete_stories/widgets/incomplete_stories_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/ui/home/view_models/home_view_model.dart';

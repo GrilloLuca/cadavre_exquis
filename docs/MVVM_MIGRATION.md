@@ -52,7 +52,7 @@ lib/
       age_signals_service.dart, shared_preferences_service.dart, google_sign_in_service.dart
   domain/
     models/                         # pure Dart (DateTime, no Firestore types)
-    use_cases/                      # ResolveAgeAccess (today's AgeGate)
+    use_cases/                      # AgeGate (the age check, D2)
   ui/
     core/                           # theme, AppColors, shared widgets, l10n error mapping
     <feature>/view_models/  <feature>/widgets/
@@ -67,7 +67,7 @@ testing/fakes/                      # FakeStoryRepository, …
 | `StoryService` | `StoryRepository` (abstract) + `StoryRepositoryFirestore`. The Firestore SDK is already the "service": no extra wrapper |
 | `AuthService` (static) + `FirebaseAuth.instance` | `AuthRepository extends ChangeNotifier` (`currentUserEmail`, sign-in, `signOut`, `deleteAccount`) + `GoogleSignInService` |
 | `UserProfileService` | `UserProfileRepository`; nickname validation → `domain/` |
-| `AgeCheckService` + `AgeGate` | `AgeCheckRepository` + `ResolveAgeAccess` use case; session cache becomes per-instance, cleared on sign-out |
+| `AgeCheckService` + `AgeGate` | `AgeCheckRepository` + `AgeGate` use case in `domain/use_cases/` (name kept); session cache becomes per-instance, cleared on sign-out |
 | `LanguageRoomPreference` + `HomeScreen` state | `SharedPreferencesService` + `RoomRepository` (ChangeNotifier: current language + private room), removing the callbacks |
 | `PrivateRoomService` | `PrivateRoomRepository` |
 | `_XxxScreenState` with logic | `XxxViewModel extends ChangeNotifier`, async actions as `Command`s |
@@ -97,7 +97,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [x] Add `provider`; add `Command0`/`Command1` in `lib/utils/command.dart` (adapted from the guide's *compass_app* to catch exceptions, see D1; tests in `test/command_test.dart`)
 - [x] Create `lib/ui/core/{themes,ui}` and `lib/utils`; move `AppColors`, `constants.dart` to `ui/core/themes/`, shared widgets (`Background`, `ChatButton`, `CreamCard`, `MessageBubble`, `TypingIndicator`) to `ui/core/ui/`, theme from `main.dart` to `AppTheme` in `ui/core/themes/theme.dart`. `config/`, `data/`, `domain/` are created when Phase 1–2 add their first file
 - [x] Decide D1 (exceptions vs `Result`), record it below
-- [ ] Decide D2 (domain layer scope)
+- [x] Decide D2 (domain layer scope), record it below
 
 ### Phase 1: data layer and models (2–3 PRs)
 - [x] Pure-Dart models in `lib/domain/models/`: `Timestamp` → `DateTime`; Firestore mapping in `data/repositories/story/story_firestore_mapping.dart`; `positionLabel` → `ui/core/position_label.dart`
@@ -105,7 +105,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [x] Domain errors and rules out of the services: `StoryException`/`StoryErrorCode`, `PrivateRoomException`/`PrivateRoomErrorCode`, `UserProfileException`/`UserProfileErrorCode` (the `Service` infix dropped) in `domain/models/`; `Nickname` (normalize/validate/min/max), `emailKey()`, `AgeRules` (isAdult/adultAge/oldestBirthYear)
 - [x] `age_signals_source.dart` → `data/services/`
 - [x] Fakes in `testing/fakes/repositories/` (story, user profile, age check, private room); `test/fake_story_repository_test.dart` checks the story fake follows the turn rules. Service tests renamed to `*_repository_firestore_test.dart`
-- Left in `lib/services/` on purpose: `auth_service.dart` (→ Phase 2, done), `language_room_preference.dart` (→ Phase 3 with `RoomRepository`, done: now in `data/services/`), `age_gate.dart` (→ Phase 3, use case, D2)
+- Left in `lib/services/` on purpose: `auth_service.dart` (→ Phase 2, done), `language_room_preference.dart` (→ Phase 3 with `RoomRepository`, done: now in `data/services/`), `age_gate.dart` (→ Phase 3, use case, D2, done: now in `domain/use_cases/`). `lib/services/` is gone
 
 ### Phase 2: auth and central DI (1 PR)
 - [x] `AuthRepository` (ChangeNotifier) + `AuthRepositoryFirebase` replace static `AuthService`; Google SDK behind `data/services/google_sign_in_service.dart`; Firebase errors become `AuthException`/`AuthErrorCode` (`domain/models/auth_error.dart`, D1). `config/dependencies.dart` provides all repositories via `MultiProvider` in `main.dart`; screens `context.read` them (optional constructor params kept for existing tests until Phase 3). `AgeGate` now requires its `storage`
@@ -118,7 +118,7 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 - [x] `WelcomeScreen` / `LoginScreen` / `RegistrationScreen`: `WelcomeViewModel` (`signInWithGoogle`, false when the picker is dismissed), `LoginViewModel` (`login`), `RegistrationViewModel` (`register`); moved to `ui/auth/`. Tests in `test/ui/auth/`
 - [x] `StoryReadScreen`: `StoryReadViewModel` (`loadNicknames` started on creation, never fails; `authorNameOf(part)` = nickname or masked email). The screen takes the story and creates the ViewModel in `initState`; `CompleteStoriesScreen` lost its `profileRepository` pass-through (its test provides the repository instead). Moved to `ui/story_read/`; its test moved to `test/ui/story_read/`, gates the lookup explicitly to check the masked-first render, and checks an app rebuild doesn't reload the nicknames
 - [x] `HomeScreen` + `RoomRepository`: `RoomRepository` (ChangeNotifier) + `RoomRepositoryLocal` own the language room (via `LanguageRoomPreference`, moved to `data/services/`), how it was picked, and the in-memory private room, which they leave on sign-out (before, Home's state was simply destroyed). `RoomLanguageSource` moved to `domain/models/story_language.dart`. `HomeViewModel` loads the room and exposes it to Home; the selected tab stays in the View. `AccountScreen` reads and changes the room through the repository: its five room parameters and Home's callbacks are gone. `FakeRoomRepository` in `testing/fakes/`; tests in `test/room_repository_local_test.dart` and `test/ui/home/`
-- [ ] `CompleteStoriesScreen` + `ResolveAgeAccess` use case
+- [x] `CompleteStoriesScreen` + `AgeGate` use case: `AgeGate` moved to `domain/use_cases/` (name kept, the age-signals docs use it). It is one app-wide instance (provided in `config/dependencies.dart`) that now also remembers each user's session verdict (`isSessionAdult`/`isSessionMinor`/`rememberVerdict`, formerly static sets in the screen), writes the birth year (`recordBirthYear`) and forgets everything on sign-out by listening to `AuthRepository`; its signal cache is per instance, no longer static. AccountScreen's sign-out no longer clears anything by hand (account deletion now clears too). `CompleteStoriesViewModel`: one subscription per room, the mature filter and "yours first" split (`sections`), the quiet birth-year read, and unlocking as two commands (`unlock` → open / minor / askBirthYear; `submitBirthYear` after the View shows the age screen; `cancelBirthYear`). Screen and `AgeCheckScreen` moved to `ui/complete_stories/`. `mature_story_lock_test` keeps all its cases, now through providers, with sign-out instead of the static clears; ViewModel tests in `test/ui/complete_stories/`
 - [ ] `AccountScreen` (split into sub-widgets: nickname, room, language, account deletion; one ViewModel)
 
 Pattern: a screen takes only its inputs (e.g. the story) and **creates its ViewModel once, in `initState`**, with repositories from `context.read`, then disposes it. Never build a ViewModel in a route builder or another widget's `build`: Flutter reruns a route's builder whenever the Navigator's dependencies change (`Navigator.didChangeDependencies` → `changedExternalState` → the page is rebuilt), which would create a new ViewModel each time, repeating its side effects (lock, loads) and leaking the old one. Tabs forward input changes (e.g. the room) from `didUpdateWidget`. Tests go in `test/ui/<feature>/`. Per feature: ViewModel unit tests with fakes; update existing widget tests (`account_screen_test`, `mature_story_lock_test`, `story_read_screen_test`) to get dependencies via providers.
@@ -127,13 +127,13 @@ Pattern: a screen takes only its inputs (e.g. the story) and **creates its ViewM
 - [ ] `go_router` with `redirect` on `AuthRepository`; drop `AuthWrapper`, named routes, `pushNamedAndRemoveUntil` on sign-out/delete
 
 ### Phase 5: cleanup
-- [ ] Remove empty `services/` and `screens/`, static `AgeGate` cache
+- [ ] Remove empty `screens/` (`services/` and the static `AgeGate` cache: done in Phase 3)
 - [ ] Import/lint rule: `lib/ui` must not import `cloud_firestore` / `firebase_auth`
 - [ ] Update CLAUDE.md / docs and the `pr-review` skill with the new conventions
 
 ## Decisions
 - **D1 (decided 2026-10-12)** Error handling: keep the existing coded exceptions (`StoryServiceException` etc.). Repositories throw them as today; `Command` catches and exposes the error to the ViewModel/View, which maps the code to l10n. No `Result<T>`.
-- **D2 (proposed)** Domain layer only for the age check (`ResolveAgeAccess`); other ViewModels call repositories directly, as the guide allows for simple logic.
+- **D2 (decided 2026-10-12)** Domain layer only for the age check: `AgeGate` becomes the use case (name kept); other ViewModels call repositories directly, as the guide allows for simple logic.
 - **D3 (proposed)** Finish the in-flight branches touching `complete_stories` and `account` (AdMob, mature stories) before Phase 3 reaches those screens.
 
 ## Progress log
@@ -150,3 +150,4 @@ Pattern: a screen takes only its inputs (e.g. the story) and **creates its ViewM
 - 2026-10-12: Fix: ViewModels were built in route builders (chat, private room forms, login, registration), which Flutter can rerun, recreating the ViewModel; noticed as nicknames flickering on the story-read screen during its migration. Screens now create their ViewModel in `initState`. Regression test in `test/ui/chat/chat_screen_test.dart`. Verified on a real device by the owner.
 - 2026-10-12: Phase 3, `StoryReadScreen` done. No behaviour change: authors still show masked until nicknames arrive, as before. Analyze clean, all tests green. Verified on a real device by the owner.
 - 2026-10-12: Phase 3, `HomeScreen` + `RoomRepository` done. Behaviour: the language room is resolved once per app run instead of each time Home is created (same result unless the device language changes while the app runs); the private room is still left on sign-out. Analyze clean, all tests green. Verified on a real device by the owner.
+- 2026-10-12: D2 decided. Phase 3, `CompleteStoriesScreen` + `AgeGate` use case done. Behaviour: the session's age verdicts are now also forgotten when the account is deleted (before, only on the sign-out button). Analyze clean, all tests green. Verified on a real device by the owner.

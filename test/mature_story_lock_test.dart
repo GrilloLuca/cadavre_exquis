@@ -8,17 +8,20 @@ import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
-import 'package:cadavre_exquisite/screens/age_check_screen.dart';
-import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
+import 'package:cadavre_exquisite/ui/complete_stories/widgets/age_check_screen.dart';
+import 'package:cadavre_exquisite/ui/complete_stories/widgets/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
-import 'package:cadavre_exquisite/services/age_gate.dart';
+import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+
+import '../testing/fakes/repositories/fake_auth_repository.dart';
 
 /// An [AgeSignalsSource] answering with [_answer] and counting its calls.
 class _FakeSource implements AgeSignalsSource {
@@ -74,6 +77,11 @@ void main() {
   late FakeFirebaseFirestore firestore;
   late AgeCheckRepository storage;
   late AppLocalizations l10n;
+  late FakeAuthRepository auth;
+
+  /// The gate the screen gets when a test doesn't pass its own: one per
+  /// test, shared across pumps like the app's single gate.
+  AgeGate? sharedGate;
 
   Future<void> addStory(
     String id, {
@@ -105,8 +113,8 @@ void main() {
   }
 
   setUp(() async {
-    AgeGate.clearSessionCache();
-    CompleteStoriesScreen.clearSessionState();
+    sharedGate = null;
+    auth = FakeAuthRepository(email: _email);
     firestore = FakeFirebaseFirestore();
     storage = AgeCheckRepositoryFirestore(firestore: firestore);
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
@@ -135,8 +143,10 @@ void main() {
       (await firestore.collection('ageChecks').doc(_docId).get())
           .data()?['birthYear'] as int?;
 
-  /// The screen in an app. Pass the same [storyRepository] and [gate] across
-  /// pumps to exercise `didUpdateWidget` rather than a fresh state.
+  /// The screen in an app, signed in as [_email]. Without [gate] it uses
+  /// [sharedGate], so what the session remembers survives re-pumps as in
+  /// the app. Re-pumping with another room or language exercises
+  /// `didUpdateWidget` rather than a fresh state.
   Widget app(
     _FakeSource source, {
     AgeGate? gate,
@@ -144,23 +154,38 @@ void main() {
     String language = 'en',
     String? roomId,
   }) {
-    return Provider<UserProfileRepository>(
-      create: (_) => UserProfileRepositoryFirestore(firestore: firestore),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>.value(value: auth),
+        Provider<StoryRepository>.value(
+          value:
+              storyRepository ?? StoryRepositoryFirestore(firestore: firestore),
+        ),
+        Provider<AgeGate>.value(
+          value: gate ??
+              (sharedGate ??= AgeGate(
+                signals: source,
+                storage: storage,
+                authRepository: auth,
+              )),
+        ),
+        Provider<UserProfileRepository>.value(
+          value: UserProfileRepositoryFirestore(firestore: firestore),
+        ),
+      ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
-        home: CompleteStoriesScreen(
-          language: language,
-          roomId: roomId,
-          storyRepository:
-              storyRepository ?? StoryRepositoryFirestore(firestore: firestore),
-          ageGate: gate ?? AgeGate(signals: source, storage: storage),
-          ageCheckRepository: storage,
-          email: _email,
-        ),
+        home: CompleteStoriesScreen(language: language, roomId: roomId),
       ),
     );
+  }
+
+  /// What the sign-out button does, then signing back in as the same user.
+  Future<void> signOutAndIn() async {
+    await auth.signOut();
+    await auth.signInWithEmail(email: _email, password: 'secret');
   }
 
   Future<void> pumpScreen(WidgetTester tester, _FakeSource source,
@@ -310,7 +335,7 @@ void main() {
     expect(source.calls, 1);
   });
 
-  testWidgets('clearSessionState locks mature stories again', (tester) async {
+  testWidgets('signing out locks mature stories again', (tester) async {
     final source = _FakeSource.value(AgeSignal.adult);
     await pumpScreen(tester, source);
     await tester.tap(locked().first);
@@ -318,7 +343,7 @@ void main() {
     await goBack(tester);
     expect(locked(), findsNothing);
 
-    CompleteStoriesScreen.clearSessionState();
+    await signOutAndIn();
     await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester, source);
     expect(locked(), findsNWidgets(2));
@@ -696,9 +721,8 @@ void main() {
     });
   });
 
-  testWidgets(
-      'sign-out reset (clearSessionState + AgeGate.clearSessionCache) locks '
-      'again and asks the platform afresh', (tester) async {
+  testWidgets('signing out locks again and asks the platform afresh',
+      (tester) async {
     final source = _FakeSource.value(AgeSignal.adult);
     await pumpScreen(tester, source);
     await tester.tap(locked().first);
@@ -707,9 +731,7 @@ void main() {
     expect(locked(), findsNothing);
     expect(source.calls, 1);
 
-    // What the sign-out button in AccountScreen does.
-    CompleteStoriesScreen.clearSessionState();
-    AgeGate.clearSessionCache();
+    await signOutAndIn();
 
     await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester, source);
@@ -723,15 +745,14 @@ void main() {
     expect(source.calls, 2);
   });
 
-  testWidgets('sign-out reset also forgets a session minor', (tester) async {
+  testWidgets('signing out also forgets a session minor', (tester) async {
     final source = _FakeSource.value(AgeSignal.minor);
     await pumpScreen(tester, source);
     await tester.tap(locked().first);
     await tester.pumpAndSettle();
     expect(locked(), findsNothing);
 
-    CompleteStoriesScreen.clearSessionState();
-    AgeGate.clearSessionCache();
+    await signOutAndIn();
 
     await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester, source);

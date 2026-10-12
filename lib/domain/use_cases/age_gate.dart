@@ -1,4 +1,5 @@
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/domain/models/email_key.dart';
@@ -25,15 +26,24 @@ enum AgeVerdict {
 /// results are never written to Firestore (they change over time and the
 /// rules only accept a birth year); definitive ones are cached in memory for
 /// the app session so the system sheet does not reappear on every tap.
+///
+/// The app shares one gate (see `config/dependencies.dart`), which also
+/// remembers each user's final verdict for the session ([isSessionAdult],
+/// [isSessionMinor]). Everything it remembers is forgotten when
+/// [authRepository] reports a sign-out, or on [clearSession].
 class AgeGate {
   AgeGate({
     AgeSignalsSource? signals,
     required AgeCheckRepository storage,
+    AuthRepository? authRepository,
     this.timeout = defaultTimeout,
     DateTime Function()? clock,
   })  : _signals = signals ?? PluginAgeSignalsSource.shared,
         _storage = storage,
-        _clock = clock ?? DateTime.now;
+        _auth = authRepository,
+        _clock = clock ?? DateTime.now {
+    _auth?.addListener(_onAuthChanged);
+  }
 
   /// Long enough for the user to answer a system sheet, short enough that a
   /// silent hang does not block them for good.
@@ -41,19 +51,55 @@ class AgeGate {
 
   final AgeSignalsSource _signals;
   final AgeCheckRepository _storage;
+  final AuthRepository? _auth;
   final DateTime Function() _clock;
 
   /// How long to wait for the platform before falling back to asking.
   final Duration timeout;
 
-  /// Definitive (adult or minor) signals per user for this app session.
-  /// Static so it survives the gate being recreated with each widget.
-  /// [AgeSignal.unavailable] is never stored, so later taps retry.
-  static final Map<String, AgeSignal> _sessionSignals = {};
+  /// Definitive (adult or minor) signals per user (email key) for this
+  /// session. [AgeSignal.unavailable] is never stored, so later taps retry.
+  final Map<String, AgeSignal> _sessionSignals = {};
 
-  /// Clears the session cache. Called on sign-out, so the next user's
-  /// signals are asked afresh; also used by tests.
-  static void clearSessionCache() => _sessionSignals.clear();
+  /// Users (email keys) found adult or minor this session, whatever the
+  /// source of the verdict.
+  final Set<String> _sessionAdults = {};
+  final Set<String> _sessionMinors = {};
+
+  /// Forgets everything remembered this session, so mature stories lock
+  /// again and the platform is asked afresh.
+  void clearSession() {
+    _sessionSignals.clear();
+    _sessionAdults.clear();
+    _sessionMinors.clear();
+  }
+
+  void _onAuthChanged() {
+    if (!_auth!.isAuthenticated) clearSession();
+  }
+
+  /// Whether [email] was found adult this session: their mature stories are
+  /// unlocked until sign-out or restart.
+  bool isSessionAdult(String email) => _sessionAdults.contains(emailKey(email));
+
+  /// Whether [email] was found minor this session: their mature stories stay
+  /// hidden.
+  bool isSessionMinor(String email) => _sessionMinors.contains(emailKey(email));
+
+  /// Remembers the final verdict for [email] for the rest of the session.
+  void rememberVerdict(String email, {required bool adult}) {
+    final key = emailKey(email);
+    (adult ? _sessionAdults : _sessionMinors).add(key);
+    (adult ? _sessionMinors : _sessionAdults).remove(key);
+  }
+
+  /// Stores the [birthYear] entered on the age screen (write-once, see
+  /// [AgeCheckRepository.setBirthYear]) and returns whether it makes [email]
+  /// an adult.
+  Future<bool> recordBirthYear(String email, int birthYear) async {
+    await _storage.setBirthYear(email: email, birthYear: birthYear);
+    return AgeRules.isAdult(birthYear, _clock());
+  }
 
   /// The birth year stored for [email], or null if never asked. Quiet: no
   /// platform call and no UI, so it is safe from `initState` (for example,
@@ -96,4 +142,6 @@ class AgeGate {
     if (signal != AgeSignal.unavailable) _sessionSignals[key] = signal;
     return signal;
   }
+
+  void dispose() => _auth?.removeListener(_onAuthChanged);
 }

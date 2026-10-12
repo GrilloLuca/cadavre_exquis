@@ -15,6 +15,7 @@ import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_re
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/services/google_sign_in_service.dart';
 import 'package:cadavre_exquisite/data/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 
 /// The app's repositories, provided above `MaterialApp` so every screen can
 /// `context.read` them. Tests provide fakes instead.
@@ -39,6 +40,15 @@ List<SingleChildWidget> providers({
       ),
       Provider<AgeCheckRepository>(
         create: (_) => AgeCheckRepositoryFirestore(),
+      ),
+      // The app-wide age check: remembers verdicts for the session and
+      // forgets them on sign-out.
+      Provider<AgeGate>(
+        create: (context) => AgeGate(
+          storage: context.read<AgeCheckRepository>(),
+          authRepository: context.read<AuthRepository>(),
+        ),
+        dispose: (_, gate) => gate.dispose(),
       ),
       Provider<PrivateRoomRepository>(
         create: (_) => PrivateRoomRepositoryFirestore(),

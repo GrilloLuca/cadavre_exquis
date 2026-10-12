@@ -9,10 +9,8 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
-import 'package:cadavre_exquisite/screens/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
-import 'package:cadavre_exquisite/services/age_gate.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
@@ -687,11 +685,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       Center(
                         child: ElevatedButton.icon(
                           onPressed: () async {
+                            // AgeGate forgets the session's age verdicts and
+                            // signals by itself on sign-out.
                             await context.read<AuthRepository>().signOut();
-                            // Mature stories lock again for the next user,
-                            // and their age signals are asked afresh.
-                            CompleteStoriesScreen.clearSessionState();
-                            AgeGate.clearSessionCache();
                             if (!context.mounted) return;
                             Navigator.pushNamedAndRemoveUntil(
                               context,
