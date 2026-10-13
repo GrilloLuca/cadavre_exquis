@@ -94,6 +94,41 @@ void main() {
         unorderedEquals(['it-room', 'room-mature']));
   });
 
+  test('submitPart sends the earlier parts back exactly as stored', () async {
+    // Nanoseconds: more precision than a DateTime keeps (microseconds on
+    // mobile, milliseconds on web). firestore.rules requires the earlier
+    // parts unchanged, so they must not go through DateTime.
+    final timestamp = Timestamp(1760000000, 123456789);
+    await firestore.collection('stories').doc('ongoing').set({
+      'status': 'incomplete',
+      'currentPosition': kStoryPositions[1],
+      'parts': [
+        {
+          'position': kStoryPositions.first,
+          'text': 'first',
+          'author': 'a@example.com',
+          'timestamp': timestamp,
+        },
+      ],
+      'lockedBy': null,
+      'language': 'it',
+      'roomId': null,
+    });
+
+    await service.submitPart(
+      storyId: 'ongoing',
+      expectedPosition: kStoryPositions[1],
+      text: 'second',
+      authorEmail: 'b@example.com',
+    );
+
+    final parts = (await firestore.collection('stories').doc('ongoing').get())
+        .data()!['parts'] as List<dynamic>;
+    expect(parts, hasLength(2));
+    expect((parts.first as Map)['timestamp'], timestamp);
+    expect((parts.last as Map)['text'], 'second');
+  });
+
   test('complete list is newest completed first, ties by id', () async {
     // Ordered by the last part's timestamp, not the first one.
     await addStory('old', partSeconds: [10, 100]);

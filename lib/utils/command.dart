@@ -37,13 +37,16 @@ abstract class Command<T> extends ChangeNotifier {
   /// Forgets the outcome of the last execution, for example once the View
   /// has shown its error.
   void clearResult() {
+    if (_disposed) return;
     _error = null;
     _completed = false;
     notifyListeners();
   }
 
   Future<void> _execute(Future<T> Function() action) async {
-    if (_running) return;
+    // A late call (e.g. a retry started after an await) on a command whose
+    // ViewModel is gone does nothing.
+    if (_running || _disposed) return;
 
     _running = true;
     _error = null;

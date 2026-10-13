@@ -179,11 +179,15 @@ class StoryRepositoryFirestore implements StoryRepository {
         author: authorEmail,
         timestamp: DateTime.now(),
       );
-      final updatedParts = [...story.parts, newPart];
+      // The earlier parts are sent back exactly as read: firestore.rules
+      // requires them unchanged, and a round trip through DateTime would
+      // lose precision on web (milliseconds only).
+      final storedParts = snapshot.data()?['parts'] as List<dynamic>? ?? [];
+      final updatedParts = [...storedParts, storyPartToMap(newPart)];
       final next = nextPosition(expectedPosition);
 
       transaction.update(docRef, {
-        'parts': updatedParts.map(storyPartToMap).toList(),
+        'parts': updatedParts,
         'currentPosition': next ?? expectedPosition,
         'status': next == null ? 'complete' : 'incomplete',
         'lockedBy': null,

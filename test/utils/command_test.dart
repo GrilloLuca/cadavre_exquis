@@ -70,4 +70,17 @@ void main() {
 
     await expectLater(running, completes);
   });
+
+  test('execute and clearResult after dispose do nothing', () async {
+    var calls = 0;
+    final command = Command0<void>(() async => calls++);
+    command.dispose();
+
+    // A disposed ChangeNotifier asserts when notified, so these would throw.
+    await command.execute();
+    command.clearResult();
+
+    expect(calls, 0);
+    expect(command.running, isFalse);
+  });
 }
