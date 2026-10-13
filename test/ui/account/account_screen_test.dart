@@ -7,15 +7,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
-import 'package:cadavre_exquisite/screens/account_screen.dart';
+import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
-import '../testing/fakes/repositories/fake_room_repository.dart';
+import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_room_repository.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
 const _docId = 'luca.grillo@gmail.com';
@@ -60,14 +62,28 @@ void main() {
     };
   }
 
-  Widget buildApp(UserProfileRepository service) =>
-      ChangeNotifierProvider<RoomRepository>(
-        create: (_) => FakeRoomRepository(languageCode: kFallbackRoomLanguage),
-        child: MaterialApp(
+  /// The screen with its dependencies: [service] for the nickname, signed
+  /// in as [email] (signed out when null), in [rooms].
+  Widget buildApp(
+    UserProfileRepository service, {
+    String? email = _email,
+    RoomRepository? rooms,
+  }) =>
+      MultiProvider(
+        providers: [
+          Provider<UserProfileRepository>.value(value: service),
+          ChangeNotifierProvider<AuthRepository>(
+              create: (_) => FakeAuthRepository(email: email)),
+          ChangeNotifierProvider<RoomRepository>.value(
+            value: rooms ??
+                FakeRoomRepository(languageCode: kFallbackRoomLanguage),
+          ),
+        ],
+        child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('it'),
-          home: AccountScreen(profileRepository: service, email: _email),
+          locale: Locale('it'),
+          home: AccountScreen(),
         ),
       );
 
@@ -364,19 +380,10 @@ void main() {
         languageSource: languageSource,
         privateRoom: privateRoom,
       );
-      await tester.pumpWidget(ChangeNotifierProvider<RoomRepository>.value(
-        value: rooms,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('it'),
-          home: AccountScreen(
-            profileRepository:
-                UserProfileRepositoryFirestore(firestore: firestore),
-            email: email,
-            currentEmail: () => null,
-          ),
-        ),
+      await tester.pumpWidget(buildApp(
+        UserProfileRepositoryFirestore(firestore: firestore),
+        email: email,
+        rooms: rooms,
       ));
       await tester.pumpAndSettle();
       return rooms;
