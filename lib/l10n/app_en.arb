@@ -110,5 +110,18 @@
   "ageCheckQuestion": "What year were you born?",
   "ageCheckHint": "Year of birth",
   "ageCheckNote": "You won't be able to change your answer.",
-  "ageCheckConfirm": "Confirm"
+  "ageCheckConfirm": "Confirm",
+
+  "notificationOfferTitle": "Want to know when someone continues your story?",
+  "notificationOfferMessage": "We'll send you a notification when someone writes the next part and when the story is complete.",
+  "notificationOfferAccept": "Yes, notify me",
+  "notificationOfferDecline": "Not now",
+  "notificationsSectionTitle": "Notifications",
+  "notificationsOn": "On: we'll tell you when someone continues your stories and when they're complete.",
+  "notificationsOff": "Turn them on to know when someone continues your stories and when they're complete.",
+  "notificationsDenied": "They're turned off in your phone's settings: turn them on there to get them.",
+  "notificationsEnableButton": "Turn on",
+  "notificationOpenAction": "Open",
+  "storyNotFound": "This story is no longer available.",
+  "storyNotReadyYet": "This story will be ready to read in a moment."
 }

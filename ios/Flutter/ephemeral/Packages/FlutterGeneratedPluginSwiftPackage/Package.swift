@@ -19,6 +19,7 @@ let package = Package(
         .package(name: "cloud_firestore", path: "../.packages/cloud_firestore-6.7.1"),
         .package(name: "shared_preferences_foundation", path: "../.packages/shared_preferences_foundation-2.5.7"),
         .package(name: "google_sign_in_ios", path: "../.packages/google_sign_in_ios-6.3.6"),
+        .package(name: "firebase_messaging", path: "../.packages/firebase_messaging-16.4.3"),
         .package(name: "firebase_auth", path: "../.packages/firebase_auth-6.5.6"),
         .package(name: "age_range_signals", path: "../.packages/age_range_signals-0.10.1"),
         .package(name: "FlutterFramework", path: "../.packages/FlutterFramework")
@@ -31,6 +32,7 @@ let package = Package(
                 .product(name: "cloud-firestore", package: "cloud_firestore"),
                 .product(name: "shared-preferences-foundation", package: "shared_preferences_foundation"),
                 .product(name: "google-sign-in-ios", package: "google_sign_in_ios"),
+                .product(name: "firebase-messaging", package: "firebase_messaging"),
                 .product(name: "firebase-auth", package: "firebase_auth"),
                 .product(name: "age-range-signals", package: "age_range_signals"),
                 .product(name: "FlutterFramework", package: "FlutterFramework")

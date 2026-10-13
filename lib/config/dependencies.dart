@@ -5,6 +5,8 @@ import 'package:cadavre_exquisite/data/repositories/age_check/age_check_reposito
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository_firebase.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository_firebase.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -52,5 +54,13 @@ List<SingleChildWidget> providers({
       ),
       Provider<PrivateRoomRepository>(
         create: (_) => PrivateRoomRepositoryFirestore(),
+      ),
+      // Below AuthRepository, which it follows to register the device for
+      // the signed-in user. Created on first use (the signed-in home), so a
+      // launch notification is still waiting for it.
+      ChangeNotifierProvider<NotificationRepository>(
+        create: (context) => NotificationRepositoryFirebase(
+          authRepository: context.read<AuthRepository>(),
+        ),
       ),
     ];

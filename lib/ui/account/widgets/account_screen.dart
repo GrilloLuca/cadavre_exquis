@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/account/view_models/account_view_model.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/delete_account_dialog.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/nickname_card.dart';
+import 'package:cadavre_exquisite/ui/account/widgets/notifications_card.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/room_card.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 
-/// The profile tab: nickname, room, sign-out and account deletion. Creates
+/// The profile tab: nickname, room, notifications, sign-out and account
+/// deletion. Creates
 /// its [AccountViewModel] once, in `initState` (see `ChatScreen`).
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -34,6 +38,7 @@ class _AccountScreenState extends State<AccountScreen> {
       profileRepository: context.read<UserProfileRepository>(),
       authRepository: context.read<AuthRepository>(),
       roomRepository: context.read<RoomRepository>(),
+      notificationRepository: context.read<NotificationRepository>(),
     );
     _viewModel.deleteAccount.addListener(_onDeleteChanged);
     _viewModel.signOut.addListener(_onSignOutChanged);
@@ -121,6 +126,9 @@ class _AccountScreenState extends State<AccountScreen> {
       );
   }
 
+  static bool _showsNotifications(NotificationPermission? permission) =>
+      permission != null && permission != NotificationPermission.unsupported;
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -130,6 +138,7 @@ class _AccountScreenState extends State<AccountScreen> {
         _viewModel.saveNickname,
         _viewModel.deleteAccount,
         _viewModel.signOut,
+        _viewModel.enableNotifications,
       ]),
       builder: (context, _) => _buildScreen(context),
     );
@@ -191,6 +200,12 @@ class _AccountScreenState extends State<AccountScreen> {
                         viewModel: _viewModel,
                         onOpenPrivateRooms: _openPrivateRoomPicker,
                       ),
+                      if (email != null &&
+                          _showsNotifications(
+                              _viewModel.notificationPermission)) ...[
+                        const SizedBox(height: 24.0),
+                        NotificationsCard(viewModel: _viewModel),
+                      ],
                       const SizedBox(height: 32.0),
                       Center(
                         child: ElevatedButton.icon(

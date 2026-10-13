@@ -8,15 +8,18 @@ import 'package:provider/provider.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
@@ -68,9 +71,12 @@ void main() {
     UserProfileRepository service, {
     String? email = _email,
     RoomRepository? rooms,
+    NotificationRepository? notifications,
   }) =>
       MultiProvider(
         providers: [
+          ChangeNotifierProvider<NotificationRepository>(
+              create: (_) => notifications ?? FakeNotificationRepository()),
           Provider<UserProfileRepository>.value(value: service),
           ChangeNotifierProvider<AuthRepository>(
               create: (_) => FakeAuthRepository(email: email)),
@@ -583,6 +589,59 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(leaveButton(), findsOneWidget);
+    });
+  });
+
+  group('Notifications card', () {
+    Future<FakeNotificationRepository> pumpCard(
+      WidgetTester tester,
+      NotificationPermission permission, {
+      String? email = _email,
+    }) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final notifications = FakeNotificationRepository(permission: permission);
+      await tester.pumpWidget(buildApp(
+        UserProfileRepositoryFirestore(firestore: firestore),
+        email: email,
+        notifications: notifications,
+      ));
+      await tester.pumpAndSettle();
+      return notifications;
+    }
+
+    Finder turnOn() => find.widgetWithText(FilledButton, 'Attiva');
+
+    testWidgets('turns notifications on when never asked', (tester) async {
+      final notifications =
+          await pumpCard(tester, NotificationPermission.notDetermined);
+      expect(find.text('Notifiche'), findsOneWidget);
+
+      await tester.ensureVisible(turnOn());
+      await tester.tap(turnOn());
+      await tester.pumpAndSettle();
+
+      expect(notifications.calls, ['enable']);
+      expect(turnOn(), findsNothing);
+      expect(find.textContaining('Attive:'), findsOneWidget);
+    });
+
+    testWidgets('a refused permission points to the system settings',
+        (tester) async {
+      await pumpCard(tester, NotificationPermission.denied);
+
+      expect(find.textContaining('impostazioni del telefono'), findsOneWidget);
+      expect(turnOn(), findsNothing);
+    });
+
+    testWidgets('is hidden where push does not exist, or signed out',
+        (tester) async {
+      await pumpCard(tester, NotificationPermission.unsupported);
+      expect(find.text('Notifiche'), findsNothing);
+
+      await pumpCard(tester, NotificationPermission.granted, email: null);
+      expect(find.text('Notifiche'), findsNothing);
     });
   });
 }

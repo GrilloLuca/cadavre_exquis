@@ -12,7 +12,7 @@ lib/
   config/              dependencies.dart: the app's providers
   data/
     repositories/<x>/  <x>_repository.dart (interface) + <x>_repository_firestore|firebase|local.dart
-    services/          thin wrappers over SDKs/plugins (Google Sign-In, age signals, shared preferences)
+    services/          thin wrappers over SDKs/plugins (Google Sign-In, age signals, FCM, shared preferences)
   domain/
     models/            plain Dart: Story, PrivateRoom, Nickname, AgeRules, coded exceptions...
     use_cases/         AgeGate (the only use case, decision D2)
@@ -39,7 +39,7 @@ Only `config/dependencies.dart` creates repository implementations.
 - Source of truth for one kind of data, behind an abstract class. The UI only knows the interface.
 - Errors are **coded exceptions** from `domain/models` (`StoryException`, `PrivateRoomException`, `UserProfileException`, `AuthException`), never user-facing text (decision D1). The View maps the code to an `AppLocalizations` string.
 - Firestore documents are converted to domain models inside the data layer (e.g. `story_firestore_mapping.dart`); domain models carry `DateTime`, never `Timestamp`.
-- Repositories with state the UI follows (`AuthRepository`, `RoomRepository`) extend `ChangeNotifier`. `RoomRepository` and `AgeGate` forget session state on sign-out by listening to `AuthRepository`.
+- Repositories with state the UI follows (`AuthRepository`, `RoomRepository`, `NotificationRepository`) extend `ChangeNotifier`. `RoomRepository` and `AgeGate` forget session state on sign-out by listening to `AuthRepository`; `NotificationRepository` registers the device on sign-in the same way, but must be unregistered *before* sign-out (`AccountViewModel.signOut`), while the user can still delete its token.
 
 ## ViewModels and Views
 

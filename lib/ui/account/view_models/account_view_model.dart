@@ -1,37 +1,45 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
-/// The profile tab: the user's nickname, their room, signing out and
-/// deleting the account.
+/// The profile tab: the user's nickname, their room, push notifications,
+/// signing out and deleting the account.
 class AccountViewModel extends ChangeNotifier {
   /// Starts loading the nickname when someone is signed in.
   AccountViewModel({
     required UserProfileRepository profileRepository,
     required AuthRepository authRepository,
     required RoomRepository roomRepository,
+    required NotificationRepository notificationRepository,
   })  : _profiles = profileRepository,
         _auth = authRepository,
         _rooms = roomRepository,
+        _notifications = notificationRepository,
         email = authRepository.currentEmail {
     loadNickname = Command0<String?>(_loadNickname);
     saveNickname = Command1<void, String>(_saveNickname);
     deleteAccount = Command1<bool, String?>(_deleteAccount);
-    signOut = Command0<void>(_auth.signOut);
+    signOut = Command0<void>(_signOut);
+    enableNotifications =
+        Command0<NotificationPermission>(_notifications.enable);
     _rooms.addListener(notifyListeners);
+    _notifications.addListener(notifyListeners);
     if (email != null) loadNickname.execute();
   }
 
   final UserProfileRepository _profiles;
   final AuthRepository _auth;
   final RoomRepository _rooms;
+  final NotificationRepository _notifications;
 
   /// The signed-in user, read once: signing out leaves this screen. Without
   /// one there is no nickname to show and no account to delete.
@@ -117,6 +125,16 @@ class AccountViewModel extends ChangeNotifier {
 
   void leavePrivateRoom() => _rooms.leavePrivateRoom();
 
+  // ---- Notifications ----
+
+  /// Whether the device shows push notifications, null until known. The
+  /// card is hidden while unknown and where push doesn't exist.
+  NotificationPermission? get notificationPermission =>
+      _notifications.permission;
+
+  /// Asks for the permission (the system prompt) and registers the device.
+  late final Command0<NotificationPermission> enableNotifications;
+
   // ---- Account ----
 
   /// Whether the user signs in with a password, which they must enter again
@@ -130,15 +148,23 @@ class AccountViewModel extends ChangeNotifier {
   late final Command1<bool, String?> deleteAccount;
 
   /// Signs out. `AgeGate` and `RoomRepository` forget the session by
-  /// themselves.
+  /// themselves; the device stops getting this user's notifications first,
+  /// while the user can still remove its token.
   late final Command0<void> signOut;
+
+  Future<void> _signOut() async {
+    await _notifications.unregister();
+    await _auth.signOut();
+  }
 
   Future<bool> _deleteAccount(String? password) async {
     final confirmed = await _auth.reauthenticate(password: password);
     if (!confirmed) return false;
     // The anonymizeDeletedUser Cloud Function deletes the profile: the
     // rules don't let the user delete it, as that would free the nickname
-    // to be chosen again.
+    // to be chosen again. It deletes the push tokens too; this device's is
+    // removed here as well, so it stops right away.
+    await _notifications.unregister();
     await _auth.deleteAccount();
     return true;
   }
@@ -146,6 +172,8 @@ class AccountViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _rooms.removeListener(notifyListeners);
+    _notifications.removeListener(notifyListeners);
+    enableNotifications.dispose();
     loadNickname.dispose();
     saveNickname.dispose();
     deleteAccount.dispose();

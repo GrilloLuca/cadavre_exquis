@@ -16,6 +16,9 @@
 //   node scripts/review-complete-stories.js --write
 //   node scripts/review-complete-stories.js --mature-titles           # dry run
 //   node scripts/review-complete-stories.js --mature-titles --write
+//
+// It calls reviewStory/saveReview directly, never the reviewCompletedStory
+// trigger, so it sends no "story completed" push notifications.
 // lib/index.js initializes the default Admin app, which reads the project
 // from this variable when run outside Cloud Functions.
 process.env.GCLOUD_PROJECT ??= "flash-chat-7d17e";

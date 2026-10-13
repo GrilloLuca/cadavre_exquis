@@ -19,6 +19,9 @@ abstract class StoryRepository {
     String? roomId,
   });
 
+  /// The story with [storyId], or null if there is none.
+  Future<Story?> getStory(String storyId);
+
   /// Creates an empty story and returns it, so the caller can open it
   /// straight away.
   Future<Story> createStory({required String language, String? roomId});

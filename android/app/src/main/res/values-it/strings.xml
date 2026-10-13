@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="story_updates_channel_name">Aggiornamenti delle storie</string>
+    <string name="story_updates_channel_description">Quando qualcuno continua o completa una storia in cui hai scritto.</string>
+</resources>

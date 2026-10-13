@@ -703,6 +703,78 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Conferma'**
   String get ageCheckConfirm;
+
+  /// Title of the dialog offering to turn on push notifications, shown after the user sends a part.
+  ///
+  /// In it, this message translates to:
+  /// **'Vuoi sapere quando qualcuno continua la tua storia?'**
+  String get notificationOfferTitle;
+
+  /// Body of the dialog offering to turn on push notifications.
+  ///
+  /// In it, this message translates to:
+  /// **'Ti mandiamo una notifica quando qualcuno scrive il pezzo successivo e quando la storia è completa.'**
+  String get notificationOfferMessage;
+
+  /// Button accepting the notification offer; the system permission prompt follows.
+  ///
+  /// In it, this message translates to:
+  /// **'Sì, avvisami'**
+  String get notificationOfferAccept;
+
+  /// Button declining the notification offer for now.
+  ///
+  /// In it, this message translates to:
+  /// **'Non ora'**
+  String get notificationOfferDecline;
+
+  /// Heading of the notifications card in the profile tab.
+  ///
+  /// In it, this message translates to:
+  /// **'Notifiche'**
+  String get notificationsSectionTitle;
+
+  /// Notifications card text when the permission is granted.
+  ///
+  /// In it, this message translates to:
+  /// **'Attive: ti avvisiamo quando qualcuno continua le tue storie e quando sono complete.'**
+  String get notificationsOn;
+
+  /// Notifications card text when the user was never asked.
+  ///
+  /// In it, this message translates to:
+  /// **'Attivale per sapere quando qualcuno continua le tue storie e quando sono complete.'**
+  String get notificationsOff;
+
+  /// Notifications card text when the user refused the permission; only the system settings can change it.
+  ///
+  /// In it, this message translates to:
+  /// **'Sono disattivate nelle impostazioni del telefono: attivale lì per riceverle.'**
+  String get notificationsDenied;
+
+  /// Button on the notifications card that asks for the permission.
+  ///
+  /// In it, this message translates to:
+  /// **'Attiva'**
+  String get notificationsEnableButton;
+
+  /// Snackbar action opening the story of a notification received while the app is open.
+  ///
+  /// In it, this message translates to:
+  /// **'Apri'**
+  String get notificationOpenAction;
+
+  /// Snackbar when a tapped notification's story no longer exists.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa storia non è più disponibile.'**
+  String get storyNotFound;
+
+  /// Snackbar when a tapped notification's completed story hasn't been reviewed yet.
+  ///
+  /// In it, this message translates to:
+  /// **'La storia sarà pronta da leggere tra un momento.'**
+  String get storyNotReadyYet;
 }
 
 class _AppLocalizationsDelegate

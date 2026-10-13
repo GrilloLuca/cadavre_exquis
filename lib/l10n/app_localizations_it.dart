@@ -361,4 +361,46 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get ageCheckConfirm => 'Conferma';
+
+  @override
+  String get notificationOfferTitle =>
+      'Vuoi sapere quando qualcuno continua la tua storia?';
+
+  @override
+  String get notificationOfferMessage =>
+      'Ti mandiamo una notifica quando qualcuno scrive il pezzo successivo e quando la storia è completa.';
+
+  @override
+  String get notificationOfferAccept => 'Sì, avvisami';
+
+  @override
+  String get notificationOfferDecline => 'Non ora';
+
+  @override
+  String get notificationsSectionTitle => 'Notifiche';
+
+  @override
+  String get notificationsOn =>
+      'Attive: ti avvisiamo quando qualcuno continua le tue storie e quando sono complete.';
+
+  @override
+  String get notificationsOff =>
+      'Attivale per sapere quando qualcuno continua le tue storie e quando sono complete.';
+
+  @override
+  String get notificationsDenied =>
+      'Sono disattivate nelle impostazioni del telefono: attivale lì per riceverle.';
+
+  @override
+  String get notificationsEnableButton => 'Attiva';
+
+  @override
+  String get notificationOpenAction => 'Apri';
+
+  @override
+  String get storyNotFound => 'Questa storia non è più disponibile.';
+
+  @override
+  String get storyNotReadyYet =>
+      'La storia sarà pronta da leggere tra un momento.';
 }

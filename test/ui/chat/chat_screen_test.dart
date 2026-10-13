@@ -3,12 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 
 /// Counts how many times the story was locked.
@@ -45,12 +48,17 @@ void main() {
 
   /// Pumps a page with an "open" button that pushes the chat screen.
   Future<void> pumpAndOpen(
-      WidgetTester tester, FakeStoryRepository stories) async {
+    WidgetTester tester,
+    FakeStoryRepository stories, {
+    FakeNotificationRepository? notifications,
+  }) async {
     await tester.pumpWidget(MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthRepository>(
             create: (_) => FakeAuthRepository(email: 'me@example.com')),
         Provider<StoryRepository>.value(value: stories),
+        ChangeNotifierProvider<NotificationRepository>(
+            create: (_) => notifications ?? FakeNotificationRepository()),
       ],
       child: StatefulBuilder(builder: (context, setState) {
         rebuildApp = setState;
@@ -131,6 +139,47 @@ void main() {
     await tester.tap(find.byType(TextButton));
     await tester.pumpAndSettle();
 
+    expect(find.byType(ChatScreen), findsNothing);
+  });
+
+  testWidgets('offers notifications after sending, then closes',
+      (tester) async {
+    final stories = FakeStoryRepository(stories: [story()], now: () => now);
+    final notifications = FakeNotificationRepository(
+      permission: NotificationPermission.notDetermined,
+      offer: true,
+    );
+    await pumpAndOpen(tester, stories, notifications: notifications);
+
+    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Want to know when someone continues your story?'),
+        findsOneWidget);
+    await tester.tap(find.text('Yes, notify me'));
+    await tester.pumpAndSettle();
+
+    expect(notifications.calls, ['enable']);
+    expect(find.byType(ChatScreen), findsNothing);
+  });
+
+  testWidgets('"Not now" closes without asking for the permission',
+      (tester) async {
+    final stories = FakeStoryRepository(stories: [story()], now: () => now);
+    final notifications = FakeNotificationRepository(
+      permission: NotificationPermission.notDetermined,
+      offer: true,
+    );
+    await pumpAndOpen(tester, stories, notifications: notifications);
+
+    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(notifications.calls, ['dismissOffer']);
     expect(find.byType(ChatScreen), findsNothing);
   });
 }

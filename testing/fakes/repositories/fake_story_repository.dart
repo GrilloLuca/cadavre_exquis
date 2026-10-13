@@ -74,6 +74,9 @@ class FakeStoryRepository implements StoryRepository {
   }
 
   @override
+  Future<Story?> getStory(String storyId) async => _stories[storyId];
+
+  @override
   Future<Story> createStory({required String language, String? roomId}) async {
     _checkFailure();
     final story = Story(

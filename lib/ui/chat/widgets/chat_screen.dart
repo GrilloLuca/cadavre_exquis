@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
+import 'package:cadavre_exquisite/ui/chat/widgets/notification_offer_dialog.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
@@ -42,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
       story: widget.story,
       storyRepository: context.read<StoryRepository>(),
       authRepository: context.read<AuthRepository>(),
+      notificationRepository: context.read<NotificationRepository>(),
     );
     _viewModel.lock.addListener(_onLockChanged);
     _viewModel.submit.addListener(_onSubmitChanged);
@@ -78,7 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _onSubmitChanged() {
+  Future<void> _onSubmitChanged() async {
     final submit = _viewModel.submit;
     if (submit.running) return;
     final error = submit.error;
@@ -89,7 +92,18 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       return;
     }
-    if (submit.completed && submit.value == true) Navigator.pop(context);
+    if (!submit.completed || submit.value != true) return;
+    if (_viewModel.offerNotifications) {
+      submit.clearResult();
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (_) => const NotificationOfferDialog(),
+      );
+      if (!mounted) return;
+      await _viewModel.answerNotificationOffer.execute(accepted ?? false);
+      if (!mounted) return;
+    }
+    Navigator.pop(context);
   }
 
   String _errorMessage(BuildContext context, Object error) {

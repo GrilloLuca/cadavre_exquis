@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 
 const _me = 'me@example.com';
@@ -13,6 +15,7 @@ void main() {
   late DateTime now;
   late FakeStoryRepository stories;
   late FakeAuthRepository auth;
+  late FakeNotificationRepository notifications;
 
   Story newStory({String? lockedBy}) => Story(
         id: 's1',
@@ -28,12 +31,14 @@ void main() {
     now = DateTime.utc(2026, 10, 12, 10);
     stories = FakeStoryRepository(stories: [newStory()], now: () => now);
     auth = FakeAuthRepository(email: _me);
+    notifications = FakeNotificationRepository();
   });
 
   ChatViewModel create() => ChatViewModel(
         story: stories.stories['s1']!,
         storyRepository: stories,
         authRepository: auth,
+        notificationRepository: notifications,
       );
 
   test('locks the story on creation, then lets the user write', () async {
@@ -139,5 +144,56 @@ void main() {
     await pumpEventQueue();
 
     expect(stories.stories['s1']!.lockedBy, isNull);
+  });
+
+  group('notification offer', () {
+    test('is made after a part is sent when the user was never asked',
+        () async {
+      notifications = FakeNotificationRepository(
+        permission: NotificationPermission.notDetermined,
+        offer: true,
+      );
+      final viewModel = create();
+      await pumpEventQueue();
+      expect(viewModel.offerNotifications, isFalse);
+
+      await viewModel.submit.execute('hello');
+
+      expect(viewModel.offerNotifications, isTrue);
+      await viewModel.answerNotificationOffer.execute(true);
+      expect(notifications.calls, ['enable']);
+      expect(viewModel.offerNotifications, isFalse);
+      viewModel.dispose();
+    });
+
+    test('"Not now" is remembered', () async {
+      notifications = FakeNotificationRepository(
+        permission: NotificationPermission.notDetermined,
+        offer: true,
+      );
+      final viewModel = create();
+      await pumpEventQueue();
+      await viewModel.submit.execute('hello');
+
+      await viewModel.answerNotificationOffer.execute(false);
+
+      expect(notifications.calls, ['dismissOffer']);
+      viewModel.dispose();
+    });
+
+    test('is not made once the user answered the system prompt', () async {
+      notifications = FakeNotificationRepository(
+        permission: NotificationPermission.denied,
+        offer: true,
+      );
+      final viewModel = create();
+      await pumpEventQueue();
+
+      await viewModel.submit.execute('hello');
+
+      expect(viewModel.submit.value, isTrue);
+      expect(viewModel.offerNotifications, isFalse);
+      viewModel.dispose();
+    });
   });
 }

@@ -245,5 +245,54 @@
   "ageCheckQuestion": "Qual è il tuo anno di nascita?",
   "ageCheckHint": "Anno di nascita",
   "ageCheckNote": "Non potrai modificare la risposta.",
-  "ageCheckConfirm": "Conferma"
+  "ageCheckConfirm": "Conferma",
+
+  "notificationOfferTitle": "Vuoi sapere quando qualcuno continua la tua storia?",
+  "@notificationOfferTitle": {
+    "description": "Title of the dialog offering to turn on push notifications, shown after the user sends a part."
+  },
+  "notificationOfferMessage": "Ti mandiamo una notifica quando qualcuno scrive il pezzo successivo e quando la storia è completa.",
+  "@notificationOfferMessage": {
+    "description": "Body of the dialog offering to turn on push notifications."
+  },
+  "notificationOfferAccept": "Sì, avvisami",
+  "@notificationOfferAccept": {
+    "description": "Button accepting the notification offer; the system permission prompt follows."
+  },
+  "notificationOfferDecline": "Non ora",
+  "@notificationOfferDecline": {
+    "description": "Button declining the notification offer for now."
+  },
+  "notificationsSectionTitle": "Notifiche",
+  "@notificationsSectionTitle": {
+    "description": "Heading of the notifications card in the profile tab."
+  },
+  "notificationsOn": "Attive: ti avvisiamo quando qualcuno continua le tue storie e quando sono complete.",
+  "@notificationsOn": {
+    "description": "Notifications card text when the permission is granted."
+  },
+  "notificationsOff": "Attivale per sapere quando qualcuno continua le tue storie e quando sono complete.",
+  "@notificationsOff": {
+    "description": "Notifications card text when the user was never asked."
+  },
+  "notificationsDenied": "Sono disattivate nelle impostazioni del telefono: attivale lì per riceverle.",
+  "@notificationsDenied": {
+    "description": "Notifications card text when the user refused the permission; only the system settings can change it."
+  },
+  "notificationsEnableButton": "Attiva",
+  "@notificationsEnableButton": {
+    "description": "Button on the notifications card that asks for the permission."
+  },
+  "notificationOpenAction": "Apri",
+  "@notificationOpenAction": {
+    "description": "Snackbar action opening the story of a notification received while the app is open."
+  },
+  "storyNotFound": "Questa storia non è più disponibile.",
+  "@storyNotFound": {
+    "description": "Snackbar when a tapped notification's story no longer exists."
+  },
+  "storyNotReadyYet": "La storia sarà pronta da leggere tra un momento.",
+  "@storyNotReadyYet": {
+    "description": "Snackbar when a tapped notification's completed story hasn't been reviewed yet."
+  }
 }

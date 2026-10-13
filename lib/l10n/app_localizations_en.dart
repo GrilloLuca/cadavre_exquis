@@ -358,4 +358,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ageCheckConfirm => 'Confirm';
+
+  @override
+  String get notificationOfferTitle =>
+      'Want to know when someone continues your story?';
+
+  @override
+  String get notificationOfferMessage =>
+      'We\'ll send you a notification when someone writes the next part and when the story is complete.';
+
+  @override
+  String get notificationOfferAccept => 'Yes, notify me';
+
+  @override
+  String get notificationOfferDecline => 'Not now';
+
+  @override
+  String get notificationsSectionTitle => 'Notifications';
+
+  @override
+  String get notificationsOn =>
+      'On: we\'ll tell you when someone continues your stories and when they\'re complete.';
+
+  @override
+  String get notificationsOff =>
+      'Turn them on to know when someone continues your stories and when they\'re complete.';
+
+  @override
+  String get notificationsDenied =>
+      'They\'re turned off in your phone\'s settings: turn them on there to get them.';
+
+  @override
+  String get notificationsEnableButton => 'Turn on';
+
+  @override
+  String get notificationOpenAction => 'Open';
+
+  @override
+  String get storyNotFound => 'This story is no longer available.';
+
+  @override
+  String get storyNotReadyYet =>
+      'This story will be ready to read in a moment.';
 }

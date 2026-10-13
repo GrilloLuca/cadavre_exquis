@@ -4,6 +4,7 @@ import { getFirestore, Transaction } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import * as functionsV1 from "firebase-functions/v1";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { deleteTokensOf, notifyIfContinued, notifyStoryCompleted } from "./notifications";
 
 initializeApp();
 
@@ -145,23 +146,29 @@ export async function reviewStory(data: FirebaseFirestore.DocumentData): Promise
  * Stores [review] on the story. Both fields are fixed once set (clients
  * can't write them either, see `isValidSubmit` in firestore.rules), so a
  * duplicate event or a re-run of the backfill script changes nothing.
+ * Returns whether this call set the verdict, i.e. the story has just
+ * become readable.
  */
-export async function saveReview(storyId: string, review: StoryReview): Promise<void> {
+export async function saveReview(storyId: string, review: StoryReview): Promise<boolean> {
   const db = getFirestore();
   const ref = db.doc(`stories/${storyId}`);
-  await db.runTransaction(async (tx: Transaction) => {
+  return db.runTransaction(async (tx: Transaction) => {
     const snapshot = await tx.get(ref);
     const fields: Record<string, unknown> = {};
     if (review.title && !snapshot.get("title")) fields.title = review.title;
-    if (typeof snapshot.get("mature") !== "boolean") fields.mature = review.mature;
+    const setsVerdict = typeof snapshot.get("mature") !== "boolean";
+    if (setsVerdict) fields.mature = review.mature;
     if (Object.keys(fields).length > 0) tx.update(ref, fields);
+    return setsVerdict;
   });
 }
 
 /**
  * Reviews a story once its last part is written: the complete stories list
  * only shows reviewed stories (`mature` set), and those with
- * `mature == true` appear there locked behind the app's age check.
+ * `mature == true` appear there locked behind the app's age check. Once
+ * reviewed, its authors are told it can be read. The backfill script calls
+ * reviewStory/saveReview directly, so it never notifies anyone.
  */
 export const reviewCompletedStory = onDocumentUpdated(
   { document: "stories/{storyId}", region: "us-central1" },
@@ -181,7 +188,23 @@ export const reviewCompletedStory = onDocumentUpdated(
       return;
     }
     if (!review.title) logger.warn("Model returned no usable title", { storyId });
-    await saveReview(storyId, review);
+    // Only the run that set the verdict notifies, so a duplicate event
+    // doesn't notify twice.
+    if (await saveReview(storyId, review)) await notifyStoryCompleted(storyId);
+  },
+);
+
+/**
+ * Tells the earlier authors of a story that someone wrote the next part (see
+ * notifications.ts). The last part is notified by reviewCompletedStory.
+ */
+export const notifyStoryContinued = onDocumentUpdated(
+  { document: "stories/{storyId}", region: "us-central1" },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+    await notifyIfContinued(event.params.storyId, before, after);
   },
 );
 function cleanTitle(raw: string | undefined): string | undefined {
@@ -216,8 +239,8 @@ export function anonymizeParts(
 }
 
 /**
- * Removes a deleted account's email from Firestore: its profile is deleted,
- * its story parts stay (they belong to stories other people wrote too) but
+ * Removes a deleted account's email from Firestore: its profile and push
+ * tokens are deleted, its story parts stay (they belong to stories other people wrote too) but
  * become anonymous, its story locks are released and it's removed as the
  * creator of its private rooms. There is no 2nd-gen trigger for deleted
  * users, hence the 1st-gen function.
@@ -233,6 +256,7 @@ export const anonymizeDeletedUser = functionsV1
     const writer = db.bulkWriter();
 
     writer.delete(db.doc(`userProfiles/${key}`));
+    const tokenCount = await deleteTokensOf(email, writer);
 
     // Parts can't be queried by author, so every story is checked.
     const stories = await db.collection("stories").select("parts", "lockedBy").get();
@@ -255,5 +279,10 @@ export const anonymizeDeletedUser = functionsV1
     for (const doc of rooms.docs) writer.update(doc.ref, { createdBy: null });
 
     await writer.close();
-    logger.info("Anonymized deleted user", { uid: user.uid, stories: storyCount, rooms: rooms.size });
+    logger.info("Anonymized deleted user", {
+      uid: user.uid,
+      stories: storyCount,
+      rooms: rooms.size,
+      tokens: tokenCount,
+    });
   });
