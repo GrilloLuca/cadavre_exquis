@@ -8,7 +8,7 @@ import 'package:cadavre_exquisite/data/repositories/age_check/age_check_reposito
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 
-import '../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 
 class _FakeSource implements AgeSignalsSource {
   _FakeSource(this._answer);

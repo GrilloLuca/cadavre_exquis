@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
 
-import '../testing/fakes/repositories/fake_story_repository.dart';
+import '../../testing/fakes/repositories/fake_story_repository.dart';
 
 void main() {
   late DateTime now;

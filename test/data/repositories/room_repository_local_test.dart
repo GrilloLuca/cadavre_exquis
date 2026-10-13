@@ -7,7 +7,7 @@ import 'package:cadavre_exquisite/data/services/language_room_preference.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 
-import '../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 
 /// A preference whose storage can't be read.
 class _BrokenPreference extends LanguageRoomPreference {

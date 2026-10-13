@@ -1,6 +1,6 @@
 # Migration to MVVM (official Flutter app architecture guide)
 
-Status: analysis done, migration not started (2026-10-12). Target: https://docs.flutter.dev/app-architecture/guide
+Status: done (2026-10-13), Phases 0–3 and 5 on `feature/mvvm-migration`; Phase 4 (go_router) postponed. Target: https://docs.flutter.dev/app-architecture/guide. The resulting conventions are in `docs/ARCHITECTURE.md`.
 
 How to use this file: tick a task when its PR is merged, add a line to the [Progress log](#progress-log), and record any decision under [Decisions](#decisions). One feature per PR, no behaviour change, existing tests stay green.
 
@@ -123,13 +123,14 @@ The view listens to the commands, shows snackbars and pops on completion/error. 
 
 Pattern: a screen takes only its inputs (e.g. the story) and **creates its ViewModel once, in `initState`**, with repositories from `context.read`, then disposes it. Never build a ViewModel in a route builder or another widget's `build`: Flutter reruns a route's builder whenever the Navigator's dependencies change (`Navigator.didChangeDependencies` → `changedExternalState` → the page is rebuilt), which would create a new ViewModel each time, repeating its side effects (lock, loads) and leaking the old one. Tabs forward input changes (e.g. the room) from `didUpdateWidget`. Tests go in `test/ui/<feature>/`. Per feature: ViewModel unit tests with fakes; update existing widget tests (`account_screen_test`, `mature_story_lock_test`, `story_read_screen_test`) to get dependencies via providers.
 
-### Phase 4: routing (optional)
-- [ ] `go_router` with `redirect` on `AuthRepository`; drop `AuthWrapper`, named routes, `pushNamedAndRemoveUntil` on sign-out/delete
+### Phase 4: routing (optional, postponed)
+- [ ] `go_router` with `redirect` on `AuthRepository`; drop `AuthWrapper`, named routes, `pushNamedAndRemoveUntil` on sign-out/delete. Postponed: navigation works and the app has few routes; worth it with deep links or more screens. Mind the rule in Phase 3: a route builder must not create a ViewModel
 
 ### Phase 5: cleanup
 - [x] Remove empty `screens/` and `services/`, static `AgeGate` cache (all done during Phase 3)
-- [ ] Import/lint rule: `lib/ui` must not import `cloud_firestore` / `firebase_auth`
-- [ ] Update CLAUDE.md / docs and the `pr-review` skill with the new conventions
+- [x] Import rules as a test, `test/architecture_test.dart`: `lib/ui` uses no SDK (Firestore, Firebase Auth/Core, Google Sign-In, shared_preferences, age signals), no `data/services` and no repository implementation; `lib/domain` no Flutter, SDK, UI or implementation; `lib/data` never imports `lib/ui`; repository interfaces expose no SDK types. Checked to fail on an injected violation
+- [x] `docs/ARCHITECTURE.md` (layers, import rules, ViewModel/View pattern, adding a screen), a new `CLAUDE.md` pointing to it, and the `pr-review` skill's architecture, lifecycle, auth and test sections rewritten for MVVM (the skill lives in the git-ignored `.claude/`, so that change is local)
+- [x] Tests left in the root of `test/` moved to mirror `lib/`: `test/data/{repositories,services}/`, `test/domain/{models,use_cases}/`, `test/utils/`, `test/testing/` (the fakes' own test), `test/ui/complete_stories/mature_story_lock_test.dart`; the root keeps only app-level tests (architecture, `AuthWrapper`, smoke)
 
 ## Decisions
 - **D1 (decided 2026-10-12)** Error handling: keep the existing coded exceptions (`StoryServiceException` etc.). Repositories throw them as today; `Command` catches and exposes the error to the ViewModel/View, which maps the code to l10n. No `Result<T>`.
@@ -152,3 +153,4 @@ Pattern: a screen takes only its inputs (e.g. the story) and **creates its ViewM
 - 2026-10-12: Phase 3, `HomeScreen` + `RoomRepository` done. Behaviour: the language room is resolved once per app run instead of each time Home is created (same result unless the device language changes while the app runs); the private room is still left on sign-out. Analyze clean, all tests green. Verified on a real device by the owner.
 - 2026-10-12: D2 decided. Phase 3, `CompleteStoriesScreen` + `AgeGate` use case done. Behaviour: the session's age verdicts are now also forgotten when the account is deleted (before, only on the sign-out button). Analyze clean, all tests green. Verified on a real device by the owner.
 - 2026-10-13: Phase 3, `AccountScreen` done; Phase 3 complete, `lib/screens/` gone. Behaviour: the sign-out button is disabled while signing out, and a sign-out failure shows the generic error (before, it was an unhandled error). Analyze clean, all tests green. Verified on a real device by the owner.
+- 2026-10-13: Phase 5 done: architecture test, `docs/ARCHITECTURE.md`, `CLAUDE.md`, `pr-review` skill updated, tests reorganised. No app code changed. Analyze clean, all tests green. Phase 4 postponed.
