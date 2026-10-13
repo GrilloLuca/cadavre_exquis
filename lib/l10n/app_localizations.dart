@@ -200,18 +200,6 @@ abstract class AppLocalizations {
   /// **'Ora sei in “{name}”.'**
   String privateRoomJoinedSnackbar(String name);
 
-  /// Snackbar after leaving a private room; offers Undo.
-  ///
-  /// In it, this message translates to:
-  /// **'Hai lasciato “{name}”.'**
-  String privateRoomLeftSnackbar(String name);
-
-  /// Snackbar action that undoes leaving a private room.
-  ///
-  /// In it, this message translates to:
-  /// **'Annulla'**
-  String get undoButton;
-
   /// Tooltip and screen-reader label of the app bar room indicator in a language room; language is the room's native name.
   ///
   /// In it, this message translates to:

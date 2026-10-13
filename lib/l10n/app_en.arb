@@ -19,8 +19,6 @@
   "privateRoomRowSubtitle": "Play only with friends who know its name and password.",
   "privateRoomActiveNotice": "You're in the private room “{name}”. The language room is paused until you leave.",
   "privateRoomJoinedSnackbar": "You're now in “{name}”.",
-  "privateRoomLeftSnackbar": "You left “{name}”.",
-  "undoButton": "Undo",
   "roomIndicatorLanguage": "Room: {language}. Change it in Profile.",
   "roomIndicatorPrivate": "Private room: {name}. Change it in Profile.",
 
