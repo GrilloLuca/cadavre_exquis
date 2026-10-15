@@ -146,20 +146,90 @@ class AppLocalizationsIt extends AppLocalizations {
   String get positionEpilogue => 'Epilogo';
 
   @override
-  String get chatFirstWriterTitle =>
-      'Questa è una storia nuova e ancora vuota: sei il primo a scrivere!';
-
-  @override
-  String get chatFirstWriterHint =>
-      'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.';
-
-  @override
-  String get storySoFarLabel => 'Finora è stato scritto...';
-
-  @override
-  String chatMessageHint(String position) {
-    return 'Scrivi qui: $position...';
+  String chatPartProgress(int current, int total) {
+    return 'Parte $current di $total';
   }
+
+  @override
+  String get chatHeadlineFirst => 'Inizia una storia nuova';
+
+  @override
+  String get chatHeadlineMiddle => 'Continua la storia';
+
+  @override
+  String get chatHeadlineLast => 'Scrivi il finale';
+
+  @override
+  String get chatLeadFirst =>
+      'Tocca a te iniziare: scegli tu personaggi, luogo e cosa succede.';
+
+  @override
+  String get chatLeadMiddle =>
+      'Della storia vedi solo le ultime 5 parole: riparti da lì, con la tua fantasia.';
+
+  @override
+  String get chatLeadLast =>
+      'Della storia vedi solo le ultime 5 parole: portala a una conclusione.';
+
+  @override
+  String get storyKeywordsLabel => 'Di cosa parla finora';
+
+  @override
+  String get chatKeywordsCaption =>
+      'Parole scelte in automatico leggendo tutte le parti scritte finora.';
+
+  @override
+  String get chatContinueFromLabel => 'Continua da qui:';
+
+  @override
+  String chatLastWords(String words) {
+    return '…$words';
+  }
+
+  @override
+  String get chatInputHint => 'Scrivi qui la tua parte…';
+
+  @override
+  String chatInputLabel(String position) {
+    return 'La tua parte: $position';
+  }
+
+  @override
+  String get chatReservingTurn => 'Sto riservando il tuo turno…';
+
+  @override
+  String get chatSending => 'Invio…';
+
+  @override
+  String chatCharacterCount(int count, int max) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat maxNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String maxString = maxNumberFormat.format(max);
+
+    return '$countString/$maxString';
+  }
+
+  @override
+  String get chatSentSnackbar => 'Parte inviata! Ora tocca a qualcun altro.';
+
+  @override
+  String get chatCompletedSnackbar => 'Storia completata!';
+
+  @override
+  String get chatLeaveTitle => 'Uscire senza inviare?';
+
+  @override
+  String get chatLeaveBody =>
+      'Quello che hai scritto andrà perso e la storia tornerà libera per gli altri.';
+
+  @override
+  String get chatLeaveCancel => 'Continua a scrivere';
+
+  @override
+  String get chatLeaveConfirm => 'Esci';
 
   @override
   String get sendButton => 'Invia';

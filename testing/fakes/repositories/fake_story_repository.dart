@@ -186,4 +186,5 @@ Story _copy(
       roomId: story.roomId,
       title: story.title,
       mature: story.mature,
+      keywords: story.keywords,
     );

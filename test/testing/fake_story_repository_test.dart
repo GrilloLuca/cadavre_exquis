@@ -64,6 +64,29 @@ void main() {
         throwsStory(StoryErrorCode.positionTaken));
   });
 
+  test('keeps the keywords of a story through locks and submits', () async {
+    // Like Firestore, where only extractStoryKeywords writes `keywords`.
+    final repository = FakeStoryRepository(now: () => now, stories: [
+      Story(
+        id: 's1',
+        status: 'incomplete',
+        currentPosition: 'introduzione',
+        parts: [],
+        keywords: const ['drago', 'faro'],
+      ),
+    ]);
+
+    await repository.lockStory(storyId: 's1', authorEmail: 'a@x.it');
+    await repository.submitPart(
+      storyId: 's1',
+      expectedPosition: 'introduzione',
+      text: 'part',
+      authorEmail: 'a@x.it',
+    );
+
+    expect(repository.stories['s1']!.keywords, ['drago', 'faro']);
+  });
+
   test('streams emit the current room and every change', () async {
     final emitted = <int>[];
     final subscription = repository

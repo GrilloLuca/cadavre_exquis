@@ -8,7 +8,8 @@ import 'package:cadavre_exquisite/domain/models/story_language.dart';
 // data layer.
 
 /// The [Story] stored in [doc]. Stories created before language rooms have
-/// no `language` and count as [kDefaultStoryLanguage].
+/// no `language` and count as [kDefaultStoryLanguage]; stories without
+/// `keywords` (never extracted, or legacy) have none.
 Story storyFromSnapshot(DocumentSnapshot doc) {
   final data = doc.data() as Map<String, dynamic>;
   return Story(
@@ -24,7 +25,16 @@ Story storyFromSnapshot(DocumentSnapshot doc) {
     roomId: data['roomId'] as String?,
     title: data['title'] as String?,
     mature: data['mature'] as bool?,
+    keywords: keywordsFromField(data['keywords']),
   );
+}
+
+/// The keywords stored in a story's `keywords` field: only its strings, at
+/// most 4. Anything that isn't a list (including a missing field) gives
+/// none, so a malformed document can't break the story lists.
+List<String> keywordsFromField(Object? field) {
+  if (field is! List) return const [];
+  return List.unmodifiable(field.whereType<String>().take(4));
 }
 
 StoryPart storyPartFromMap(Map<String, dynamic> map) {

@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="1440" viewBox="0 0 1040 1440" font-family="Helvetica, Arial, sans-serif">
+  <title>Writing screen wireframe: turn card + docked composer, six states, no tips section (phones drawn at 0.875 scale of 360x640)</title>
+  <rect width="1040" height="1440" fill="#FFFFFF"/>
+
+  <defs>
+    <!-- Reusable bits -->
+    <g id="closeIcon"><text x="18" y="33" font-size="18" fill="#FFFFFF">✕</text></g>
+  </defs>
+
+  <!-- ================= A. First part ================= -->
+  <text x="20" y="28" font-size="15" font-weight="bold" fill="#2E2E28">A. First part (no parts yet)</text>
+  <g transform="translate(20,40)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <use href="#closeIcon"/>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Introduction</text>
+
+    <!-- turn card -->
+    <rect x="12" y="64" width="291" height="116" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <rect x="28" y="82" width="30" height="6" rx="3" fill="#3F5A3A"/>
+    <rect x="62" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <rect x="96" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <rect x="130" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <text x="172" y="89" font-size="12" font-weight="bold" fill="#5E5C53">Part 1 of 4</text>
+    <text x="28" y="122" font-size="18" font-weight="bold" fill="#2E2E28">Start a new story</text>
+    <text x="28" y="144" font-size="12.5" fill="#2E2E28">You're the first to write: you choose the</text>
+    <text x="28" y="161" font-size="12.5" fill="#2E2E28">characters, the place and what happens.</text>
+    <text x="157" y="204" font-size="10" fill="#999" text-anchor="middle">IT: "Tocca a te iniziare: scegli tu personaggi,</text>
+    <text x="157" y="218" font-size="10" fill="#999" text-anchor="middle">luogo e cosa succede." (neutral wording)</text>
+
+
+    <!-- composer -->
+    <rect x="0" y="430" width="315" height="130" fill="#F4EEDA"/>
+    <line x1="0" y1="430" x2="315" y2="430" stroke="#5E7F55" stroke-width="2"/>
+    <rect x="14" y="444" width="287" height="64" rx="12" fill="none" stroke="#3F5A3A"/>
+    <text x="26" y="466" font-size="13" fill="#8A887E">Write your part here…</text>
+    <rect x="203" y="516" width="98" height="36" rx="18" fill="#D5E2C8"/>
+    <text x="252" y="539" font-size="13" font-weight="bold" text-anchor="middle" fill="#5E5C53">➤  Send</text>
+    <text x="16" y="539" font-size="10" fill="#999">Send disabled: field empty</text>
+  </g>
+
+  <!-- ================= B. Later part, keywords ================= -->
+  <text x="360" y="28" font-size="15" font-weight="bold" fill="#2E2E28">B. Later part, with keywords</text>
+  <g transform="translate(360,40)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <use href="#closeIcon"/>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Development (1/2)</text>
+
+    <rect x="12" y="64" width="291" height="232" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <rect x="28" y="82" width="30" height="6" rx="3" fill="#5E7F55"/>
+    <rect x="62" y="82" width="30" height="6" rx="3" fill="#3F5A3A"/>
+    <rect x="96" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <rect x="130" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <text x="172" y="89" font-size="12" font-weight="bold" fill="#5E5C53">Part 2 of 4</text>
+    <text x="28" y="122" font-size="18" font-weight="bold" fill="#2E2E28">Continue the story</text>
+    <text x="28" y="144" font-size="12.5" fill="#2E2E28">You only get to see the last 5 words of the</text>
+    <text x="28" y="161" font-size="12.5" fill="#2E2E28">story: carry on from there, your way.</text>
+
+    <text x="28" y="192" font-size="12" font-weight="bold" fill="#3F5A3A" letter-spacing="0.4">WHAT IT'S ABOUT SO FAR</text>
+    <g font-size="12.5" font-weight="bold" fill="#2E2E28" text-anchor="middle">
+      <rect x="28" y="202" width="62" height="26" rx="13" fill="#D5E2C8"/><text x="59" y="219">dragon</text>
+      <rect x="96" y="202" width="86" height="26" rx="13" fill="#D5E2C8"/><text x="139" y="219">lighthouse</text>
+      <rect x="188" y="202" width="56" height="26" rx="13" fill="#D5E2C8"/><text x="216" y="219">storm</text>
+      <rect x="28" y="234" width="62" height="26" rx="13" fill="#D5E2C8"/><text x="59" y="251">secret</text>
+    </g>
+    <text x="28" y="278" font-size="11.5" fill="#5E5C53">Picked automatically from all the parts so far.</text>
+
+
+    <!-- composer with lead-in -->
+    <rect x="0" y="408" width="315" height="152" fill="#F4EEDA"/>
+    <line x1="0" y1="408" x2="315" y2="408" stroke="#5E7F55" stroke-width="2"/>
+    <text x="16" y="428" font-size="12" font-weight="bold" fill="#3F5A3A">Carry on from here:</text>
+    <text x="16" y="450" font-size="16" font-style="italic" fill="#2E2E28">…when the lighthouse went dark</text>
+    <rect x="14" y="460" width="287" height="52" rx="12" fill="none" stroke="#3F5A3A"/>
+    <text x="26" y="482" font-size="13" fill="#8A887E">Write your part here…</text>
+    <rect x="203" y="518" width="98" height="36" rx="18" fill="#D5E2C8"/>
+    <text x="252" y="541" font-size="13" font-weight="bold" text-anchor="middle" fill="#5E5C53">➤  Send</text>
+  </g>
+
+  <!-- ================= C. Later part, no keywords (epilogue) ================= -->
+  <text x="700" y="28" font-size="15" font-weight="bold" fill="#2E2E28">C. No keywords (here: epilogue)</text>
+  <g transform="translate(700,40)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <use href="#closeIcon"/>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Epilogue</text>
+
+    <rect x="12" y="64" width="291" height="116" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <rect x="28" y="82" width="30" height="6" rx="3" fill="#5E7F55"/>
+    <rect x="62" y="82" width="30" height="6" rx="3" fill="#5E7F55"/>
+    <rect x="96" y="82" width="30" height="6" rx="3" fill="#5E7F55"/>
+    <rect x="130" y="82" width="30" height="6" rx="3" fill="#3F5A3A"/>
+    <text x="172" y="89" font-size="12" font-weight="bold" fill="#5E5C53">Part 4 of 4</text>
+    <text x="28" y="122" font-size="18" font-weight="bold" fill="#2E2E28">Write the ending</text>
+    <text x="28" y="144" font-size="12.5" fill="#2E2E28">You only get to see the last 5 words of the</text>
+    <text x="28" y="161" font-size="12.5" fill="#2E2E28">story: bring it to an end.</text>
+
+
+    <text x="157" y="208" font-size="10" fill="#999" text-anchor="middle">keywords missing / [] / legacy:</text>
+    <text x="157" y="222" font-size="10" fill="#999" text-anchor="middle">section omitted, no placeholder.</text>
+
+    <rect x="0" y="408" width="315" height="152" fill="#F4EEDA"/>
+    <line x1="0" y1="408" x2="315" y2="408" stroke="#5E7F55" stroke-width="2"/>
+    <text x="16" y="428" font-size="12" font-weight="bold" fill="#3F5A3A">Carry on from here:</text>
+    <text x="16" y="450" font-size="16" font-style="italic" fill="#2E2E28">…opened the castle door slowly</text>
+    <rect x="14" y="460" width="287" height="52" rx="12" fill="none" stroke="#3F5A3A"/>
+    <text x="26" y="482" font-size="13" fill="#8A887E">Write your part here…</text>
+    <rect x="203" y="518" width="98" height="36" rx="18" fill="#D5E2C8"/>
+    <text x="252" y="541" font-size="13" font-weight="bold" text-anchor="middle" fill="#5E5C53">➤  Send</text>
+  </g>
+
+  <!-- ================= D. Keyboard open, 360x640 ================= -->
+  <text x="20" y="638" font-size="15" font-weight="bold" fill="#2E2E28">D. Keyboard open, small phone (360×640)</text>
+  <g transform="translate(20,650)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <!-- card scrolled behind (drawn before the AppBar so the AppBar covers its top) -->
+    <rect x="12" y="20" width="291" height="120" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <g font-size="12.5" font-weight="bold" fill="#2E2E28" text-anchor="middle">
+      <rect x="28" y="58" width="62" height="26" rx="13" fill="#D5E2C8"/><text x="59" y="75">secret</text>
+    </g>
+    <text x="28" y="102" font-size="11.5" fill="#5E5C53">Picked automatically from all the parts so far.</text>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <use href="#closeIcon"/>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Development (1/2)</text>
+    <text x="300" y="118" font-size="9" fill="#999" text-anchor="end">card scrolls behind (~60dp visible)</text>
+
+    <!-- composer above keyboard -->
+    <rect x="0" y="126" width="315" height="208" fill="#F4EEDA"/>
+    <line x1="0" y1="126" x2="315" y2="126" stroke="#5E7F55" stroke-width="2"/>
+    <text x="16" y="146" font-size="12" font-weight="bold" fill="#3F5A3A">Carry on from here:</text>
+    <text x="16" y="168" font-size="16" font-style="italic" fill="#2E2E28">…when the lighthouse went dark</text>
+    <rect x="14" y="178" width="287" height="104" rx="12" fill="none" stroke="#3F5A3A" stroke-width="2"/>
+    <g font-size="13" fill="#2E2E28">
+      <text x="26" y="198">Then a shadow climbed the stairs.</text>
+      <text x="26" y="218">Nobody had been up there for years,</text>
+      <text x="26" y="238">but the lamp was still warm, as if</text>
+      <text x="26" y="258">someone had just turned it off|</text>
+    </g>
+    <text x="296" y="276" font-size="9" fill="#999" text-anchor="end">max 4 lines, then scrolls</text>
+    <rect x="203" y="290" width="98" height="36" rx="18" fill="#5E7F55"/>
+    <text x="252" y="313" font-size="13" font-weight="bold" text-anchor="middle" fill="#FFFFFF">➤  Send</text>
+
+    <!-- keyboard -->
+    <rect x="0" y="336" width="315" height="224" fill="#C9CCD1"/>
+    <g fill="#FFFFFF">
+      <rect x="10" y="352" width="295" height="34" rx="5"/>
+      <rect x="10" y="394" width="295" height="34" rx="5"/>
+      <rect x="10" y="436" width="295" height="34" rx="5"/>
+      <rect x="10" y="478" width="295" height="34" rx="5"/>
+    </g>
+    <text x="157" y="540" font-size="11" fill="#5E5C53" text-anchor="middle">keyboard ≈ 260dp: composer stays above it</text>
+  </g>
+
+  <!-- ================= E. Reserving the turn (lock running) ================= -->
+  <text x="360" y="638" font-size="15" font-weight="bold" fill="#2E2E28">E. Reserving the turn (lock running)</text>
+  <g transform="translate(360,650)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <use href="#closeIcon"/>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Development (1/2)</text>
+
+    <rect x="12" y="64" width="291" height="200" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <rect x="28" y="82" width="30" height="6" rx="3" fill="#5E7F55"/>
+    <rect x="62" y="82" width="30" height="6" rx="3" fill="#3F5A3A"/>
+    <rect x="96" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <rect x="130" y="82" width="30" height="6" rx="3" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <text x="172" y="89" font-size="12" font-weight="bold" fill="#5E5C53">Part 2 of 4</text>
+    <text x="28" y="122" font-size="18" font-weight="bold" fill="#2E2E28">Continue the story</text>
+    <text x="28" y="144" font-size="12.5" fill="#2E2E28">You only get to see the last 5 words of the</text>
+    <text x="28" y="161" font-size="12.5" fill="#2E2E28">story: carry on from there, your way.</text>
+    <text x="157" y="200" font-size="10" fill="#999" text-anchor="middle">(keywords as in B)</text>
+    <text x="157" y="240" font-size="10" fill="#999" text-anchor="middle">card readable while the lock is taken;</text>
+    <text x="157" y="254" font-size="10" fill="#999" text-anchor="middle">no full-screen spinner</text>
+
+    <rect x="0" y="408" width="315" height="152" fill="#F4EEDA"/>
+    <rect x="0" y="407" width="315" height="3" fill="#D5E2C8"/>
+    <rect x="0" y="407" width="120" height="3" fill="#5E7F55"/>
+    <text x="300" y="402" font-size="9" fill="#999" text-anchor="end">LinearProgressIndicator (2dp)</text>
+    <text x="16" y="428" font-size="12" font-weight="bold" fill="#3F5A3A">Carry on from here:</text>
+    <text x="16" y="450" font-size="16" font-style="italic" fill="#2E2E28">…when the lighthouse went dark</text>
+    <rect x="14" y="460" width="287" height="52" rx="12" fill="none" stroke="#2E2E28" stroke-opacity="0.3"/>
+    <text x="26" y="482" font-size="13" fill="#8A887E">Reserving your turn…</text>
+    <rect x="203" y="518" width="98" height="36" rx="18" fill="#D5E2C8"/>
+    <text x="252" y="541" font-size="13" font-weight="bold" text-anchor="middle" fill="#5E5C53">➤  Send</text>
+  </g>
+
+  <!-- ================= F. Sending ================= -->
+  <text x="700" y="638" font-size="15" font-weight="bold" fill="#2E2E28">F. Sending (submit running)</text>
+  <g transform="translate(700,650)">
+    <rect x="0" y="0" width="315" height="560" rx="18" fill="#D5E2C8" stroke="#2E2E28"/>
+    <rect x="0" y="0" width="315" height="52" fill="#5E7F55"/>
+    <text x="18" y="33" font-size="18" fill="#FFFFFF" fill-opacity="0.45">✕</text>
+    <text x="56" y="33" font-size="16" fill="#FFFFFF">Development (1/2)</text>
+    <text x="16" y="70" font-size="9" fill="#5E5C53">close disabled + back blocked while sending</text>
+
+    <rect x="12" y="80" width="291" height="184" rx="14" fill="#F4EEDA" stroke="#2E2E28"/>
+    <text x="157" y="176" font-size="10" fill="#999" text-anchor="middle">(card unchanged)</text>
+
+    <rect x="0" y="368" width="315" height="192" fill="#F4EEDA"/>
+    <line x1="0" y1="368" x2="315" y2="368" stroke="#5E7F55" stroke-width="2"/>
+    <text x="16" y="388" font-size="12" font-weight="bold" fill="#3F5A3A">Carry on from here:</text>
+    <text x="16" y="410" font-size="16" font-style="italic" fill="#2E2E28">…when the lighthouse went dark</text>
+    <rect x="14" y="420" width="287" height="92" rx="12" fill="none" stroke="#3F5A3A"/>
+    <g font-size="13" fill="#2E2E28">
+      <text x="26" y="440">Then a shadow climbed the stairs.</text>
+      <text x="26" y="460">Nobody had been up there for years,</text>
+      <text x="26" y="480">but the lamp was still warm…</text>
+    </g>
+    <text x="296" y="506" font-size="9" fill="#999" text-anchor="end">read-only: text stays ink, not grey</text>
+    <rect x="191" y="518" width="110" height="36" rx="18" fill="#D5E2C8"/>
+    <circle cx="214" cy="536" r="7" fill="none" stroke="#3F5A3A" stroke-width="2" stroke-dasharray="30 14"/>
+    <text x="230" y="541" font-size="13" font-weight="bold" fill="#5E5C53">Sending…</text>
+  </g>
+
+  <!-- ================= G. Leave confirmation ================= -->
+  <text x="20" y="1248" font-size="15" font-weight="bold" fill="#2E2E28">G. Close (✕ / back) with unsent text</text>
+  <g transform="translate(20,1262)">
+    <rect x="0" y="0" width="315" height="150" rx="18" fill="#F4EEDA" stroke="#2E2E28"/>
+    <text x="20" y="34" font-size="16" font-weight="bold" fill="#2E2E28">Leave without sending?</text>
+    <text x="20" y="60" font-size="12.5" fill="#2E2E28">What you've written will be lost and the</text>
+    <text x="20" y="77" font-size="12.5" fill="#2E2E28">story will be free for others again.</text>
+    <text x="150" y="128" font-size="13" font-weight="bold" fill="#3F5A3A" text-anchor="middle">Keep writing</text>
+    <text x="262" y="128" font-size="13" font-weight="bold" fill="#3F5A3A" text-anchor="middle">Leave</text>
+  </g>
+  <text x="177" y="1430" font-size="10" fill="#999" text-anchor="middle">only if the field isn't blank; otherwise closes as today</text>
+
+  <!-- ================= After-send snackbars + notes ================= -->
+  <g font-size="12" fill="#2E2E28">
+    <text x="360" y="1248" font-weight="bold">After a successful send</text>
+    <text x="360" y="1266">The screen pops (after the notification offer, if due),</text>
+    <text x="360" y="1282">then a snackbar on the list underneath:</text>
+  </g>
+  <rect x="360" y="1296" width="300" height="40" rx="4" fill="#323232"/>
+  <text x="372" y="1321" font-size="12" fill="#FFFFFF">Part sent! Now it's someone else's turn.</text>
+  <text x="510" y="1352" font-size="10" fill="#999" text-anchor="middle">parts 1–3</text>
+  <rect x="360" y="1364" width="300" height="40" rx="4" fill="#323232"/>
+  <text x="372" y="1389" font-size="12" fill="#FFFFFF">Story complete!</text>
+  <text x="510" y="1420" font-size="10" fill="#999" text-anchor="middle">epilogue (neutral: mature stories too)</text>
+
+  <g font-size="11" fill="#2E2E28">
+    <text x="690" y="1266">• No bubbles: 5 words shown once, in the</text>
+    <text x="700" y="1281">composer, right above the field.</text>
+    <text x="690" y="1299">• Keyword tags: sage, flat, not tappable.</text>
+    <text x="690" y="1317">• No "Remember" tips (owner decision).</text>
+    <text x="690" y="1335">• Keyboard doesn't open by itself.</text>
+    <text x="690" y="1353">• Send enabled only: lock held + text.</text>
+    <text x="690" y="1371">• Counter appears from 4,500 / 5,000.</text>
+  </g>
+</svg>

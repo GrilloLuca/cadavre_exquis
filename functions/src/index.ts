@@ -1,35 +1,26 @@
-import { FinishReason, GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, Transaction } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import * as functionsV1 from "firebase-functions/v1";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { BLOCKED_FINISH_REASONS, client, DEFAULT_LANGUAGE, LANGUAGE_NAMES, MODEL } from "./gemini";
+import { extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
 import { deleteTokensOf, notifyIfContinued, notifyStoryCompleted } from "./notifications";
 
 initializeApp();
 
-// Gemini on Vertex AI authenticates with the function's service account, so
-// there is no API key to manage. Gemini 3.x models are served from "global".
-const MODEL = "gemini-3.1-flash-lite";
+// The backfill script imports these from lib/index.js.
+export { cleanKeywords, extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
+
 const MAX_TITLE_LENGTH = 80;
-
-// Must match kDefaultStoryLanguage in lib/models/story_language.dart.
-const DEFAULT_LANGUAGE = "it";
-
-// Must match kStoryLanguages in lib/models/story_language.dart.
-const LANGUAGE_NAMES: Record<string, string> = {
-  it: "Italian",
-  en: "English",
-  es: "Spanish",
-  fr: "French",
-  de: "German",
-};
 
 /**
  * Fields the story lists filter on in Firestore (see `_roomQuery` in
- * lib/services/story_service.dart) that are missing from [data]: older app
- * versions omit `roomId` for public stories, and the oldest stories have no
- * `language`. Firestore can't match a missing field, so these are filled in.
+ * lib/data/repositories/story/story_repository_firestore.dart) that are
+ * missing from [data]: older app versions omit `roomId` for public stories,
+ * and the oldest stories have no `language`. Firestore can't match a
+ * missing field, so these are filled in.
  */
 export function missingRoomFields(data: FirebaseFirestore.DocumentData): Record<string, unknown> {
   const fields: Record<string, unknown> = {};
@@ -48,17 +39,6 @@ export const normalizeStory = onDocumentCreated(
     await event.data!.ref.update(fields);
   },
 );
-
-let ai: GoogleGenAI | undefined;
-
-function client(): GoogleGenAI {
-  ai ??= new GoogleGenAI({
-    vertexai: true,
-    project: process.env.GCLOUD_PROJECT,
-    location: "global",
-  });
-  return ai;
-}
 
 /** What [reviewStory] decided about a completed story. */
 export interface StoryReview {
@@ -99,14 +79,6 @@ const REVIEW_SCHEMA = {
   required: ["title", "mature"],
   propertyOrdering: ["title", "mature"],
 };
-
-// Finish reasons meaning the model refused to process the text itself.
-const BLOCKED_FINISH_REASONS = new Set<FinishReason | undefined>([
-  FinishReason.SAFETY,
-  FinishReason.PROHIBITED_CONTENT,
-  FinishReason.BLOCKLIST,
-  FinishReason.SPII,
-]);
 
 /**
  * Asks Gemini for a title and a children's-suitability verdict. A story
@@ -207,6 +179,32 @@ export const notifyStoryContinued = onDocumentUpdated(
     await notifyIfContinued(event.params.storyId, before, after);
   },
 );
+
+/**
+ * Extracts up to 4 keywords from the parts written so far each time a part
+ * is added to a story that goes on, so the next player has some context
+ * (see keywords.ts). Separate from notifyStoryContinued so that a Gemini
+ * failure doesn't affect notifications, and vice versa. Failures are logged,
+ * not retried: the story keeps the previous part's keywords, if any.
+ */
+export const extractStoryKeywords = onDocumentUpdated(
+  { document: "stories/{storyId}", region: "us-central1" },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+    const partCount = keywordsPartCountFor(before, after);
+    if (partCount === undefined) return;
+
+    const storyId = event.params.storyId;
+    try {
+      const keywords = await extractKeywords(after);
+      await saveKeywords(storyId, partCount, keywords);
+    } catch (error) {
+      logger.error("Keyword extraction failed", { storyId, error });
+    }
+  },
+);
 function cleanTitle(raw: string | undefined): string | undefined {
   const line = raw?.trim().split("\n")[0] ?? "";
   const title = line
@@ -217,7 +215,7 @@ function cleanTitle(raw: string | undefined): string | undefined {
 }
 
 // Shown as "Anonymous" in the app: authorDisplayName() in
-// lib/models/author_name.dart returns null for an empty author.
+// lib/domain/models/author_name.dart returns null for an empty author.
 const DELETED_AUTHOR = "";
 
 /**

@@ -7,6 +7,10 @@ const List<String> kStoryPositions = [
   'epilogo',
 ];
 
+/// Most characters a part may have. Must match `part.text.size() <= 5000`
+/// in firestore.rules.
+const int kMaxPartLength = 5000;
+
 /// Returns the position that follows [position], or null if [position] is the last one.
 String? nextPosition(String position) {
   final index = kStoryPositions.indexOf(position);
@@ -71,6 +75,12 @@ class Story {
   /// alongside [title]. Null until the story is complete and reviewed.
   final bool? mature;
 
+  /// Up to 4 AI-generated keywords describing the parts written so far,
+  /// set by the `extractStoryKeywords` Cloud Function shortly after each
+  /// part except the last. Empty until then, if extraction failed or gave
+  /// nothing usable, and for legacy stories.
+  final List<String> keywords;
+
   Story({
     required this.id,
     required this.status,
@@ -82,6 +92,7 @@ class Story {
     this.roomId,
     this.title,
     this.mature,
+    this.keywords = const [],
   });
 
   bool get isComplete => status == 'complete';
