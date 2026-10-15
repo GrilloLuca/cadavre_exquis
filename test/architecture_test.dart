@@ -12,6 +12,7 @@ const _sdkPackages = [
   'package:cloud_firestore/',
   'package:firebase_auth/',
   'package:firebase_core/',
+  'package:firebase_messaging/',
   'package:google_sign_in/',
   'package:shared_preferences/',
   'package:age_range_signals/',

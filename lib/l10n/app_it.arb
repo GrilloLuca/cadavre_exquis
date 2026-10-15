@@ -101,16 +101,121 @@
   "positionDevelopment2": "Sviluppo (2/2)",
   "positionEpilogue": "Epilogo",
 
-  "chatFirstWriterTitle": "Questa è una storia nuova e ancora vuota: sei il primo a scrivere!",
-  "chatFirstWriterHint": "Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.",
-  "storySoFarLabel": "Finora è stato scritto...",
-  "chatMessageHint": "Scrivi qui: {position}...",
-  "@chatMessageHint": {
+  "chatPartProgress": "Parte {current} di {total}",
+  "@chatPartProgress": {
+    "description": "Progress line at the top of the turn card in the writing screen: which of the story's parts the player is writing.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "chatHeadlineFirst": "Inizia una storia nuova",
+  "@chatHeadlineFirst": {
+    "description": "Headline of the turn card when writing the first part of a story."
+  },
+  "chatHeadlineMiddle": "Continua la storia",
+  "@chatHeadlineMiddle": {
+    "description": "Headline of the turn card when writing one of the middle parts of a story."
+  },
+  "chatHeadlineLast": "Scrivi il finale",
+  "@chatHeadlineLast": {
+    "description": "Headline of the turn card when writing the last part (the epilogue) of a story."
+  },
+  "chatLeadFirst": "Tocca a te iniziare: scegli tu personaggi, luogo e cosa succede.",
+  "@chatLeadFirst": {
+    "description": "Text under the headline when writing the first part of a story. Kept gender-neutral in Italian."
+  },
+  "chatLeadMiddle": "Della storia vedi solo le ultime 5 parole: riparti da lì, con la tua fantasia.",
+  "@chatLeadMiddle": {
+    "description": "Text under the headline when writing a middle part: the player only sees the last 5 words of the previous part."
+  },
+  "chatLeadLast": "Della storia vedi solo le ultime 5 parole: portala a una conclusione.",
+  "@chatLeadLast": {
+    "description": "Text under the headline when writing the last part: the player only sees the last 5 words and must end the story."
+  },
+  "storyKeywordsLabel": "Di cosa parla finora",
+  "@storyKeywordsLabel": {
+    "description": "Visible heading of the story's keywords on the writing screen's turn card. The keywords themselves are story content and are not translated."
+  },
+  "chatKeywordsCaption": "Parole scelte in automatico leggendo tutte le parti scritte finora.",
+  "@chatKeywordsCaption": {
+    "description": "Caption under the story's keywords, explaining where they come from."
+  },
+  "chatContinueFromLabel": "Continua da qui:",
+  "@chatContinueFromLabel": {
+    "description": "Sender label of the bubble showing the last five words of the previous part."
+  },
+  "chatLastWords": "…{words}",
+  "@chatLastWords": {
+    "description": "The last five words of the previous part, after an ellipsis (a single … character), shown under chatContinueFromLabel.",
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInputHint": "Scrivi qui la tua parte…",
+  "@chatInputHint": {
+    "description": "Hint inside the empty writing field."
+  },
+  "chatInputLabel": "La tua parte: {position}",
+  "@chatInputLabel": {
+    "description": "Screen reader label of the writing field. position is the part's name, e.g. Sviluppo (1/2).",
     "placeholders": {
       "position": {
         "type": "String"
       }
     }
+  },
+  "chatReservingTurn": "Sto riservando il tuo turno…",
+  "@chatReservingTurn": {
+    "description": "Hint in the writing field while the app takes the story's lock for the player."
+  },
+  "chatSending": "Invio…",
+  "@chatSending": {
+    "description": "Label of the send button while the part is being sent."
+  },
+  "chatCharacterCount": "{count}/{max}",
+  "@chatCharacterCount": {
+    "description": "Character counter under the writing field, shown near the length limit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "max": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "chatSentSnackbar": "Parte inviata! Ora tocca a qualcun altro.",
+  "@chatSentSnackbar": {
+    "description": "Snackbar after a part other than the last one is sent and the writing screen closes."
+  },
+  "chatCompletedSnackbar": "Storia completata!",
+  "@chatCompletedSnackbar": {
+    "description": "Snackbar after the last part is sent and the writing screen closes. Neutral on purpose: a mature story may not appear in the Complete tab for everyone."
+  },
+  "chatLeaveTitle": "Uscire senza inviare?",
+  "@chatLeaveTitle": {
+    "description": "Title of the confirmation shown when closing the writing screen with unsent text."
+  },
+  "chatLeaveBody": "Quello che hai scritto andrà perso e la storia tornerà libera per gli altri.",
+  "@chatLeaveBody": {
+    "description": "Body of the confirmation shown when closing the writing screen with unsent text."
+  },
+  "chatLeaveCancel": "Continua a scrivere",
+  "@chatLeaveCancel": {
+    "description": "Button of the leave confirmation that stays on the writing screen."
+  },
+  "chatLeaveConfirm": "Esci",
+  "@chatLeaveConfirm": {
+    "description": "Button of the leave confirmation that closes the writing screen and discards the text."
   },
   "sendButton": "Invia",
   "logoutButton": "Logout",
@@ -245,5 +350,54 @@
   "ageCheckQuestion": "Qual è il tuo anno di nascita?",
   "ageCheckHint": "Anno di nascita",
   "ageCheckNote": "Non potrai modificare la risposta.",
-  "ageCheckConfirm": "Conferma"
+  "ageCheckConfirm": "Conferma",
+
+  "notificationOfferTitle": "Vuoi sapere quando qualcuno continua la tua storia?",
+  "@notificationOfferTitle": {
+    "description": "Title of the dialog offering to turn on push notifications, shown after the user sends a part."
+  },
+  "notificationOfferMessage": "Ti mandiamo una notifica quando qualcuno scrive il pezzo successivo e quando la storia è completa.",
+  "@notificationOfferMessage": {
+    "description": "Body of the dialog offering to turn on push notifications."
+  },
+  "notificationOfferAccept": "Sì, avvisami",
+  "@notificationOfferAccept": {
+    "description": "Button accepting the notification offer; the system permission prompt follows."
+  },
+  "notificationOfferDecline": "Non ora",
+  "@notificationOfferDecline": {
+    "description": "Button declining the notification offer for now."
+  },
+  "notificationsSectionTitle": "Notifiche",
+  "@notificationsSectionTitle": {
+    "description": "Heading of the notifications card in the profile tab."
+  },
+  "notificationsOn": "Attive: ti avvisiamo quando qualcuno continua le tue storie e quando sono complete.",
+  "@notificationsOn": {
+    "description": "Notifications card text when the permission is granted."
+  },
+  "notificationsOff": "Attivale per sapere quando qualcuno continua le tue storie e quando sono complete.",
+  "@notificationsOff": {
+    "description": "Notifications card text when the user was never asked."
+  },
+  "notificationsDenied": "Sono disattivate nelle impostazioni del telefono: attivale lì per riceverle.",
+  "@notificationsDenied": {
+    "description": "Notifications card text when the user refused the permission; only the system settings can change it."
+  },
+  "notificationsEnableButton": "Attiva",
+  "@notificationsEnableButton": {
+    "description": "Button on the notifications card that asks for the permission."
+  },
+  "notificationOpenAction": "Apri",
+  "@notificationOpenAction": {
+    "description": "Snackbar action opening the story of a notification received while the app is open."
+  },
+  "storyNotFound": "Questa storia non è più disponibile.",
+  "@storyNotFound": {
+    "description": "Snackbar when a tapped notification's story no longer exists."
+  },
+  "storyNotReadyYet": "La storia sarà pronta da leggere tra un momento.",
+  "@storyNotReadyYet": {
+    "description": "Snackbar when a tapped notification's completed story hasn't been reviewed yet."
+  }
 }

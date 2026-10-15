@@ -83,6 +83,10 @@ service cloud.firestore {
 
       // submitPart: appends exactly one part by me at the current position
       // and advances (or completes) the story.
+      // `title`, `mature`, `keywords` and `keywordsPartCount` are written by
+      // Cloud Functions only (reviewCompletedStory, extractStoryKeywords):
+      // clients can't write them because they're missing from the `hasOnly`
+      // lists here, in isValidLockChange and in isValidCreate.
       function isValidSubmit() {
         let before = resource.data;
         let after = request.resource.data;
@@ -194,6 +198,29 @@ service cloud.firestore {
         && request.resource.data.birthYear >= 1900
         && request.resource.data.birthYear <= request.time.year()
         && request.resource.data.createdAt == request.time;
+    }
+
+    // ---------------------------------------------------------------------
+    // pushTokens/{fcmToken}  (NotificationRepository)
+    // ---------------------------------------------------------------------
+    // One document per device, keyed by its FCM token, naming the user it
+    // notifies. Writing a token claims it for the signed-in user: only the
+    // device knows its token, and a new sign-in on that device should take
+    // it over. Only the Cloud Functions (Admin SDK) read tokens.
+    match /pushTokens/{token} {
+      function isValidToken() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['emailKey', 'locale', 'platform', 'updatedAt'])
+          && d.emailKey == myEmail().lower()
+          && d.locale is string
+          && d.locale.size() <= 10
+          && d.platform in ['android', 'ios']
+          && d.updatedAt == request.time;
+      }
+
+      allow read: if false;
+      allow create, update: if signedIn() && isValidToken();
+      allow delete: if signedIn() && resource.data.emailKey == myEmail().lower();
     }
 
     // Everything else (including the legacy `chapters` collection) is closed.

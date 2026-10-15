@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
+import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/ui/account/view_models/account_view_model.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
@@ -15,17 +17,20 @@ void main() {
   late FakeUserProfileRepository profiles;
   late FakeAuthRepository auth;
   late FakeRoomRepository rooms;
+  late FakeNotificationRepository notifications;
 
   setUp(() {
     profiles = FakeUserProfileRepository();
     auth = FakeAuthRepository(email: _me);
     rooms = FakeRoomRepository();
+    notifications = FakeNotificationRepository();
   });
 
   AccountViewModel create() => AccountViewModel(
         profileRepository: profiles,
         authRepository: auth,
         roomRepository: rooms,
+        notificationRepository: notifications,
       );
 
   group('nickname', () {
@@ -154,6 +159,59 @@ void main() {
 
       expect(viewModel.signOut.completed, isTrue);
       expect(auth.isAuthenticated, isFalse);
+    });
+  });
+
+  group('notifications', () {
+    test('shows the permission and turns notifications on', () async {
+      notifications = FakeNotificationRepository(
+        permission: NotificationPermission.notDetermined,
+      );
+      final viewModel = create();
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+      expect(viewModel.notificationPermission,
+          NotificationPermission.notDetermined);
+
+      await viewModel.enableNotifications.execute();
+
+      expect(notifications.calls, ['enable']);
+      expect(viewModel.notificationPermission, NotificationPermission.granted);
+      expect(notified, greaterThan(0));
+      viewModel.dispose();
+    });
+
+    test('signing out unregisters the device first', () async {
+      final viewModel = create();
+      var unregisteredBeforeSignOut = false;
+      auth.addListener(() {
+        // The token can only be removed while the user is signed in.
+        unregisteredBeforeSignOut = notifications.calls.contains('unregister');
+      });
+
+      await viewModel.signOut.execute();
+
+      expect(notifications.calls, ['unregister']);
+      expect(unregisteredBeforeSignOut, isTrue);
+      expect(auth.isAuthenticated, isFalse);
+    });
+
+    test('deleting the account unregisters the device', () async {
+      final viewModel = create();
+
+      await viewModel.deleteAccount.execute('secret');
+
+      expect(notifications.calls, ['unregister']);
+    });
+
+    test('a dismissed reauthentication keeps the device registered', () async {
+      auth.usesPassword = false;
+      auth.googlePickerConfirms = false;
+      final viewModel = create();
+
+      await viewModel.deleteAccount.execute(null);
+
+      expect(notifications.calls, isEmpty);
     });
   });
 }

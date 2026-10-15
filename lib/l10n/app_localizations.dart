@@ -326,29 +326,137 @@ abstract class AppLocalizations {
   /// **'Epilogo'**
   String get positionEpilogue;
 
-  /// No description provided for @chatFirstWriterTitle.
+  /// Progress line at the top of the turn card in the writing screen: which of the story's parts the player is writing.
   ///
   /// In it, this message translates to:
-  /// **'Questa è una storia nuova e ancora vuota: sei il primo a scrivere!'**
-  String get chatFirstWriterTitle;
+  /// **'Parte {current} di {total}'**
+  String chatPartProgress(int current, int total);
 
-  /// No description provided for @chatFirstWriterHint.
+  /// Headline of the turn card when writing the first part of a story.
   ///
   /// In it, this message translates to:
-  /// **'Come funziona:\n• Ogni storia ha 4 parti: Introduzione, Sviluppo (1/2), Sviluppo (2/2) ed Epilogo. Tu scrivi l\'Introduzione.\n• Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio!\n• Non puoi scrivere due parti di fila: dopo il tuo turno deve continuare qualcun altro.\n• Mentre scrivi, la storia è bloccata per tutti gli altri.\n• Quando viene scritto l\'Epilogo, la storia intera appare nella scheda Complete e tutti possono leggerla.'**
-  String get chatFirstWriterHint;
+  /// **'Inizia una storia nuova'**
+  String get chatHeadlineFirst;
 
-  /// No description provided for @storySoFarLabel.
+  /// Headline of the turn card when writing one of the middle parts of a story.
   ///
   /// In it, this message translates to:
-  /// **'Finora è stato scritto...'**
-  String get storySoFarLabel;
+  /// **'Continua la storia'**
+  String get chatHeadlineMiddle;
 
-  /// No description provided for @chatMessageHint.
+  /// Headline of the turn card when writing the last part (the epilogue) of a story.
   ///
   /// In it, this message translates to:
-  /// **'Scrivi qui: {position}...'**
-  String chatMessageHint(String position);
+  /// **'Scrivi il finale'**
+  String get chatHeadlineLast;
+
+  /// Text under the headline when writing the first part of a story. Kept gender-neutral in Italian.
+  ///
+  /// In it, this message translates to:
+  /// **'Tocca a te iniziare: scegli tu personaggi, luogo e cosa succede.'**
+  String get chatLeadFirst;
+
+  /// Text under the headline when writing a middle part: the player only sees the last 5 words of the previous part.
+  ///
+  /// In it, this message translates to:
+  /// **'Della storia vedi solo le ultime 5 parole: riparti da lì, con la tua fantasia.'**
+  String get chatLeadMiddle;
+
+  /// Text under the headline when writing the last part: the player only sees the last 5 words and must end the story.
+  ///
+  /// In it, this message translates to:
+  /// **'Della storia vedi solo le ultime 5 parole: portala a una conclusione.'**
+  String get chatLeadLast;
+
+  /// Visible heading of the story's keywords on the writing screen's turn card. The keywords themselves are story content and are not translated.
+  ///
+  /// In it, this message translates to:
+  /// **'Di cosa parla finora'**
+  String get storyKeywordsLabel;
+
+  /// Caption under the story's keywords, explaining where they come from.
+  ///
+  /// In it, this message translates to:
+  /// **'Parole scelte in automatico leggendo tutte le parti scritte finora.'**
+  String get chatKeywordsCaption;
+
+  /// Sender label of the bubble showing the last five words of the previous part.
+  ///
+  /// In it, this message translates to:
+  /// **'Continua da qui:'**
+  String get chatContinueFromLabel;
+
+  /// The last five words of the previous part, after an ellipsis (a single … character), shown under chatContinueFromLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'…{words}'**
+  String chatLastWords(String words);
+
+  /// Hint inside the empty writing field.
+  ///
+  /// In it, this message translates to:
+  /// **'Scrivi qui la tua parte…'**
+  String get chatInputHint;
+
+  /// Screen reader label of the writing field. position is the part's name, e.g. Sviluppo (1/2).
+  ///
+  /// In it, this message translates to:
+  /// **'La tua parte: {position}'**
+  String chatInputLabel(String position);
+
+  /// Hint in the writing field while the app takes the story's lock for the player.
+  ///
+  /// In it, this message translates to:
+  /// **'Sto riservando il tuo turno…'**
+  String get chatReservingTurn;
+
+  /// Label of the send button while the part is being sent.
+  ///
+  /// In it, this message translates to:
+  /// **'Invio…'**
+  String get chatSending;
+
+  /// Character counter under the writing field, shown near the length limit.
+  ///
+  /// In it, this message translates to:
+  /// **'{count}/{max}'**
+  String chatCharacterCount(int count, int max);
+
+  /// Snackbar after a part other than the last one is sent and the writing screen closes.
+  ///
+  /// In it, this message translates to:
+  /// **'Parte inviata! Ora tocca a qualcun altro.'**
+  String get chatSentSnackbar;
+
+  /// Snackbar after the last part is sent and the writing screen closes. Neutral on purpose: a mature story may not appear in the Complete tab for everyone.
+  ///
+  /// In it, this message translates to:
+  /// **'Storia completata!'**
+  String get chatCompletedSnackbar;
+
+  /// Title of the confirmation shown when closing the writing screen with unsent text.
+  ///
+  /// In it, this message translates to:
+  /// **'Uscire senza inviare?'**
+  String get chatLeaveTitle;
+
+  /// Body of the confirmation shown when closing the writing screen with unsent text.
+  ///
+  /// In it, this message translates to:
+  /// **'Quello che hai scritto andrà perso e la storia tornerà libera per gli altri.'**
+  String get chatLeaveBody;
+
+  /// Button of the leave confirmation that stays on the writing screen.
+  ///
+  /// In it, this message translates to:
+  /// **'Continua a scrivere'**
+  String get chatLeaveCancel;
+
+  /// Button of the leave confirmation that closes the writing screen and discards the text.
+  ///
+  /// In it, this message translates to:
+  /// **'Esci'**
+  String get chatLeaveConfirm;
 
   /// No description provided for @sendButton.
   ///
@@ -703,6 +811,78 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Conferma'**
   String get ageCheckConfirm;
+
+  /// Title of the dialog offering to turn on push notifications, shown after the user sends a part.
+  ///
+  /// In it, this message translates to:
+  /// **'Vuoi sapere quando qualcuno continua la tua storia?'**
+  String get notificationOfferTitle;
+
+  /// Body of the dialog offering to turn on push notifications.
+  ///
+  /// In it, this message translates to:
+  /// **'Ti mandiamo una notifica quando qualcuno scrive il pezzo successivo e quando la storia è completa.'**
+  String get notificationOfferMessage;
+
+  /// Button accepting the notification offer; the system permission prompt follows.
+  ///
+  /// In it, this message translates to:
+  /// **'Sì, avvisami'**
+  String get notificationOfferAccept;
+
+  /// Button declining the notification offer for now.
+  ///
+  /// In it, this message translates to:
+  /// **'Non ora'**
+  String get notificationOfferDecline;
+
+  /// Heading of the notifications card in the profile tab.
+  ///
+  /// In it, this message translates to:
+  /// **'Notifiche'**
+  String get notificationsSectionTitle;
+
+  /// Notifications card text when the permission is granted.
+  ///
+  /// In it, this message translates to:
+  /// **'Attive: ti avvisiamo quando qualcuno continua le tue storie e quando sono complete.'**
+  String get notificationsOn;
+
+  /// Notifications card text when the user was never asked.
+  ///
+  /// In it, this message translates to:
+  /// **'Attivale per sapere quando qualcuno continua le tue storie e quando sono complete.'**
+  String get notificationsOff;
+
+  /// Notifications card text when the user refused the permission; only the system settings can change it.
+  ///
+  /// In it, this message translates to:
+  /// **'Sono disattivate nelle impostazioni del telefono: attivale lì per riceverle.'**
+  String get notificationsDenied;
+
+  /// Button on the notifications card that asks for the permission.
+  ///
+  /// In it, this message translates to:
+  /// **'Attiva'**
+  String get notificationsEnableButton;
+
+  /// Snackbar action opening the story of a notification received while the app is open.
+  ///
+  /// In it, this message translates to:
+  /// **'Apri'**
+  String get notificationOpenAction;
+
+  /// Snackbar when a tapped notification's story no longer exists.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa storia non è più disponibile.'**
+  String get storyNotFound;
+
+  /// Snackbar when a tapped notification's completed story hasn't been reviewed yet.
+  ///
+  /// In it, this message translates to:
+  /// **'La storia sarà pronta da leggere tra un momento.'**
+  String get storyNotReadyYet;
 }
 
 class _AppLocalizationsDelegate

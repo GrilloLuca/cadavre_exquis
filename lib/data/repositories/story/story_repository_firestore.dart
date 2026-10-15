@@ -65,6 +65,12 @@ class StoryRepositoryFirestore implements StoryRepository {
           ..sort(Story.compareByCompletedAtDesc));
   }
 
+  @override
+  Future<Story?> getStory(String storyId) async {
+    final snapshot = await _stories.doc(storyId).get();
+    return snapshot.exists ? storyFromSnapshot(snapshot) : null;
+  }
+
   /// Creates an empty story and returns it, so the caller can open it
   /// straight away.
   @override

@@ -12,14 +12,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 
+import '../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../testing/fakes/repositories/fake_auth_repository.dart';
+import '../testing/fakes/repositories/fake_notification_repository.dart';
 import '../testing/fakes/repositories/fake_room_repository.dart';
+import '../testing/fakes/repositories/fake_story_repository.dart';
 
 void main() {
   testWidgets('Welcome screen shows the Google sign-in button',
@@ -42,8 +48,19 @@ void main() {
       (WidgetTester tester) async {
     // The stored room is still being read.
     final stillLoading = Completer<void>();
-    await tester.pumpWidget(ChangeNotifierProvider<RoomRepository>(
-      create: (_) => FakeRoomRepository(pendingLoad: stillLoading.future),
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>(
+            create: (_) => FakeAuthRepository(email: 'me@example.com')),
+        ChangeNotifierProvider<RoomRepository>(
+            create: (_) =>
+                FakeRoomRepository(pendingLoad: stillLoading.future)),
+        Provider<StoryRepository>(create: (_) => FakeStoryRepository()),
+        Provider<AgeGate>(
+            create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+        ChangeNotifierProvider<NotificationRepository>(
+            create: (_) => FakeNotificationRepository()),
+      ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -10,6 +11,7 @@ import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
 import 'package:cadavre_exquisite/ui/incomplete_stories/widgets/incomplete_stories_screen.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 
 void main() {
@@ -26,6 +28,8 @@ void main() {
         ChangeNotifierProvider<AuthRepository>(
             create: (_) => FakeAuthRepository(email: 'me@example.com')),
         Provider<StoryRepository>.value(value: stories),
+        ChangeNotifierProvider<NotificationRepository>(
+            create: (_) => FakeNotificationRepository()),
       ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
