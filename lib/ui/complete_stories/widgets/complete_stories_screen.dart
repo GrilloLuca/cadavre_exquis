@@ -14,8 +14,9 @@ import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
-/// Non-story rows in the complete stories list.
-enum _ListMarker { yourStoriesHeading, divider }
+/// Most of the screen's height the "Your stories" panel may take when
+/// other stories are listed below it.
+const _yourStoriesMaxHeightFactor = 0.4;
 
 /// The completed stories of the room, newest first. Stories the AI review
 /// flagged as mature are listed with the others but locked behind the age
@@ -160,50 +161,78 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
               );
             }
 
-            // Markers stand in for the heading and the divider, so the list
-            // can still be built lazily.
-            final items = <Object>[
-              if (mine.isNotEmpty) _ListMarker.yourStoriesHeading,
-              ...mine,
-              if (mine.isNotEmpty && others.isNotEmpty) _ListMarker.divider,
-              ...others,
-            ];
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(12.0),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                switch (item) {
-                  case _ListMarker.yourStoriesHeading:
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 8.0),
-                      child: Text(
-                        l10n.yourStoriesHeading,
-                        style: const TextStyle(
-                          color: AppColors.primaryDark,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    );
-                  case _ListMarker.divider:
-                    return const Divider(
-                      height: 24.0,
-                      thickness: 1.5,
-                      indent: 8.0,
-                      endIndent: 8.0,
-                      color: AppColors.primaryDark,
-                    );
-                  case final Story story:
-                    return _buildStoryCard(context, story);
-                  default:
-                    throw StateError('Unexpected list item: $item');
-                }
-              },
+            // The user's stories sit in a panel pinned at the top, which
+            // scrolls on its own; everyone else's fill the rest of the
+            // screen with their own scroll.
+            if (mine.isEmpty) return _buildStoryList(others);
+            if (others.isEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildYourStoriesHeading(l10n),
+                  Expanded(child: _buildStoryList(mine, top: false)),
+                ],
+              );
+            }
+            return LayoutBuilder(
+              builder: (context, constraints) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildYourStoriesHeading(l10n),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          constraints.maxHeight * _yourStoriesMaxHeightFactor,
+                    ),
+                    child: _buildStoryList(mine, top: false, shrinkWrap: true),
+                  ),
+                  const Divider(
+                    height: 24.0,
+                    thickness: 1.5,
+                    indent: 20.0,
+                    endIndent: 20.0,
+                    color: AppColors.primaryDark,
+                  ),
+                  Expanded(child: _buildStoryList(others, top: false)),
+                ],
+              ),
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildYourStoriesHeading(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
+      child: Text(
+        l10n.yourStoriesHeading,
+        style: const TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: 16.0,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  /// A scrollable list of story cards, with a scrollbar so a list that
+  /// scrolls on its own shows it. Without [top] padding when a heading
+  /// sits right above it. [shrinkWrap] lets a short list take only the
+  /// height it needs.
+  Widget _buildStoryList(
+    List<Story> stories, {
+    bool top = true,
+    bool shrinkWrap = false,
+  }) {
+    return Scrollbar(
+      child: ListView.builder(
+        shrinkWrap: shrinkWrap,
+        padding: EdgeInsets.fromLTRB(12.0, top ? 12.0 : 0.0, 12.0, 12.0),
+        itemCount: stories.length,
+        itemBuilder: (context, index) =>
+            _buildStoryCard(context, stories[index]),
       ),
     );
   }

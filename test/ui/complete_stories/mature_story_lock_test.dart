@@ -579,6 +579,60 @@ void main() {
         lessThan(tester.getTopLeft(find.text(_normalTitle)).dy));
     expect(find.byType(Divider), findsOneWidget);
   });
+  group('your stories panel', () {
+    /// Adds [count] stories by the user, "Mine 0" the newest, older than
+    /// every story from setUp.
+    Future<void> addMine(int count) async {
+      for (var i = 0; i < count; i++) {
+        await addStory('mine-$i',
+            title: 'Mine $i', seconds: 90 - i, firstAuthor: _email);
+      }
+    }
+
+    double topOf(WidgetTester tester, String text) =>
+        tester.getTopLeft(find.text(text)).dy;
+
+    testWidgets('scrolls on its own, apart from the other stories',
+        (tester) async {
+      await addMine(15);
+      await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
+
+      // Pinned at the top, at most 40% of the screen tall.
+      final screenHeight = tester.getSize(find.byType(Scaffold)).height;
+      expect(tester.getSize(find.byType(ListView).first).height,
+          lessThanOrEqualTo(screenHeight * 0.4));
+      final divider = tester.getTopLeft(find.byType(Divider)).dy;
+      expect(find.text('Mine 14'), findsNothing);
+
+      // Dragging the panel scrolls only the user's stories.
+      final heading = topOf(tester, l10n.yourStoriesHeading);
+      final others = topOf(tester, _normalTitle);
+      await tester.drag(find.text('Mine 1'), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Mine 0'), findsNothing);
+      expect(topOf(tester, l10n.yourStoriesHeading), heading);
+      expect(topOf(tester, _normalTitle), others);
+      expect(tester.getTopLeft(find.byType(Divider)).dy, divider);
+
+      // Dragging the other stories leaves the panel where it is.
+      final mineTop = topOf(tester, 'Mine 5');
+      await tester.drag(find.text(_normalTitle), const Offset(0, -50));
+      await tester.pumpAndSettle();
+      expect(topOf(tester, 'Mine 5'), mineTop);
+      expect(topOf(tester, l10n.yourStoriesHeading), heading);
+    });
+
+    testWidgets('a short panel takes only the height it needs', (tester) async {
+      await addMine(1);
+      await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
+
+      expect(
+          tester.getTopLeft(find.byType(Divider)).dy -
+              tester.getBottomLeft(find.text('Mine 0')).dy,
+          lessThan(80.0));
+    });
+  });
+
   group('slow stored birth-year read', () {
     /// Pumps single frames (never settles) while the read is pending, and
     /// checks that no locked tile is shown in any of them.
