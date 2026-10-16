@@ -380,13 +380,37 @@ abstract class AppLocalizations {
   /// **'Parole scelte in automatico leggendo tutte le parti scritte finora.'**
   String get chatKeywordsCaption;
 
-  /// Sender label of the bubble showing the last five words of the previous part.
+  /// Sender label of the bubble showing the last five words of the previous part: who wrote it and how long ago (one of timeJustNow, timeMinutesAgo, timeHoursAgo, timeDaysAgo).
   ///
   /// In it, this message translates to:
-  /// **'Continua da qui:'**
-  String get chatContinueFromLabel;
+  /// **'{name} ha scritto {time}:'**
+  String chatPreviousAuthorLabel(String name, String time);
 
-  /// The last five words of the previous part, after an ellipsis (a single … character), shown under chatContinueFromLabel.
+  /// Relative time for less than a minute ago.
+  ///
+  /// In it, this message translates to:
+  /// **'poco fa'**
+  String get timeJustNow;
+
+  /// Relative time in minutes, under an hour.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{1 minuto fa} other{{count} minuti fa}}'**
+  String timeMinutesAgo(int count);
+
+  /// Relative time in hours, under a day.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{1 ora fa} other{{count} ore fa}}'**
+  String timeHoursAgo(int count);
+
+  /// Relative time in days.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{1 giorno fa} other{{count} giorni fa}}'**
+  String timeDaysAgo(int count);
+
+  /// The last five words of the previous part, after an ellipsis (a single … character), shown under chatPreviousAuthorLabel.
   ///
   /// In it, this message translates to:
   /// **'…{words}'**

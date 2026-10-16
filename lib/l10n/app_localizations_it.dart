@@ -179,7 +179,45 @@ class AppLocalizationsIt extends AppLocalizations {
       'Parole scelte in automatico leggendo tutte le parti scritte finora.';
 
   @override
-  String get chatContinueFromLabel => 'Continua da qui:';
+  String chatPreviousAuthorLabel(String name, String time) {
+    return '$name ha scritto $time:';
+  }
+
+  @override
+  String get timeJustNow => 'poco fa';
+
+  @override
+  String timeMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minuti fa',
+      one: '1 minuto fa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ore fa',
+      one: '1 ora fa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count giorni fa',
+      one: '1 giorno fa',
+    );
+    return '$_temp0';
+  }
 
   @override
   String chatLastWords(String words) {
