@@ -52,7 +52,6 @@
   "chatLeadMiddle": "You only get to see the last 5 words of the story: carry on from there, your way.",
   "chatLeadLast": "You only get to see the last 5 words of the story: bring it to an end.",
   "storyKeywordsLabel": "What it's about so far",
-  "chatKeywordsCaption": "Picked automatically from all the parts written so far.",
   "chatPreviousAuthorLabel": "{name} wrote {time}:",
   "timeJustNow": "just now",
   "timeMinutesAgo": "{count, plural, one{1 minute ago} other{{count} minutes ago}}",

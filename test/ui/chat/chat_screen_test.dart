@@ -453,8 +453,7 @@ void main() {
   });
 
   group('keywords', () {
-    testWidgets('shows the heading, the tags and the caption in the card',
-        (tester) async {
+    testWidgets('shows the heading and the tags in the card', (tester) async {
       final semantics = tester.ensureSemantics();
       final stories = FakeStoryRepository(stories: [
         story(
@@ -477,10 +476,6 @@ void main() {
             matchesSemantics(label: keyword));
       }
       expect(find.text('quinto'), findsNothing);
-      expect(
-          find.descendant(
-              of: card, matching: find.text(l10n.chatKeywordsCaption)),
-          findsOneWidget);
       expect(find.byType(Chip), findsNothing);
 
       // Tapping a tag does nothing.
@@ -500,7 +495,6 @@ void main() {
 
       expect(find.text(previousAuthorLabel()), findsOneWidget);
       expect(find.text(l10n.storyKeywordsLabel), findsNothing);
-      expect(find.text(l10n.chatKeywordsCaption), findsNothing);
     });
 
     testWidgets('shows no section when the story has no parts yet',
