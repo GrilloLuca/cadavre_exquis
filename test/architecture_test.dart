@@ -16,12 +16,19 @@ const _sdkPackages = [
   'package:google_sign_in/',
   'package:shared_preferences/',
   'package:age_range_signals/',
+  'package:google_mobile_ads/',
 ];
 
+/// The one UI file that may use an SDK: a banner ad is a native view, so it
+/// can only be drawn with the ads SDK's widget. It only loads and shows the
+/// ad unit `AdBanner` hands it.
+const _adViewFile = 'lib/ui/core/ui/ad_banner_view.dart';
+const _adsSdk = 'package:google_mobile_ads/';
+
 /// Repository implementations and their helpers: built only in
-/// lib/config/dependencies.dart, everyone else gets the interface.
-final _implementation =
-    RegExp(r'_(firestore|firebase|local)\.dart$|_firestore_mapping\.dart$');
+/// lib/config/, everyone else gets the interface.
+final _implementation = RegExp(
+    r'_(firestore|firebase|local|admob|noop)\.dart$|_firestore_mapping\.dart$');
 
 /// The `import '...'` targets of [file].
 List<String> _imports(File file) =>
@@ -42,13 +49,15 @@ Map<String, List<String>> _importsUnder(String dir) => {
 /// The imports in [dir] matching [isViolation], as "file: import" lines.
 List<String> _violations(
   String dir,
-  bool Function(String import) isViolation,
-) =>
+  bool Function(String import) isViolation, {
+  bool Function(String path, String import)? allowed,
+}) =>
     [
       for (final MapEntry(key: path, value: imports)
           in _importsUnder(dir).entries)
         for (final import in imports)
-          if (isViolation(import)) '$path: $import',
+          if (isViolation(import) && !(allowed?.call(path, import) ?? false))
+            '$path: $import',
     ];
 
 bool _isSdk(String import) => _sdkPackages.any(import.startsWith);
@@ -64,8 +73,17 @@ void main() {
             _isSdk(i) ||
             i.startsWith('package:cadavre_exquisite/data/services/') ||
             _implementation.hasMatch(i),
+        allowed: (path, i) => path == _adViewFile && i.startsWith(_adsSdk),
       ),
       isEmpty,
+    );
+  });
+
+  test('the ad view exception still points at a file using the ads SDK', () {
+    // Guards against the allowance outliving the file it was made for.
+    expect(
+      _imports(File(_adViewFile)).where((i) => i.startsWith(_adsSdk)),
+      isNotEmpty,
     );
   });
 

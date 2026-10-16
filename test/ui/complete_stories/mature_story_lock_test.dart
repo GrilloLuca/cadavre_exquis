@@ -12,6 +12,7 @@ import 'package:cadavre_exquisite/ui/complete_stories/widgets/age_check_screen.d
 import 'package:cadavre_exquisite/ui/complete_stories/widgets/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
@@ -21,6 +22,7 @@ import 'package:cadavre_exquisite/data/repositories/story/story_repository_fires
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
+import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 
 /// An [AgeSignalsSource] answering with [_answer] and counting its calls.
@@ -157,6 +159,8 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthRepository>.value(value: auth),
+        ChangeNotifierProvider<AdsRepository>(
+            create: (_) => FakeAdsRepository()),
         Provider<StoryRepository>.value(
           value:
               storyRepository ?? StoryRepositoryFirestore(firestore: firestore),

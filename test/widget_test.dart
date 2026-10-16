@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
@@ -21,6 +22,7 @@ import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 
+import '../testing/fakes/repositories/fake_ads_repository.dart';
 import '../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../testing/fakes/repositories/fake_auth_repository.dart';
 import '../testing/fakes/repositories/fake_notification_repository.dart';
@@ -58,6 +60,8 @@ void main() {
         Provider<StoryRepository>(create: (_) => FakeStoryRepository()),
         Provider<AgeGate>(
             create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+        ChangeNotifierProvider<AdsRepository>(
+            create: (_) => FakeAdsRepository()),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
       ],

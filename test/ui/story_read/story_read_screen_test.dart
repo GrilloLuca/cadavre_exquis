@@ -5,13 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/domain/models/story.dart';
-import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
-
-import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/ad_placement.dart';
+import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/ui/core/ui/ad_banner.dart';
+import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
+
+import '../../../testing/fakes/repositories/fake_ads_repository.dart';
+import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 /// Answers nickname lookups only once [_gate] completes.
 class _GatedProfileRepository extends FakeUserProfileRepository {
@@ -63,9 +67,17 @@ void main() {
         ],
       );
 
-  Widget buildApp(UserProfileRepository service, {String? title}) =>
-      Provider<UserProfileRepository>.value(
-        value: service,
+  Widget buildApp(
+    UserProfileRepository service, {
+    String? title,
+    FakeAdsRepository? ads,
+  }) =>
+      MultiProvider(
+        providers: [
+          Provider<UserProfileRepository>.value(value: service),
+          ChangeNotifierProvider<AdsRepository>.value(
+              value: ads ?? FakeAdsRepository()),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -137,8 +149,12 @@ void main() {
     final service = _CountingProfileRepository(
         nicknames: {'mario.rossi@example.com': 'Supermario'});
     late StateSetter rebuildApp;
-    await tester.pumpWidget(Provider<UserProfileRepository>.value(
-      value: service,
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        Provider<UserProfileRepository>.value(value: service),
+        ChangeNotifierProvider<AdsRepository>(
+            create: (_) => FakeAdsRepository()),
+      ],
       child: StatefulBuilder(builder: (context, setState) {
         rebuildApp = setState;
         return MaterialApp(
@@ -169,5 +185,19 @@ void main() {
     expect(find.text('— Supermario'), findsOneWidget);
     expect(find.text('— Ma***'), findsNothing);
     expect(service.lookups, 1);
+  });
+
+  testWidgets(
+      'the story banner sits below the story and takes no space '
+      'without an ad', (tester) async {
+    // Ads available but no unit id: no real ad is ever requested.
+    final ads = FakeAdsRepository(available: true);
+    await tester.pumpWidget(buildApp(FakeUserProfileRepository(), ads: ads));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AdBanner), findsOneWidget);
+    expect(tester.getSize(find.byType(AdBanner)), Size.zero);
+    expect(ads.requested, [AdPlacement.storyReadBanner]);
+    expect(find.text('Once upon a time'), findsOneWidget);
   });
 }

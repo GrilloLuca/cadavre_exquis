@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -18,6 +19,7 @@ import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 
+import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
@@ -72,9 +74,12 @@ void main() {
     String? email = _email,
     RoomRepository? rooms,
     NotificationRepository? notifications,
+    AdsRepository? ads,
   }) =>
       MultiProvider(
         providers: [
+          ChangeNotifierProvider<AdsRepository>(
+              create: (_) => ads ?? FakeAdsRepository()),
           ChangeNotifierProvider<NotificationRepository>(
               create: (_) => notifications ?? FakeNotificationRepository()),
           Provider<UserProfileRepository>.value(value: service),
@@ -643,5 +648,24 @@ void main() {
       await pumpCard(tester, NotificationPermission.granted, email: null);
       expect(find.text('Notifiche'), findsNothing);
     });
+  });
+
+  testWidgets(
+      'the ad privacy entry appears only when required and reopens '
+      'the consent form', (tester) async {
+    final ads = FakeAdsRepository();
+    await tester.pumpWidget(
+      buildApp(UserProfileRepositoryFirestore(firestore: firestore), ads: ads),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Privacy e annunci'), findsNothing);
+
+    ads.privacyOptionsRequired = true;
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Privacy e annunci'));
+    await tester.tap(find.text('Privacy e annunci'));
+    await tester.pumpAndSettle();
+
+    expect(ads.calls, ['showPrivacyOptions']);
   });
 }

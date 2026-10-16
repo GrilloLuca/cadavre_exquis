@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -18,9 +19,9 @@ import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 
-/// The profile tab: nickname, room, notifications, sign-out and account
-/// deletion. Creates
-/// its [AccountViewModel] once, in `initState` (see `ChatScreen`).
+/// The profile tab: nickname, room, notifications, ad privacy, sign-out and
+/// account deletion. Creates its [AccountViewModel] once, in `initState`
+/// (see `ChatScreen`).
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
@@ -39,6 +40,7 @@ class _AccountScreenState extends State<AccountScreen> {
       authRepository: context.read<AuthRepository>(),
       roomRepository: context.read<RoomRepository>(),
       notificationRepository: context.read<NotificationRepository>(),
+      adsRepository: context.read<AdsRepository>(),
     );
     _viewModel.deleteAccount.addListener(_onDeleteChanged);
     _viewModel.signOut.addListener(_onSignOutChanged);
@@ -139,6 +141,7 @@ class _AccountScreenState extends State<AccountScreen> {
         _viewModel.deleteAccount,
         _viewModel.signOut,
         _viewModel.enableNotifications,
+        _viewModel.showAdPrivacyOptions,
       ]),
       builder: (context, _) => _buildScreen(context),
     );
@@ -205,6 +208,18 @@ class _AccountScreenState extends State<AccountScreen> {
                               _viewModel.notificationPermission)) ...[
                         const SizedBox(height: 24.0),
                         NotificationsCard(viewModel: _viewModel),
+                      ],
+                      if (_viewModel.adPrivacyOptionsRequired) ...[
+                        const SizedBox(height: 24.0),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: _viewModel.showAdPrivacyOptions.running
+                                ? null
+                                : _viewModel.showAdPrivacyOptions.execute,
+                            icon: const Icon(Icons.privacy_tip_outlined),
+                            label: Text(l10n.adPrivacySettingsButton),
+                          ),
+                        ),
                       ],
                       const SizedBox(height: 32.0),
                       Center(

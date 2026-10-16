@@ -254,6 +254,7 @@
   },
   "sendButton": "Invia",
   "logoutButton": "Logout",
+  "adPrivacySettingsButton": "Privacy e annunci",
   "deleteAccountButton": "Elimina account",
   "deleteAccountTitle": "Eliminare il tuo account?",
   "deleteAccountMessage": "Il tuo account e il tuo nickname verranno eliminati definitivamente. Le parti che hai scritto restano nelle loro storie, come Anonimo.",

@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/domain/models/ad_placement.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
+import 'package:cadavre_exquisite/ui/core/ui/ad_banner.dart';
 import 'package:cadavre_exquisite/ui/home/view_models/home_view_model.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 
+import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
@@ -38,7 +42,10 @@ void main() {
 
   test('HomeViewModel follows the room repository', () {
     final rooms = FakeRoomRepository(languageCode: 'es');
-    final viewModel = HomeViewModel(roomRepository: rooms);
+    final viewModel = HomeViewModel(
+      roomRepository: rooms,
+      adsRepository: FakeAdsRepository(),
+    );
     var notified = 0;
     viewModel.addListener(() => notified++);
 
@@ -64,6 +71,8 @@ void main() {
             create: (_) => FakeAuthRepository(email: 'me@example.com')),
         ChangeNotifierProvider<RoomRepository>.value(value: rooms),
         Provider<StoryRepository>.value(value: stories),
+        ChangeNotifierProvider<AdsRepository>(
+            create: (_) => FakeAdsRepository()),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
         Provider<UserProfileRepository>(
@@ -132,6 +141,8 @@ void main() {
               create: (_) => FakeUserProfileRepository()),
           Provider<AgeGate>(
               create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+          ChangeNotifierProvider<AdsRepository>(
+              create: (_) => FakeAdsRepository()),
           ChangeNotifierProvider<NotificationRepository>.value(
               value: notifications),
         ],
@@ -189,5 +200,46 @@ void main() {
       expect(find.byType(ChatScreen), findsNothing);
       expect(find.text('This story is no longer available.'), findsOneWidget);
     });
+  });
+
+  testWidgets(
+      'the home starts the ads; the banner is only on the '
+      'complete stories tab', (tester) async {
+    // Ads available but no unit id: no real ad is ever requested.
+    final ads = FakeAdsRepository(available: true);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>(
+            create: (_) => FakeAuthRepository(email: 'me@example.com')),
+        ChangeNotifierProvider<RoomRepository>(
+            create: (_) => FakeRoomRepository(languageCode: 'it')),
+        Provider<StoryRepository>(create: (_) => FakeStoryRepository()),
+        ChangeNotifierProvider<NotificationRepository>(
+            create: (_) => FakeNotificationRepository()),
+        ChangeNotifierProvider<AdsRepository>.value(value: ads),
+        Provider<UserProfileRepository>(
+            create: (_) => FakeUserProfileRepository()),
+        Provider<AgeGate>(
+            create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+      ],
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('en'),
+        home: HomeScreen(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(ads.calls, ['initialize']);
+    expect(find.byType(AdBanner), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.menu_book));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdBanner), findsOneWidget);
+    expect(ads.requested, [AdPlacement.completeStoriesBanner]);
+
+    await tester.tap(find.byIcon(Icons.person));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdBanner), findsNothing);
   });
 }

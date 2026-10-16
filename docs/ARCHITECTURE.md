@@ -32,7 +32,9 @@ test/                  mirrors lib/ (data/, domain/, ui/<feature>/, utils/)
 | `data` | `domain`, SDKs | `ui` |
 | repository interfaces | `domain`, `flutter/foundation.dart` (ChangeNotifier) | SDK types |
 
-Only `config/dependencies.dart` creates repository implementations.
+Only `config/` creates repository implementations (`dependencies.dart`, plus `ads_repository_factory*.dart`, a conditional import that keeps `google_mobile_ads` out of the web build).
+
+One exception to the UI rule: `ui/core/ui/ad_banner_view.dart` may use `google_mobile_ads`, because a banner ad is a native view drawn by the SDK's widget. It only loads and shows the ad unit that `AdBanner` gets from `AdsRepository`; the test names the file, so the allowance can't spread.
 
 ## Repositories
 
