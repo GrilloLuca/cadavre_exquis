@@ -592,6 +592,8 @@ void main() {
     double topOf(WidgetTester tester, String text) =>
         tester.getTopLeft(find.text(text)).dy;
 
+    // On iOS too: its scrollbar is interactive and breaks if both lists
+    // share the PrimaryScrollController.
     testWidgets('scrolls on its own, apart from the other stories',
         (tester) async {
       await addMine(15);
@@ -620,7 +622,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(topOf(tester, 'Mine 5'), mineTop);
       expect(topOf(tester, l10n.yourStoriesHeading), heading);
-    });
+    },
+        variant: TargetPlatformVariant(
+            {TargetPlatform.android, TargetPlatform.iOS}));
 
     testWidgets('a short panel takes only the height it needs', (tester) async {
       await addMine(1);
