@@ -177,7 +177,45 @@ class AppLocalizationsEn extends AppLocalizations {
       'Picked automatically from all the parts written so far.';
 
   @override
-  String get chatContinueFromLabel => 'Carry on from here:';
+  String chatPreviousAuthorLabel(String name, String time) {
+    return '$name wrote $time:';
+  }
+
+  @override
+  String get timeJustNow => 'just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes ago',
+      one: '1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
 
   @override
   String chatLastWords(String words) {

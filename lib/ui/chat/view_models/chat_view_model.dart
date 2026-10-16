@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
@@ -18,16 +20,22 @@ import 'package:cadavre_exquisite/utils/command.dart';
 /// After a part is sent it may offer to turn on push notifications
 /// ([offerNotifications]), when the user has never been asked: that's when
 /// knowing someone continued the story is obviously useful.
+///
+/// Also looks up the nickname of whoever wrote the previous part
+/// ([loadPreviousAuthor]), shown above its last words.
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
     required this.story,
     required StoryRepository storyRepository,
     required AuthRepository authRepository,
     required NotificationRepository notificationRepository,
+    required UserProfileRepository profileRepository,
   })  : _stories = storyRepository,
         _auth = authRepository,
-        _notifications = notificationRepository {
+        _notifications = notificationRepository,
+        _profiles = profileRepository {
     lock = Command0<void>(_lock)..execute();
+    loadPreviousAuthor = Command0<void>(_loadPreviousAuthor)..execute();
     submit = Command1<bool, String>(_submit);
     answerNotificationOffer = Command1<void, bool>(_answerNotificationOffer);
   }
@@ -36,10 +44,15 @@ class ChatViewModel extends ChangeNotifier {
   final StoryRepository _stories;
   final AuthRepository _auth;
   final NotificationRepository _notifications;
+  final UserProfileRepository _profiles;
 
   /// Takes the story's lock. Started by the constructor; fails with a
   /// [StoryException] if the story can't be written now.
   late final Command0<void> lock;
+
+  /// Fetches the previous part's author's nickname. Started by the
+  /// constructor; never fails: without it the masked email is shown.
+  late final Command0<void> loadPreviousAuthor;
 
   /// Submits the text as the next part. Its value is true once the part is
   /// stored, false if there was nothing to send.
@@ -48,6 +61,20 @@ class ChatViewModel extends ChangeNotifier {
   /// Turns notifications on (true: the system prompt follows) or puts the
   /// offer off (false). Never fails.
   late final Command1<void, bool> answerNotificationOffer;
+
+  String? _previousAuthorNickname;
+
+  /// The last part written so far, null for a story without parts.
+  StoryPart? get previousPart => story.parts.isEmpty ? null : story.parts.last;
+
+  /// The name to show for [previousPart]'s author: their nickname once
+  /// loaded, otherwise the masked email; null if neither is usable.
+  String? get previousAuthorName {
+    final part = previousPart;
+    if (part == null) return null;
+    return authorDisplayName(
+        nickname: _previousAuthorNickname, email: part.author);
+  }
 
   bool _offerNotifications = false;
 
@@ -73,6 +100,16 @@ class ChatViewModel extends ChangeNotifier {
     }
     _lockHolder = email;
     notifyListeners();
+  }
+
+  Future<void> _loadPreviousAuthor() async {
+    final part = previousPart;
+    if (part == null) return;
+    try {
+      _previousAuthorNickname = await _profiles.getNickname(part.author);
+    } catch (_) {
+      _previousAuthorNickname = null;
+    }
   }
 
   Future<bool> _submit(String text) async {
@@ -124,6 +161,7 @@ class ChatViewModel extends ChangeNotifier {
     final email = _lockHolder;
     if (email != null) _unlock(email);
     lock.dispose();
+    loadPreviousAuthor.dispose();
     submit.dispose();
     answerNotificationOffer.dispose();
     super.dispose();

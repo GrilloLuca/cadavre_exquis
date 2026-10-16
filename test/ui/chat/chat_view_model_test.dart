@@ -7,6 +7,7 @@ import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
+import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 const _me = 'me@example.com';
 const _other = 'other@example.com';
@@ -16,6 +17,7 @@ void main() {
   late FakeStoryRepository stories;
   late FakeAuthRepository auth;
   late FakeNotificationRepository notifications;
+  late FakeUserProfileRepository profiles;
 
   Story newStory({String? lockedBy}) => Story(
         id: 's1',
@@ -32,6 +34,7 @@ void main() {
     stories = FakeStoryRepository(stories: [newStory()], now: () => now);
     auth = FakeAuthRepository(email: _me);
     notifications = FakeNotificationRepository();
+    profiles = FakeUserProfileRepository(nicknames: const {_other: 'Lupo'});
   });
 
   ChatViewModel create() => ChatViewModel(
@@ -39,6 +42,7 @@ void main() {
         storyRepository: stories,
         authRepository: auth,
         notificationRepository: notifications,
+        profileRepository: profiles,
       );
 
   test('locks the story on creation, then lets the user write', () async {
@@ -144,6 +148,54 @@ void main() {
     await pumpEventQueue();
 
     expect(stories.stories['s1']!.lockedBy, isNull);
+  });
+
+  group('previous author', () {
+    StoryPart introduction() => StoryPart(
+          position: kStoryPositions.first,
+          text: 'Un drago viveva nel faro',
+          author: _other,
+          timestamp: now,
+        );
+
+    Story continuedStory() => Story(
+          id: 's1',
+          status: 'incomplete',
+          currentPosition: kStoryPositions[1],
+          parts: [introduction()],
+          language: 'it',
+        );
+
+    test('is masked until the nickname loads, then named by it', () async {
+      stories =
+          FakeStoryRepository(stories: [continuedStory()], now: () => now);
+      final viewModel = create();
+      expect(viewModel.previousPart?.author, _other);
+      expect(viewModel.previousAuthorName, 'ot***');
+
+      await pumpEventQueue();
+
+      expect(viewModel.previousAuthorName, 'Lupo');
+    });
+
+    test('keeps the masked email when the lookup fails', () async {
+      stories =
+          FakeStoryRepository(stories: [continuedStory()], now: () => now);
+      profiles.failWith = Exception('offline');
+      final viewModel = create();
+      await pumpEventQueue();
+
+      expect(viewModel.loadPreviousAuthor.error, isNull);
+      expect(viewModel.previousAuthorName, 'ot***');
+    });
+
+    test('is absent for a story without parts', () async {
+      final viewModel = create();
+      await pumpEventQueue();
+
+      expect(viewModel.previousPart, isNull);
+      expect(viewModel.previousAuthorName, isNull);
+    });
   });
 
   group('notification offer', () {

@@ -145,13 +145,52 @@
   "@chatKeywordsCaption": {
     "description": "Caption under the story's keywords, explaining where they come from."
   },
-  "chatContinueFromLabel": "Continua da qui:",
-  "@chatContinueFromLabel": {
-    "description": "Sender label of the bubble showing the last five words of the previous part."
+  "chatPreviousAuthorLabel": "{name} ha scritto {time}:",
+  "@chatPreviousAuthorLabel": {
+    "description": "Sender label of the bubble showing the last five words of the previous part: who wrote it and how long ago (one of timeJustNow, timeMinutesAgo, timeHoursAgo, timeDaysAgo).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timeJustNow": "poco fa",
+  "@timeJustNow": {
+    "description": "Relative time for less than a minute ago."
+  },
+  "timeMinutesAgo": "{count, plural, one{1 minuto fa} other{{count} minuti fa}}",
+  "@timeMinutesAgo": {
+    "description": "Relative time in minutes, under an hour.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count, plural, one{1 ora fa} other{{count} ore fa}}",
+  "@timeHoursAgo": {
+    "description": "Relative time in hours, under a day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count, plural, one{1 giorno fa} other{{count} giorni fa}}",
+  "@timeDaysAgo": {
+    "description": "Relative time in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "chatLastWords": "…{words}",
   "@chatLastWords": {
-    "description": "The last five words of the previous part, after an ellipsis (a single … character), shown under chatContinueFromLabel.",
+    "description": "The last five words of the previous part, after an ellipsis (a single … character), shown under chatPreviousAuthorLabel.",
     "placeholders": {
       "words": {
         "type": "String"

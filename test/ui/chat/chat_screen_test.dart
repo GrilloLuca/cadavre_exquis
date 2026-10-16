@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -20,6 +21,7 @@ import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
+import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 /// Counts how many times the story was locked.
 class _CountingStoryRepository extends FakeStoryRepository {
@@ -97,7 +99,8 @@ void main() {
         position: kStoryPositions[index],
         text: text,
         author: 'other@example.com',
-        timestamp: now,
+        // Shown relative to the real clock, not to [now].
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
       );
 
   final introduction = part(0, 'Un drago viveva nel faro durante la tempesta');
@@ -111,6 +114,11 @@ void main() {
       ];
 
   late AppLocalizations l10n;
+
+  /// The label above the previous part's last words, for the default
+  /// author and timestamp of [part].
+  String previousAuthorLabel([String name = 'Lupo']) =>
+      l10n.chatPreviousAuthorLabel(name, l10n.timeHoursAgo(4));
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
@@ -126,6 +134,7 @@ void main() {
     WidgetTester tester,
     FakeStoryRepository stories, {
     FakeNotificationRepository? notifications,
+    FakeUserProfileRepository? profiles,
     Locale locale = const Locale('en'),
     bool settle = true,
   }) async {
@@ -136,6 +145,11 @@ void main() {
         Provider<StoryRepository>.value(value: stories),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => notifications ?? FakeNotificationRepository()),
+        Provider<UserProfileRepository>(
+            create: (_) =>
+                profiles ??
+                FakeUserProfileRepository(
+                    nicknames: const {'other@example.com': 'Lupo'})),
       ],
       child: StatefulBuilder(builder: (context, setState) {
         rebuildApp = setState;
@@ -484,7 +498,7 @@ void main() {
       ], now: () => now);
       await pumpAndOpen(tester, stories);
 
-      expect(find.text(l10n.chatContinueFromLabel), findsOneWidget);
+      expect(find.text(previousAuthorLabel()), findsOneWidget);
       expect(find.text(l10n.storyKeywordsLabel), findsNothing);
       expect(find.text(l10n.chatKeywordsCaption), findsNothing);
     });
@@ -510,7 +524,7 @@ void main() {
           stories: [story(parts: parts(1))], now: () => now);
       await pumpAndOpen(tester, stories);
 
-      expect(find.text(l10n.chatContinueFromLabel), findsOneWidget);
+      expect(find.text(previousAuthorLabel()), findsOneWidget);
       final words = find.text('…quando il faro si spense');
       expect(words, findsOneWidget);
       expect(find.ancestor(of: words, matching: find.byType(MessageBubble)),
@@ -521,7 +535,7 @@ void main() {
       expect(
         tester.getSemantics(words),
         matchesSemantics(
-            label: 'Carry on from here:\n…quando il faro si spense'),
+            label: 'Lupo wrote 4 hours ago:\n…quando il faro si spense'),
       );
       semantics.dispose();
     });
@@ -530,9 +544,18 @@ void main() {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
 
-      expect(find.text(l10n.chatContinueFromLabel), findsNothing);
+      expect(find.textContaining(' wrote '), findsNothing);
       expect(find.textContaining('…'), findsOneWidget); // The field's hint.
       expect(find.text(l10n.chatInputHint), findsOneWidget);
+    });
+
+    testWidgets('names an author without a nickname by the masked email',
+        (tester) async {
+      final stories = FakeStoryRepository(
+          stories: [story(parts: parts(1))], now: () => now);
+      await pumpAndOpen(tester, stories, profiles: FakeUserProfileRepository());
+
+      expect(find.text(previousAuthorLabel('ot***')), findsOneWidget);
     });
 
     testWidgets('a "word" over 120 characters shows only its end',

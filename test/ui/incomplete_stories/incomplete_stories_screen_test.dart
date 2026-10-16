@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
@@ -13,6 +14,7 @@ import 'package:cadavre_exquisite/ui/incomplete_stories/widgets/incomplete_stori
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
+import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 void main() {
   late AppLocalizations l10n;
@@ -30,6 +32,8 @@ void main() {
         Provider<StoryRepository>.value(value: stories),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
+        Provider<UserProfileRepository>(
+            create: (_) => FakeUserProfileRepository()),
       ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

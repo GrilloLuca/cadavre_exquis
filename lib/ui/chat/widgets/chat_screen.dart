@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -13,6 +14,7 @@ import 'package:cadavre_exquisite/ui/chat/widgets/chat_turn_card.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/notification_offer_dialog.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/time_ago.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
 
@@ -47,6 +49,7 @@ class _ChatScreenState extends State<ChatScreen> {
       storyRepository: context.read<StoryRepository>(),
       authRepository: context.read<AuthRepository>(),
       notificationRepository: context.read<NotificationRepository>(),
+      profileRepository: context.read<UserProfileRepository>(),
     );
     _viewModel.lock.addListener(_onLockChanged);
     _viewModel.submit.addListener(_onSubmitChanged);
@@ -156,8 +159,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable:
-          Listenable.merge([_viewModel, _viewModel.lock, _viewModel.submit]),
+      listenable: Listenable.merge([
+        _viewModel,
+        _viewModel.lock,
+        _viewModel.loadPreviousAuthor,
+        _viewModel.submit,
+      ]),
       builder: (context, _) {
         final sending = _viewModel.submit.running;
         // Back and close are blocked while sending, so the unlock can't
@@ -178,6 +185,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildScreen(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final story = _viewModel.story;
+    final previousPart = _viewModel.previousPart;
     final position = positionLabel(context, story.currentPosition);
     final sending = _viewModel.submit.running;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -230,11 +238,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ? const []
                                   : story.keywords,
                             ),
-                            if (story.parts.isNotEmpty)
+                            if (previousPart != null)
                               // Read as one item: label, then the words.
                               MergeSemantics(
                                 child: MessageBubble(
-                                  sender: l10n.chatContinueFromLabel,
+                                  sender: l10n.chatPreviousAuthorLabel(
+                                    _viewModel.previousAuthorName ??
+                                        l10n.anonymousAuthor,
+                                    timeAgo(l10n, previousPart.timestamp),
+                                  ),
                                   text: l10n.chatLastWords(
                                       _capLastWords(story.lastFiveWords)),
                                   isMe: false,
