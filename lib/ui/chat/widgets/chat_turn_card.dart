@@ -210,14 +210,14 @@ class _Keywords extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 8.0),
-          Text(
-            l10n.chatKeywordsCaption,
-            style: TextStyle(
-              color: AppColors.ink.withValues(alpha: 0.75),
-              fontSize: 13.0,
-            ),
-          ),
+          // const SizedBox(height: 8.0),
+          // Text(
+          //   l10n.chatKeywordsCaption,
+          //   style: TextStyle(
+          //     color: AppColors.ink.withValues(alpha: 0.75),
+          //     fontSize: 13.0,
+          //   ),
+          // ),
         ],
       ),
     );
