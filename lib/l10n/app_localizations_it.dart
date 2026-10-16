@@ -175,10 +175,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get storyKeywordsLabel => 'Di cosa parla finora';
 
   @override
-  String get chatKeywordsCaption =>
-      'Parole scelte in automatico leggendo tutte le parti scritte finora.';
-
-  @override
   String chatPreviousAuthorLabel(String name, String time) {
     return '$name ha scritto $time:';
   }

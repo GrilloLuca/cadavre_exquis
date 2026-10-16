@@ -157,7 +157,7 @@ class _Progress extends StatelessWidget {
 }
 
 /// "Di cosa parla finora": up to 4 keywords as plain sage labels (not
-/// buttons) and where they come from. The keywords are story content, so
+/// buttons). The keywords are story content, so
 /// they're never translated.
 class _Keywords extends StatelessWidget {
   const _Keywords({required this.keywords});
@@ -210,14 +210,6 @@ class _Keywords extends StatelessWidget {
                 ),
             ],
           ),
-          // const SizedBox(height: 8.0),
-          // Text(
-          //   l10n.chatKeywordsCaption,
-          //   style: TextStyle(
-          //     color: AppColors.ink.withValues(alpha: 0.75),
-          //     fontSize: 13.0,
-          //   ),
-          // ),
         ],
       ),
     );

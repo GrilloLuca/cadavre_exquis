@@ -374,12 +374,6 @@ abstract class AppLocalizations {
   /// **'Di cosa parla finora'**
   String get storyKeywordsLabel;
 
-  /// Caption under the story's keywords, explaining where they come from.
-  ///
-  /// In it, this message translates to:
-  /// **'Parole scelte in automatico leggendo tutte le parti scritte finora.'**
-  String get chatKeywordsCaption;
-
   /// Sender label of the bubble showing the last five words of the previous part: who wrote it and how long ago (one of timeJustNow, timeMinutesAgo, timeHoursAgo, timeDaysAgo).
   ///
   /// In it, this message translates to:

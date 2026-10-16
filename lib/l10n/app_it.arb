@@ -141,10 +141,6 @@
   "@storyKeywordsLabel": {
     "description": "Visible heading of the story's keywords on the writing screen's turn card. The keywords themselves are story content and are not translated."
   },
-  "chatKeywordsCaption": "Parole scelte in automatico leggendo tutte le parti scritte finora.",
-  "@chatKeywordsCaption": {
-    "description": "Caption under the story's keywords, explaining where they come from."
-  },
   "chatPreviousAuthorLabel": "{name} ha scritto {time}:",
   "@chatPreviousAuthorLabel": {
     "description": "Sender label of the bubble showing the last five words of the previous part: who wrote it and how long ago (one of timeJustNow, timeMinutesAgo, timeHoursAgo, timeDaysAgo).",

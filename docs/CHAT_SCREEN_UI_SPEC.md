@@ -145,8 +145,8 @@ in this order:
 | gap above | 20 |
 | Heading | `storyKeywordsLabel` (new value: "Di cosa parla finora"), same style as the Remember subheading. `Semantics(header: true)`. gap 8. |
 | Tags | `Wrap(spacing: 8, runSpacing: 8)` of at most 4 (`take(4)`). Each tag is a **non-interactive** label, not a button: `Container` with `AppColors.sage` fill, `StadiumBorder`, padding h12 v6, text 14sp w600 `AppColors.ink`, `maxLines: 1`, ellipsis. No elevation, no border, no ripple. (A `Chip` with `elevation: 0`, `side: BorderSide.none`, `backgroundColor: AppColors.sage` is fine too, as long as it has no `onPressed`/`onSelected`.) |
-| Caption | gap 8, `chatKeywordsCaption`, 13sp, `AppColors.ink` at alpha 0.75. |
-| Semantics | Wrap heading + tags + caption in `Semantics(container: true)`. Each tag reads as its text. |
+| Caption | None: the caption explaining where the keywords come from was dropped. |
+| Semantics | Wrap heading + tags in `Semantics(container: true)`. Each tag reads as its text. |
 
 The sage tags on the cream card replace the elevated cream chips on the
 background: inside the card they read as "labels about this story", not
@@ -228,7 +228,7 @@ footer 48 + 8 = 240. That leaves ~60dp of card visible. That's fine: the
 
 | Item | Requirement |
 |---|---|
-| Reading order | Close, title, progress text, headline, lead, keywords heading, tags, caption, Remember heading, tips, lead-in (merged: "Continua da qui: …words"), field (label `chatInputLabel`), counter (if shown), Send. Widget order; no `sortKey`. |
+| Reading order | Close, title, progress text, headline, lead, keywords heading, tags, Remember heading, tips, lead-in (merged: "Continua da qui: …words"), field (label `chatInputLabel`), counter (if shown), Send. Widget order; no `sortKey`. |
 | Headers | Headline, keywords heading and Remember heading have `header: true`, so screen-reader users can jump between them. |
 | Tags | Not buttons: no `button` flag, no tap handler, no ripple. |
 | Field | `Semantics(label: chatInputLabel(position))`. The hint is spoken while the field is empty. With `maxLength` set, Flutter reports the remaining characters to screen readers. |
@@ -256,7 +256,6 @@ placeholders) there. Regenerate with `flutter gen-l10n`.
 | `chatLeadFirst` | Sei il primo a scrivere: scegli tu personaggi, luogo e cosa succede. | You're the first to write: you choose the characters, the place and what happens. |
 | `chatLeadMiddle` | Della storia vedi solo le ultime 5 parole: riparti da lì, con la tua fantasia. | You only get to see the last 5 words of the story: carry on from there, your way. |
 | `chatLeadLast` | Della storia vedi solo le ultime 5 parole: portala a una conclusione. | You only get to see the last 5 words of the story: bring it to an end. |
-| `chatKeywordsCaption` | Parole scelte in automatico leggendo tutte le parti scritte finora. | Picked automatically from all the parts written so far. |
 | `chatTipsHeading` | Ricorda | Remember |
 | `chatTipTurns` | Ogni storia ha 4 parti, scritte a turno da giocatori diversi: non puoi scriverne due di fila. | Every story has 4 parts, written in turns by different players: you can't write two in a row. |
 | `chatTipHook` | Il prossimo giocatore vedrà solo le ultime 5 parole della tua parte: chiudi con un buon aggancio! | The next player only sees the last 5 words of your part, so end with a good hook! |
@@ -365,11 +364,11 @@ notification offer strings.
    `chatHeadlineLast`, `chatLeadLast`, Complete+Length+Lock (and **no**
    Hook tip).
 4. **Keywords.** With `keywords: [drago, faro, tempesta, segreto]` the
-   heading "What it's about so far" (`storyKeywordsLabel`), the 4 tags and
-   `chatKeywordsCaption` are shown, inside the card, above the Remember
+   heading "What it's about so far" (`storyKeywordsLabel`), the 4 tags are
+   shown, inside the card, above the Remember
    section. The tags have no tap action (`tester.tap` on one changes
    nothing, and their semantics have no `isButton`). With `keywords: []`
-   and parts present, neither the heading, the tags nor the caption exist,
+   and parts present, neither the heading nor the tags exist,
    and no placeholder text is shown. With no parts, no keywords section
    even if `keywords` is non-empty.
 5. **Lead-in.** With parts, the composer shows `chatContinueFromLabel` and
