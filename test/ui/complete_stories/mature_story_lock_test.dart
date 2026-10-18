@@ -557,7 +557,7 @@ void main() {
     expectNoMatureContent();
   });
 
-  testWidgets('a mature story the user co-wrote is under theirs, still locked',
+  testWidgets('a mature story the user co-wrote is in their tab, still locked',
       (tester) async {
     await addStory('mine-mature',
         title: 'My spicy story',
@@ -567,23 +567,19 @@ void main() {
         firstAuthor: _email);
     await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
 
-    expect(find.text(l10n.yourStoriesHeading), findsOneWidget);
+    // Everyone else's stories show first; the user's are a tab away.
+    expect(find.text('My spicy story'), findsNothing);
+    expect(locked(), findsNWidgets(2));
+
+    await tester.tap(find.text(l10n.yourStoriesHeading));
+    await tester.pumpAndSettle();
     expect(find.text('My spicy story'), findsOneWidget);
     expect(find.text('my spicy part'), findsNothing);
-    expect(locked(), findsNWidgets(3));
-
-    // The first tile after the heading is the user's locked story, above
-    // the newer stories of others.
-    final headingY = tester.getTopLeft(find.text(l10n.yourStoriesHeading)).dy;
-    final lockedYs = [
-      for (var i = 0; i < 3; i++) tester.getTopLeft(locked().at(i)).dy,
-    ]..sort();
-    expect(lockedYs.first, greaterThan(headingY));
-    expect(lockedYs.first,
-        lessThan(tester.getTopLeft(find.text(_normalTitle)).dy));
-    expect(find.byType(Divider), findsOneWidget);
+    expect(find.text(_normalTitle), findsNothing);
+    expect(locked(), findsOneWidget);
   });
-  group('your stories panel', () {
+
+  group('tabs', () {
     /// Adds [count] stories by the user, "Mine 0" the newest, older than
     /// every story from setUp.
     Future<void> addMine(int count) async {
@@ -596,48 +592,57 @@ void main() {
     double topOf(WidgetTester tester, String text) =>
         tester.getTopLeft(find.text(text)).dy;
 
-    // On iOS too: its scrollbar is interactive and breaks if both lists
-    // share the PrimaryScrollController.
-    testWidgets('scrolls on its own, apart from the other stories',
+    testWidgets('a single list per tab, keeping its scroll offset',
         (tester) async {
       await addMine(15);
       await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
 
-      // Pinned at the top, at most 40% of the screen tall.
-      final screenHeight = tester.getSize(find.byType(Scaffold)).height;
-      expect(tester.getSize(find.byType(ListView).first).height,
-          lessThanOrEqualTo(screenHeight * 0.4));
-      final divider = tester.getTopLeft(find.byType(Divider)).dy;
-      expect(find.text('Mine 14'), findsNothing);
+      expect(find.byType(ListView), findsOneWidget);
+      expect(find.text('Mine 0'), findsNothing);
 
-      // Dragging the panel scrolls only the user's stories.
-      final heading = topOf(tester, l10n.yourStoriesHeading);
-      final others = topOf(tester, _normalTitle);
+      await tester.tap(find.text(l10n.yourStoriesHeading));
+      await tester.pumpAndSettle();
+      expect(find.byType(ListView), findsOneWidget);
+      expect(find.text(_normalTitle), findsNothing);
+      expect(find.text('Mine 0'), findsOneWidget);
+
       await tester.drag(find.text('Mine 1'), const Offset(0, -300));
       await tester.pumpAndSettle();
       expect(find.text('Mine 0'), findsNothing);
-      expect(topOf(tester, l10n.yourStoriesHeading), heading);
-      expect(topOf(tester, _normalTitle), others);
-      expect(tester.getTopLeft(find.byType(Divider)).dy, divider);
+      final mineTop = topOf(tester, 'Mine 6');
 
-      // Dragging the other stories leaves the panel where it is.
-      final mineTop = topOf(tester, 'Mine 5');
-      await tester.drag(find.text(_normalTitle), const Offset(0, -50));
+      // Back and forth: the user's list is where they left it.
+      await tester.tap(find.text(l10n.otherStoriesTab));
       await tester.pumpAndSettle();
-      expect(topOf(tester, 'Mine 5'), mineTop);
-      expect(topOf(tester, l10n.yourStoriesHeading), heading);
+      expect(find.text(_normalTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.yourStoriesHeading));
+      await tester.pumpAndSettle();
+      expect(topOf(tester, 'Mine 6'), mineTop);
     },
         variant: TargetPlatformVariant(
             {TargetPlatform.android, TargetPlatform.iOS}));
 
-    testWidgets('a short panel takes only the height it needs', (tester) async {
+    testWidgets('a user without completed stories is told so in their tab',
+        (tester) async {
+      await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
+
+      await tester.tap(find.text(l10n.yourStoriesHeading));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.noYourCompleteStories), findsOneWidget);
+    });
+
+    testWidgets('opens on the user\'s tab when only that one has stories',
+        (tester) async {
+      await firestore.collection('stories').get().then((snapshot) async {
+        for (final doc in snapshot.docs) {
+          await doc.reference.delete();
+        }
+      });
       await addMine(1);
       await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
 
-      expect(
-          tester.getTopLeft(find.byType(Divider)).dy -
-              tester.getBottomLeft(find.text('Mine 0')).dy,
-          lessThan(80.0));
+      expect(find.text('Mine 0'), findsOneWidget);
+      expect(find.text(l10n.noOtherCompleteStories), findsNothing);
     });
   });
 

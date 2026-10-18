@@ -266,6 +266,24 @@ abstract class AppLocalizations {
   /// **'Le tue storie'**
   String get yourStoriesHeading;
 
+  /// Tab of the Complete screen listing completed stories the user didn't write a part of.
+  ///
+  /// In it, this message translates to:
+  /// **'Altre storie'**
+  String get otherStoriesTab;
+
+  /// No description provided for @noOtherCompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia completata da altri, per ora.'**
+  String get noOtherCompleteStories;
+
+  /// No description provided for @noYourCompleteStories.
+  ///
+  /// In it, this message translates to:
+  /// **'Non hai ancora partecipato a una storia completata.'**
+  String get noYourCompleteStories;
+
   /// No description provided for @storyNotStarted.
   ///
   /// In it, this message translates to:

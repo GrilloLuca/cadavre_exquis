@@ -14,11 +14,11 @@ import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
-/// Most of the screen's height the "Your stories" panel may take when
-/// other stories are listed below it.
-const _yourStoriesMaxHeightFactor = 0.4;
+/// Index of the "Your stories" tab; everyone else's come first.
+const _yourStoriesTab = 1;
 
-/// The completed stories of the room, newest first. Stories the AI review
+/// The completed stories of the room, newest first, in two tabs: everyone
+/// else's, and those the user wrote a part of. Stories the AI review
 /// flagged as mature are listed with the others but locked behind the age
 /// check ([AgeGate]); known minors don't see them at all. Creates its
 /// [CompleteStoriesViewModel] once, in `initState` (see `ChatScreen`).
@@ -41,13 +41,19 @@ class CompleteStoriesScreen extends StatefulWidget {
   State<CompleteStoriesScreen> createState() => _CompleteStoriesScreenState();
 }
 
-class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
+class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
+    with SingleTickerProviderStateMixin {
   late final CompleteStoriesViewModel _viewModel;
+  late final TabController _tabs;
 
   // One controller per list: two lists on the PrimaryScrollController
   // break its scrollbar on iOS and desktop, where it's interactive.
   final _yourStoriesScroll = ScrollController();
   final _otherStoriesScroll = ScrollController();
+
+  /// Whether the current room's stories had arrived at the last change;
+  /// see [_onViewModelChanged].
+  bool _wasLoaded = false;
 
   @override
   void initState() {
@@ -59,6 +65,8 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
       language: widget.language,
       roomId: widget.roomId,
     );
+    _tabs = TabController(length: 2, vsync: this);
+    _viewModel.addListener(_onViewModelChanged);
     _viewModel.unlock.addListener(_onUnlockChanged);
     _viewModel.submitBirthYear.addListener(_onSubmitBirthYearChanged);
   }
@@ -72,12 +80,25 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
 
   @override
   void dispose() {
+    _viewModel.removeListener(_onViewModelChanged);
     _viewModel.unlock.removeListener(_onUnlockChanged);
     _viewModel.submitBirthYear.removeListener(_onSubmitBirthYearChanged);
     _viewModel.dispose();
+    _tabs.dispose();
     _yourStoriesScroll.dispose();
     _otherStoriesScroll.dispose();
     super.dispose();
+  }
+
+  /// When a room's stories arrive, opens on the user's tab if only that
+  /// one has stories. The tabs aren't shown before, so nothing jumps.
+  void _onViewModelChanged() {
+    final loaded = _viewModel.isLoaded;
+    if (loaded && !_wasLoaded) {
+      final (:mine, :others) = _viewModel.sections;
+      _tabs.index = others.isEmpty && mine.isNotEmpty ? _yourStoriesTab : 0;
+    }
+    _wasLoaded = loaded;
   }
 
   void _openStory(Story story) {
@@ -145,73 +166,43 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            // Stories the user took part in come first, then a divider,
-            // then everyone else's. Both groups keep the repository's
-            // order (newest completed first).
+            // Both tabs keep the repository's order (newest completed
+            // first).
             final (:mine, :others) = _viewModel.sections;
             if (mine.isEmpty && others.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: CreamCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16.0,
-                    ),
-                    child: Text(
-                      l10n.noCompleteStories,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.ink),
-                    ),
-                  ),
-                ),
-              );
+              return _buildEmpty(l10n.noCompleteStories);
             }
 
-            // The user's stories sit in a panel pinned at the top, which
-            // scrolls on its own; everyone else's fill the rest of the
-            // screen with their own scroll.
-            if (mine.isEmpty) {
-              return _buildStoryList(others, _otherStoriesScroll);
-            }
-            if (others.isEmpty) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildYourStoriesHeading(l10n),
-                  Expanded(
-                    child:
-                        _buildStoryList(mine, _yourStoriesScroll, top: false),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TabBar(
+                  controller: _tabs,
+                  labelColor: AppColors.primaryDark,
+                  unselectedLabelColor: AppColors.ink,
+                  indicatorColor: AppColors.primaryDark,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+                  tabs: [
+                    Tab(text: l10n.otherStoriesTab),
+                    Tab(text: l10n.yourStoriesHeading),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabs,
+                    children: [
+                      others.isEmpty
+                          ? _buildEmpty(l10n.noOtherCompleteStories)
+                          : _buildStoryList(others, _otherStoriesScroll,
+                              const PageStorageKey('otherStories')),
+                      mine.isEmpty
+                          ? _buildEmpty(l10n.noYourCompleteStories)
+                          : _buildStoryList(mine, _yourStoriesScroll,
+                              const PageStorageKey('yourStories')),
+                    ],
                   ),
-                ],
-              );
-            }
-            return LayoutBuilder(
-              builder: (context, constraints) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildYourStoriesHeading(l10n),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight:
-                          constraints.maxHeight * _yourStoriesMaxHeightFactor,
-                    ),
-                    child: _buildStoryList(mine, _yourStoriesScroll,
-                        top: false, shrinkWrap: true),
-                  ),
-                  const Divider(
-                    height: 24.0,
-                    thickness: 1.5,
-                    indent: 20.0,
-                    endIndent: 20.0,
-                    color: AppColors.primaryDark,
-                  ),
-                  Expanded(
-                    child: _buildStoryList(others, _otherStoriesScroll,
-                        top: false),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
@@ -219,36 +210,38 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen> {
     );
   }
 
-  Widget _buildYourStoriesHeading(AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
-      child: Text(
-        l10n.yourStoriesHeading,
-        style: const TextStyle(
-          color: AppColors.primaryDark,
-          fontSize: 16.0,
-          fontWeight: FontWeight.w700,
+  Widget _buildEmpty(String text) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: CreamCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20.0,
+            vertical: 16.0,
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.ink),
+          ),
         ),
       ),
     );
   }
 
-  /// A scrollable list of story cards, with a scrollbar so a list that
-  /// scrolls on its own shows it. Without [top] padding when a heading
-  /// sits right above it. [shrinkWrap] lets a short list take only the
-  /// height it needs.
+  /// A scrollable list of story cards, with a scrollbar. The [storageKey]
+  /// keeps each tab's scroll offset when the user switches tabs.
   Widget _buildStoryList(
     List<Story> stories,
-    ScrollController controller, {
-    bool top = true,
-    bool shrinkWrap = false,
-  }) {
+    ScrollController controller,
+    Key storageKey,
+  ) {
     return Scrollbar(
       controller: controller,
       child: ListView.builder(
+        key: storageKey,
         controller: controller,
-        shrinkWrap: shrinkWrap,
-        padding: EdgeInsets.fromLTRB(12.0, top ? 12.0 : 0.0, 12.0, 12.0),
+        padding: const EdgeInsets.all(12.0),
         itemCount: stories.length,
         itemBuilder: (context, index) =>
             _buildStoryCard(context, stories[index]),
