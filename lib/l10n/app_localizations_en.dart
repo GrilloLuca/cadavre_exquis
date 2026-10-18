@@ -105,6 +105,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourStoriesHeading => 'Your stories';
 
   @override
+  String get otherStoriesTab => 'Other stories';
+
+  @override
+  String get noOtherCompleteStories => 'No completed stories by others yet.';
+
+  @override
+  String get noYourCompleteStories =>
+      'You haven\'t taken part in a completed story yet.';
+
+  @override
   String get storyNotStarted => 'No one has started this story yet.';
 
   @override
