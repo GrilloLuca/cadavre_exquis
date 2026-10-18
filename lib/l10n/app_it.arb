@@ -82,6 +82,12 @@
   "noIncompleteStories": "Nessuna storia da continuare al momento.\nCreane una nuova con il pulsante +.",
   "noCompleteStories": "Nessuna storia completata, per ora.",
   "yourStoriesHeading": "Le tue storie",
+  "otherStoriesTab": "Altre storie",
+  "@otherStoriesTab": {
+    "description": "Tab of the Complete screen listing completed stories the user didn't write a part of."
+  },
+  "noOtherCompleteStories": "Nessuna storia completata da altri, per ora.",
+  "noYourCompleteStories": "Non hai ancora partecipato a una storia completata.",
   "storyNotStarted": "Nessuno ha ancora iniziato questa storia.",
   "storyBeingWritten": "Qualcuno sta scrivendo il prossimo capitolo...",
   "storyWaitingForOthers": "Hai scritto l'ultimo capitolo: aspetta un altro giocatore.",
