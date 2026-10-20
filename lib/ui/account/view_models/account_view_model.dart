@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -11,8 +12,8 @@ import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
-/// The profile tab: the user's nickname, their room, push notifications,
-/// signing out and deleting the account.
+/// The profile tab: the user's nickname, their room, push notifications, ad
+/// privacy, signing out and deleting the account.
 class AccountViewModel extends ChangeNotifier {
   /// Starts loading the nickname when someone is signed in.
   AccountViewModel({
@@ -20,10 +21,12 @@ class AccountViewModel extends ChangeNotifier {
     required AuthRepository authRepository,
     required RoomRepository roomRepository,
     required NotificationRepository notificationRepository,
+    required AdsRepository adsRepository,
   })  : _profiles = profileRepository,
         _auth = authRepository,
         _rooms = roomRepository,
         _notifications = notificationRepository,
+        _ads = adsRepository,
         email = authRepository.currentEmail {
     loadNickname = Command0<String?>(_loadNickname);
     saveNickname = Command1<void, String>(_saveNickname);
@@ -31,8 +34,10 @@ class AccountViewModel extends ChangeNotifier {
     signOut = Command0<void>(_signOut);
     enableNotifications =
         Command0<NotificationPermission>(_notifications.enable);
+    showAdPrivacyOptions = Command0<void>(_ads.showPrivacyOptions);
     _rooms.addListener(notifyListeners);
     _notifications.addListener(notifyListeners);
+    _ads.addListener(notifyListeners);
     if (email != null) loadNickname.execute();
   }
 
@@ -40,6 +45,7 @@ class AccountViewModel extends ChangeNotifier {
   final AuthRepository _auth;
   final RoomRepository _rooms;
   final NotificationRepository _notifications;
+  final AdsRepository _ads;
 
   /// The signed-in user, read once: signing out leaves this screen. Without
   /// one there is no nickname to show and no account to delete.
@@ -135,6 +141,15 @@ class AccountViewModel extends ChangeNotifier {
   /// Asks for the permission (the system prompt) and registers the device.
   late final Command0<NotificationPermission> enableNotifications;
 
+  // ---- Ads ----
+
+  /// Whether to offer changing the ad consent: required by GDPR in the
+  /// EEA/UK, where the user must be able to do it at any time.
+  bool get adPrivacyOptionsRequired => _ads.privacyOptionsRequired;
+
+  /// Shows the ad consent form again.
+  late final Command0<void> showAdPrivacyOptions;
+
   // ---- Account ----
 
   /// Whether the user signs in with a password, which they must enter again
@@ -173,7 +188,9 @@ class AccountViewModel extends ChangeNotifier {
   void dispose() {
     _rooms.removeListener(notifyListeners);
     _notifications.removeListener(notifyListeners);
+    _ads.removeListener(notifyListeners);
     enableNotifications.dispose();
+    showAdPrivacyOptions.dispose();
     loadNickname.dispose();
     saveNickname.dispose();
     deleteAccount.dispose();

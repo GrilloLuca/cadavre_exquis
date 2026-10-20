@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/ui/account/view_models/account_view_model.dart';
 
+import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
@@ -18,12 +19,14 @@ void main() {
   late FakeAuthRepository auth;
   late FakeRoomRepository rooms;
   late FakeNotificationRepository notifications;
+  late FakeAdsRepository ads;
 
   setUp(() {
     profiles = FakeUserProfileRepository();
     auth = FakeAuthRepository(email: _me);
     rooms = FakeRoomRepository();
     notifications = FakeNotificationRepository();
+    ads = FakeAdsRepository();
   });
 
   AccountViewModel create() => AccountViewModel(
@@ -31,6 +34,7 @@ void main() {
         authRepository: auth,
         roomRepository: rooms,
         notificationRepository: notifications,
+        adsRepository: ads,
       );
 
   group('nickname', () {
@@ -212,6 +216,30 @@ void main() {
       await viewModel.deleteAccount.execute(null);
 
       expect(notifications.calls, isEmpty);
+    });
+  });
+
+  group('ads', () {
+    test('offers the ad privacy options only when required', () {
+      final viewModel = create();
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+      expect(viewModel.adPrivacyOptionsRequired, isFalse);
+
+      ads.privacyOptionsRequired = true;
+
+      expect(viewModel.adPrivacyOptionsRequired, isTrue);
+      expect(notified, 1);
+      viewModel.dispose();
+    });
+
+    test('shows the ad consent form again', () async {
+      final viewModel = create();
+
+      await viewModel.showAdPrivacyOptions.execute();
+
+      expect(ads.calls, ['showPrivacyOptions']);
+      viewModel.dispose();
     });
   });
 }

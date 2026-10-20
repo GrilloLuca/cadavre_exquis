@@ -6,13 +6,16 @@ import 'package:cadavre_exquisite/domain/models/story_language.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/widgets/complete_stories_screen.dart';
 import 'package:cadavre_exquisite/ui/incomplete_stories/widgets/incomplete_stories_screen.dart';
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/domain/models/ad_placement.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/widgets/age_check_screen.dart';
+import 'package:cadavre_exquisite/ui/core/ui/ad_banner.dart';
 import 'package:cadavre_exquisite/ui/home/view_models/home_view_model.dart';
 import 'package:cadavre_exquisite/ui/home/view_models/notification_router_view_model.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
@@ -33,6 +36,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const int _completeTabIndex = 1;
   static const int _profileTabIndex = 2;
 
   late final HomeViewModel _viewModel;
@@ -43,7 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = HomeViewModel(roomRepository: context.read<RoomRepository>());
+    _viewModel = HomeViewModel(
+      roomRepository: context.read<RoomRepository>(),
+      adsRepository: context.read<AdsRepository>(),
+    );
+    // Consent and the ads SDK start once the home is on screen, without
+    // delaying it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _viewModel.startAds();
+    });
     _router = NotificationRouterViewModel(
       notificationRepository: context.read<NotificationRepository>(),
       storyRepository: context.read<StoryRepository>(),
@@ -262,21 +274,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 const AccountScreen(),
               ],
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.edit_note),
-            label: l10n.homeTabIncomplete,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.menu_book),
-            label: l10n.homeTabComplete,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: l10n.homeTabProfile,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The banner lives here rather than in CompleteStoriesScreen: the
+          // IndexedStack keeps every tab alive, so it would keep loading ads
+          // while hidden. Built only on the complete-stories tab.
+          if (_selectedIndex == _completeTabIndex)
+            // The navigation bar below already pads for the bottom inset.
+            MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: const AdBanner(
+                placement: AdPlacement.completeStoriesBanner,
+              ),
+            ),
+          BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) => setState(() => _selectedIndex = index),
+            items: <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.edit_note),
+                label: l10n.homeTabIncomplete,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.menu_book),
+                label: l10n.homeTabComplete,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person),
+                label: l10n.homeTabProfile,
+              ),
+            ],
           ),
         ],
       ),

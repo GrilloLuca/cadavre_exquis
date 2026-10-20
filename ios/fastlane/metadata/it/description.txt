@@ -16,8 +16,17 @@ Il giocatore successivo vedrà solo le tue ultime cinque parole, quindi conta co
 
 FUNZIONALITÀ
 
+Un indizio sulla trama
+Oltre alle ultime cinque parole vedi alcune parole chiave su ciò di cui parla la storia finora: abbastanza per continuare, mai troppo per rovinare la sorpresa.
+
 Titoli generati dall'IA
 Ogni storia completata riceve un titolo tutto suo, generato da ciò che hanno scritto i quattro autori, così ogni racconto dell'archivio ha un nome che invoglia a leggerlo.
+
+Sai quando tocca alla tua storia
+Attiva le notifiche per sapere quando qualcuno continua una delle tue storie, e quando è completa e pronta da leggere.
+
+Le tue storie, in una scheda tutta loro
+Le storie completate a cui hai scritto una parte sono raccolte in "Le tue storie", accanto a quelle degli altri.
 
 Stanze per lingua
 Scrivi e leggi storie in italiano, inglese, spagnolo, francese o tedesco. Ogni storia appartiene a una stanza linguistica, quindi è scritta interamente da persone che parlano la stessa lingua. L'app ti fa partire dalla stanza della lingua del tuo dispositivo, e puoi cambiarla quando vuoi.
@@ -31,14 +40,8 @@ Una storia può essere scritta da una sola persona alla volta. Mentre scrivi, la
 Nickname o anonimato
 Scegli un nickname da mostrare accanto alle tue parti nelle storie completate, oppure resta anonimo. Decidi tu.
 
-Le tue storie a colpo d'occhio
-Le storie a cui hai partecipato sono contrassegnate, così vedi quali stanno ancora aspettando altri giocatori e puoi tornare a leggerle quando sono complete.
-
-Sfoglia l'archivio
-Esplora tutte le storie completate della tua stanza e leggile dall'inizio alla fine, parte per parte.
-
 Accesso rapido
-Accedi con la tua email o continua con Google.
+Entra con il tuo account Google, senza una nuova password da ricordare.
 
 PER CHI È
 • Chi scrive e cerca un esercizio creativo fuori dal comune.
