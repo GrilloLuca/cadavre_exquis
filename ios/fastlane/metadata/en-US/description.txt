@@ -16,8 +16,17 @@ Since the next player sees only your last five words, how you finish your part m
 
 FEATURES
 
+A hint of the plot
+Besides the last five words, you see a few keywords about what the story is about so far: just enough to keep going, never enough to spoil the surprise.
+
 AI-generated story titles
 Every finished story gets its own title, generated from what the four authors wrote, so each tale in the archive has a name worth clicking.
+
+Know when it's your story's turn
+Turn on notifications to find out when someone continues one of your stories, and when it's complete and ready to read.
+
+Your stories, in their own tab
+The completed stories you wrote a part of are collected under "Your stories", next to everyone else's.
 
 Language rooms
 Write and read stories in Italian, English, Spanish, French or German. Every story belongs to a language room, so it's written entirely by people who share that language. The app starts you in the room that matches your device language, and you can switch rooms at any time.
@@ -31,14 +40,8 @@ Only one person writes a story at a time. While you're writing, the story is loc
 Nickname or anonymous
 Pick a nickname to appear next to your parts in completed stories, or stay anonymous. It's up to you.
 
-Your stories at a glance
-Stories you've contributed to are labelled, so you can see which ones are still waiting for other players and come back once they're complete.
-
-Read the archive
-Browse every completed story in your room and read it from start to finish, part by part.
-
 Quick sign-in
-Sign in with your email or continue with Google.
+Continue with your Google account, no new password to remember.
 
 WHO IT'S FOR
 • Writers looking for an unusual creative warm-up.
