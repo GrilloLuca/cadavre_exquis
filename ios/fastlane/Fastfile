@@ -12,6 +12,7 @@ platform :ios do
   BUNDLE_ID = "com.lucagrillo.cadavreexquis"
   TEAM_ID = "9YK3KADAHF"
   PROJECT_ROOT = File.expand_path("../..", __dir__)
+  ADS_CONFIG = File.join(PROJECT_ROOT, "ads.json")
 
   before_all do
     setup_ci if ENV["CI"] # temporary keychain + match readonly mode
@@ -44,6 +45,16 @@ platform :ios do
     )
   end
 
+  # AdMob ad unit ids for the release build (see docs/ADMOB.md). Without
+  # them the app silently ships with no ads, so a missing file fails.
+  def ads_define
+    UI.user_error!("Missing #{ADS_CONFIG} — set the ADMOB_CONFIG_JSON secret") unless File.exist?(ADS_CONFIG)
+    JSON.parse(File.read(ADS_CONFIG))
+    "--dart-define-from-file=#{ADS_CONFIG}"
+  rescue JSON::ParserError
+    UI.user_error!("ads.json is not valid JSON — check the ADMOB_CONFIG_JSON secret")
+  end
+
   def export_build_env(values)
     File.write(File.join(PROJECT_ROOT, "ios_build.env"),
                values.map { |k, v| "#{k}=#{v}" }.join("\n") + "\n")
@@ -65,9 +76,10 @@ platform :ios do
              latest_testflight_build_number(api_key: api_key, initial_build_number: 0) + 1).to_i
     UI.message("Building #{name} (#{build})")
 
-    # Generate Flutter config (version, build number) without building; Xcode builds below.
+    # Generate Flutter config (version, build number, ad unit ids) without
+    # building; Xcode builds below.
     sh("cd #{PROJECT_ROOT} && flutter build ios --release --config-only " \
-       "--build-name=#{name} --build-number=#{build}")
+       "--build-name=#{name} --build-number=#{build} #{ads_define}")
 
     profile = ENV["sigh_#{BUNDLE_ID}_appstore_profile-name"]
     # Switch to manual signing with the match profile (CI-only change, not committed).

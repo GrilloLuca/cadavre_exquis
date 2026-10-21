@@ -58,10 +58,9 @@
 		</dict>
 	</array>
 	<key>GADApplicationIdentifier</key>
-	<!-- Google's TEST AdMob App ID. Replace with the real iOS App ID before release. -->
-	<string>ca-app-pub-3940256099942544~1458002511</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to deliver personalized ads to you.</string>
+	<!-- AdMob App ID of the iOS app. Debug builds still request Google's test
+	     ad units (see lib/data/repositories/ads/ads_config.dart). -->
+	<string>ca-app-pub-7162487806467316~2192790669</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

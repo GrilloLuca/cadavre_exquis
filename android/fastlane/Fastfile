@@ -10,12 +10,23 @@ default_platform(:android)
 platform :android do
   PROJECT_ROOT = File.expand_path("../..", __dir__)
   AAB_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/release/app-release.aab")
+  ADS_CONFIG = File.join(PROJECT_ROOT, "ads.json")
 
   # Helper methods used by the lanes below — keep them.
 
   # "1.2.3+4" -> "1.2.3"
   def version_name
     File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*([^+\s]+)/, 1]
+  end
+
+  # AdMob ad unit ids for the release build (see docs/ADMOB.md). Without
+  # them the app silently ships with no ads, so a missing file fails.
+  def ads_define
+    UI.user_error!("Missing #{ADS_CONFIG} — set the ADMOB_CONFIG_JSON secret") unless File.exist?(ADS_CONFIG)
+    JSON.parse(File.read(ADS_CONFIG))
+    "--dart-define-from-file=#{ADS_CONFIG}"
+  rescue JSON::ParserError
+    UI.user_error!("ads.json is not valid JSON — check the ADMOB_CONFIG_JSON secret")
   end
 
   # Fail fast with a clear message if the Play service account key is missing or invalid.
@@ -96,7 +107,7 @@ platform :android do
     UI.message("Building #{name} (#{code})")
 
     sh("cd #{PROJECT_ROOT} && flutter build appbundle --release " \
-       "--build-name=#{name} --build-number=#{code}")
+       "--build-name=#{name} --build-number=#{code} #{ads_define}")
 
     upload_to_play_store(
       track: "internal",

@@ -16,7 +16,7 @@
 <main>
 <div class="card">
   <h1>Privacy Policy</h1>
-  <p class="muted">Last updated: 8 October 2026</p>
+  <p class="muted">Last updated: 19 October 2026</p>
   <p>Cadavre Exquisite ("the app") is developed by Luca Grillo. This policy explains what data the app collects, why, and what you can do about it. Contact: <a href="mailto:grillo.luca@gmail.com">grillo.luca@gmail.com</a>.</p>
 
   <h2>What we collect</h2>
@@ -26,6 +26,8 @@
     <li><strong>Nickname:</strong> optional, if you set one.</li>
     <li><strong>What you write:</strong> the story parts you submit, linked to your email.</li>
     <li><strong>Private rooms:</strong> the name of rooms you create and a salted hash of their password.</li>
+    <li><strong>Notification token:</strong> if you turn on notifications, a token that identifies your device to the push service, linked to your account, with your language and platform (Android or iOS).</li>
+    <li><strong>Age check:</strong> to open stories for adults, the app first asks your phone's age signals (Google Play or Apple); that answer stays on your device and isn't stored. Only if they're not available, the app asks your birth year and stores it, linked to your email.</li>
     <li><strong>Technical data:</strong> our service providers automatically process data such as IP address and device information to operate and secure the service.</li>
   </ul>
 
@@ -33,7 +35,8 @@
   <ul>
     <li>To sign you in and keep your account.</li>
     <li>To run the game: assign turns, lock stories while someone is writing, and show who wrote each part.</li>
-    <li>To generate a title for each completed story with AI (see below).</li>
+    <li>To generate with AI a title for each completed story, check whether it contains adult content, and pick a few keywords for unfinished stories (see below).</li>
+    <li>To notify you when someone continues or completes a story you wrote in, if you turned notifications on.</li>
   </ul>
   <p>We don't sell your data, and we don't use it for advertising.</p>
 
@@ -42,17 +45,17 @@
 
   <h2>Service providers</h2>
   <ul>
-    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, Cloud Functions) stores and processes the data above. Data is stored in the United States.</li>
-    <li><strong>Google Vertex AI (Gemini)</strong> receives the text of a completed story to generate its title. Only the story text is sent, not who wrote it.</li>
+    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, Cloud Functions, Cloud Messaging) stores and processes the data above. Data is stored in the United States.</li>
+    <li><strong>Google Vertex AI (Gemini)</strong> receives the text of a story after each new part, to pick its keywords, and once it's completed, to generate its title and check it for adult content. Only the story text is sent, not who wrote it.</li>
     <li><strong>Google Sign-In</strong>, if you choose to sign in with Google.</li>
   </ul>
   <p>See <a href="https://firebase.google.com/support/privacy">Firebase's privacy information</a> and <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>.</p>
 
   <h2>How long we keep it</h2>
-  <p>We keep your data while your account exists. When you delete your account, your account, email and nickname are deleted, and the story parts you wrote stay in their stories without any link to you, shown as "Anonymous". They're part of stories other people wrote too, so they aren't removed.</p>
+  <p>We keep your data while your account exists. Notification tokens are deleted when you sign out. When you delete your account, your account, email, nickname and notification tokens are deleted, and the story parts you wrote stay in their stories without any link to you, shown as "Anonymous". They're part of stories other people wrote too, so they aren't removed.</p>
 
   <h2>Your rights</h2>
-  <p>You can change or remove your nickname and delete your account at any time from the <em>Profile</em> screen. You can also email us to access, correct or delete your data. If you're in the EU, you have rights under the GDPR, including the right to complain to your data protection authority.</p>
+  <p>You can delete your account at any time from the <em>Profile</em> screen, and turn notifications off in your phone's settings. The nickname can be chosen only once in the app; to change or remove it, or to access, correct or delete your data, email us. If you're in the EU, you have rights under the GDPR, including the right to complain to your data protection authority.</p>
 
   <h2>Children</h2>
   <p>The app is not directed to children under 13, and we don't knowingly collect their data. If you believe a child has given us data, contact us and we'll delete it.</p>
