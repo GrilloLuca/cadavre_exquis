@@ -37,10 +37,10 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_accent" />
-        <!-- AdMob App ID. This is Google's TEST App ID: replace it with the
-             real Android App ID from the AdMob console before release. -->
+        <!-- AdMob App ID of the Android app. Debug builds still request
+             Google's test ad units (see lib/data/repositories/ads/ads_config.dart). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-7162487806467316~8347135476" />
     </application>
 </manifest>

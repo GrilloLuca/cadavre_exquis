@@ -72,19 +72,26 @@ Manual test of consent: `flutter run --dart-define=ADMOB_DEBUG_EEA=true`.
 ### Code tasks
 
 - [ ] **Real App IDs** (QA finding 2): replace the test App IDs in
-  `AndroidManifest.xml` and `Info.plist`. Release builds must not ship the
+  `AndroidManifest.xml` and `Info.plist`. Done: Android
+  `ca-app-pub-7162487806467316~8347135476`, iOS
+  `ca-app-pub-7162487806467316~2192790669`. Release builds must not ship the
   test App ID: either inject per build (`manifestPlaceholders` in
   `android/app/build.gradle`, `$(ADMOB_APP_ID)` xcconfig on iOS) or keep the
   real id in the repo and fail the release build if the test id
   (`ca-app-pub-3940256099942544~…`) is still there.
-- [ ] **CI/fastlane** (T8): new secret `ADMOB_CONFIG_JSON` written to a
+- [ ] **CI/fastlane** (T8): done (deploy.yml writes the secret to `ads.json`;
+  the `internal` and `beta` lanes pass it and fail without it). Ad units:
+  `complete_banner` Android `ca-app-pub-7162487806467316/6597483268`, iOS
+  `ca-app-pub-7162487806467316/6243716311`; `story-reader-banner` Android
+  `ca-app-pub-7162487806467316/8782249748`, iOS
+  `ca-app-pub-7162487806467316/5034576423`. Original plan: new secret `ADMOB_CONFIG_JSON` written to a
   gitignored `ads.json` in `.github/workflows/deploy.yml`; pass
   `--dart-define-from-file=ads.json` in `android/fastlane/Fastfile` and
   `ios/fastlane/Fastfile` build lanes; fail clearly if missing; document the
   secret in `docs/CI_CD.md`. `release.yml` promotes the beta binary without
   rebuilding, so production ids must already be in the beta build.
-- [ ] **`ios/fastlane/Fastfile`**: `add_id_info_uses_idfa: false` is no longer
-  true with AdMob — revisit.
+- [x] **`ios/fastlane/Fastfile`**: `add_id_info_uses_idfa: false` stays
+  correct: no ATT, so the IDFA is never read (decision 4).
 - [ ] **AdBanner tests** (QA finding 4): mock the
   `plugins.flutter.io/google_mobile_ads` MethodChannel to cover dispose
   during load, reload on width change, failed load.
@@ -118,9 +125,9 @@ Manual test of consent: `flutter run --dart-define=ADMOB_DEBUG_EEA=true`.
    the completed-stories list (still outside the `IndexedStack`).
 3. **Interstitials**: none for now, only after reading a story, or also after
    writing the epilogue?
-4. **iOS tracking (ATT)**: ask for tracking (more revenue, one more prompt) →
-   enable the IDFA message in AdMob and localize the text in it/en
-   `InfoPlist.strings` (needs Xcode to add the variant group); or no tracking
-   → remove `NSUserTrackingUsageDescription`.
+4. ~~**iOS tracking (ATT)**~~ — decided 2026-10-20: **no tracking**. No ATT
+   prompt and no IDFA message in AdMob; `NSUserTrackingUsageDescription`
+   removed, so iOS ads are non-personalised. App Store privacy labels declare
+   no data used to track.
 5. **Domain** for `app-ads.txt` and the privacy policy.
 6. **"Remove ads" purchase**: yes/no, when.

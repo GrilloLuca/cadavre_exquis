@@ -16,7 +16,7 @@
 <main>
 <div class="card">
   <h1>Informativa sulla privacy</h1>
-  <p class="muted">Ultimo aggiornamento: 8 ottobre 2026</p>
+  <p class="muted">Ultimo aggiornamento: 19 ottobre 2026</p>
   <p>Cadavre Exquisite ("l'app") è sviluppata da Luca Grillo. Questa informativa spiega quali dati raccoglie l'app, perché, e cosa puoi fare. Contatto: <a href="mailto:grillo.luca@gmail.com">grillo.luca@gmail.com</a>.</p>
 
   <h2>Cosa raccogliamo</h2>
@@ -26,6 +26,8 @@
     <li><strong>Nickname:</strong> facoltativo, se ne imposti uno.</li>
     <li><strong>Ciò che scrivi:</strong> le parti di storia che invii, collegate alla tua email.</li>
     <li><strong>Stanze private:</strong> il nome delle stanze che crei e un hash con salt della loro password.</li>
+    <li><strong>Token per le notifiche:</strong> se attivi le notifiche, un token che identifica il tuo dispositivo presso il servizio di notifiche push, collegato al tuo account, con la tua lingua e la piattaforma (Android o iOS).</li>
+    <li><strong>Verifica dell'età:</strong> per aprire le storie per adulti, l'app chiede prima i segnali sull'età del telefono (Google Play o Apple); la risposta resta sul dispositivo e non viene conservata. Solo se non sono disponibili, l'app chiede il tuo anno di nascita e lo conserva, collegato alla tua email.</li>
     <li><strong>Dati tecnici:</strong> i nostri fornitori trattano automaticamente dati come indirizzo IP e informazioni sul dispositivo per far funzionare e proteggere il servizio.</li>
   </ul>
 
@@ -33,7 +35,8 @@
   <ul>
     <li>Per farti accedere e mantenere il tuo account.</li>
     <li>Per far funzionare il gioco: assegnare i turni, bloccare le storie mentre qualcuno scrive e mostrare chi ha scritto ogni parte.</li>
-    <li>Per generare con l'IA un titolo per ogni storia completata (vedi sotto).</li>
+    <li>Per generare con l'IA un titolo per ogni storia completata, verificare se contiene contenuti per adulti e scegliere qualche parola chiave per le storie incomplete (vedi sotto).</li>
+    <li>Per avvisarti quando qualcuno continua o completa una storia a cui hai partecipato, se hai attivato le notifiche.</li>
   </ul>
   <p>Non vendiamo i tuoi dati e non li usiamo per la pubblicità.</p>
 
@@ -42,17 +45,17 @@
 
   <h2>Fornitori di servizi</h2>
   <ul>
-    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, Cloud Functions) conserva e tratta i dati indicati sopra. I dati sono conservati negli Stati Uniti.</li>
-    <li><strong>Google Vertex AI (Gemini)</strong> riceve il testo di una storia completata per generarne il titolo. Viene inviato solo il testo, non chi l'ha scritto.</li>
+    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, Cloud Functions, Cloud Messaging) conserva e tratta i dati indicati sopra. I dati sono conservati negli Stati Uniti.</li>
+    <li><strong>Google Vertex AI (Gemini)</strong> riceve il testo di una storia dopo ogni nuova parte, per sceglierne le parole chiave, e una volta completata, per generarne il titolo e verificare se contiene contenuti per adulti. Viene inviato solo il testo, non chi l'ha scritto.</li>
     <li><strong>Accedi con Google</strong>, se scegli di usarlo.</li>
   </ul>
   <p>Consulta le <a href="https://firebase.google.com/support/privacy">informazioni sulla privacy di Firebase</a> e le <a href="https://policies.google.com/privacy?hl=it">norme sulla privacy di Google</a>.</p>
 
   <h2>Per quanto tempo li conserviamo</h2>
-  <p>Conserviamo i tuoi dati finché il tuo account esiste. Quando elimini l'account, account, email e nickname vengono eliminati, e le parti di storia che hai scritto restano nelle loro storie senza alcun collegamento a te, come "Anonimo". Fanno parte di storie scritte anche da altre persone, quindi non vengono rimosse.</p>
+  <p>Conserviamo i tuoi dati finché il tuo account esiste. I token per le notifiche vengono eliminati quando esci dall'account. Quando elimini l'account, account, email, nickname e token per le notifiche vengono eliminati, e le parti di storia che hai scritto restano nelle loro storie senza alcun collegamento a te, come "Anonimo". Fanno parte di storie scritte anche da altre persone, quindi non vengono rimosse.</p>
 
   <h2>I tuoi diritti</h2>
-  <p>Puoi modificare o rimuovere il nickname ed eliminare l'account in qualsiasi momento dalla schermata <em>Profilo</em>. Puoi anche scriverci per accedere ai tuoi dati, correggerli o cancellarli. Ai sensi del GDPR hai inoltre il diritto di proporre reclamo al Garante per la protezione dei dati personali.</p>
+  <p>Puoi eliminare l'account in qualsiasi momento dalla schermata <em>Profilo</em> e disattivare le notifiche nelle impostazioni del telefono. Nell'app il nickname si sceglie una sola volta; per modificarlo o rimuoverlo, o per accedere ai tuoi dati, correggerli o cancellarli, scrivici. Ai sensi del GDPR hai inoltre il diritto di proporre reclamo al Garante per la protezione dei dati personali.</p>
 
   <h2>Minori</h2>
   <p>L'app non è rivolta ai minori di 13 anni e non raccogliamo consapevolmente i loro dati. Se ritieni che un minore ci abbia fornito dei dati, contattaci e li elimineremo.</p>

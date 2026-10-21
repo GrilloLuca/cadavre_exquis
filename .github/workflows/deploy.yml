@@ -44,15 +44,18 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ADMOB_CONFIG_JSON: ${{ secrets.ADMOB_CONFIG_JSON }}
         run: |
           printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           printf '%s' "$PLAY_STORE_JSON_KEY" > android/fastlane/play-store-credentials.json
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
           printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" > android/key.properties
+          printf '%s' "$ADMOB_CONFIG_JSON" > ads.json
           # sanity checks — fail early with a readable error
           python3 -m json.tool android/fastlane/play-store-credentials.json > /dev/null || { echo "::error::PLAY_STORE_JSON_KEY is empty or not valid JSON"; exit 1; }
           python3 -m json.tool android/app/google-services.json > /dev/null || { echo "::error::GOOGLE_SERVICES_JSON is empty or not valid JSON"; exit 1; }
+          python3 -m json.tool ads.json > /dev/null || { echo "::error::ADMOB_CONFIG_JSON is empty or not valid JSON"; exit 1; }
           [ -s android/app/upload-keystore.jks ] || { echo "::error::ANDROID_KEYSTORE_BASE64 is empty or not valid base64"; exit 1; }
       - run: flutter pub get
       - name: Build & upload to Play internal track
@@ -84,10 +87,14 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
           working-directory: ios
-      - name: Write Firebase config
+      - name: Write Firebase and AdMob config
         env:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
-        run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/Runner/GoogleService-Info.plist
+          ADMOB_CONFIG_JSON: ${{ secrets.ADMOB_CONFIG_JSON }}
+        run: |
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/Runner/GoogleService-Info.plist
+          printf '%s' "$ADMOB_CONFIG_JSON" > ads.json
+          python3 -m json.tool ads.json > /dev/null || { echo "::error::ADMOB_CONFIG_JSON is empty or not valid JSON"; exit 1; }
       - run: flutter pub get
       - name: Build & upload to TestFlight
         working-directory: ios

@@ -102,6 +102,8 @@ android/app/upload-keystore.jks
 ios/.bundle/
 android_build.env
 ios_build.env
+# AdMob ad unit ids for release builds, from the ADMOB_CONFIG_JSON secret
+ads.json
 
 # Firebase CLI
 firebase-debug.log*

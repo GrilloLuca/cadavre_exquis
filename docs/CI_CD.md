@@ -49,6 +49,7 @@ the version name comes from `pubspec.yaml` (`version: 1.0.0+1` → `1.0.0`) — 
 | `ASC_KEY_CONTENT` | `base64 -i AuthKey_XXXX.p8 \| pbcopy` |
 | `MATCH_GIT_URL` | HTTPS URL of the certificates repo |
 | `MATCH_PASSWORD` | match passphrase |
+| `ADMOB_CONFIG_JSON` | AdMob ad unit ids for release builds, as JSON: `{"ADMOB_BANNER_COMPLETE_STORIES_ANDROID": "ca-app-pub-…/…", …}` (names in `docs/ADMOB.md`). The Android and iOS builds fail without it; an id left out means no ad in that spot |
 | `MATCH_GIT_BASIC_AUTHORIZATION` | `echo -n 'GrilloLuca:<PAT>' \| base64 \| pbcopy` — fine-grained PAT with *Contents: read* on the certificates repo |
 
 Optional repo **variables** (same page, *Variables* tab): `PLAY_RELEASE_STATUS` (`draft`/`completed`), `IOS_AUTOMATIC_RELEASE` (`true` = release automatically after approval).
