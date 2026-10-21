@@ -39,6 +39,7 @@
   "storyBeingWritten": "Someone is writing the next chapter...",
   "storyWaitingForOthers": "You wrote the last chapter — waiting for another player.",
   "newStoryTooltip": "New story",
+  "newStoryBlocked": "You've already started a story: wait for someone to write the next chapter.",
   "authorsCount": "{count, plural, one{1 author} other{{count} authors}}",
 
   "storyCompleteTitle": "Complete story",
@@ -147,5 +148,14 @@
   "notificationsEnableButton": "Turn on",
   "notificationOpenAction": "Open",
   "storyNotFound": "This story is no longer available.",
-  "storyNotReadyYet": "This story will be ready to read in a moment."
+  "storyNotReadyYet": "This story will be ready to read in a moment.",
+  "searchStoriesHint": "Search by title or topic",
+  "searchStoriesLabel": "Search stories",
+  "clearSearch": "Clear search",
+  "storiesTabCount": "{label} ({count})",
+  "noMatchingStories": "No stories found for “{query}”.",
+  "noMatchingStoriesHere": "No stories found here for “{query}”.",
+  "noMatchingStoriesHint": "Try another word, or write it in the singular.",
+  "showMatchesInTab": "{count, plural, one{See 1 story in “{tab}”} other{See {count} stories in “{tab}”}}",
+  "storyKeywordsSemantics": "Topics: {keywords}"
 }

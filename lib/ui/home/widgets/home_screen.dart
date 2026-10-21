@@ -264,7 +264,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) {
+          // The IndexedStack keeps the search field alive: don't leave
+          // its keyboard open over another tab.
+          FocusManager.instance.primaryFocus?.unfocus();
+          setState(() => _selectedIndex = index);
+        },
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: const Icon(Icons.edit_note),

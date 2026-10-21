@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/age_rules.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/story_search.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
@@ -30,7 +31,8 @@ enum UnlockOutcome {
 typedef UnlockResult = ({UnlockOutcome outcome, Story story});
 
 /// The completed stories of the room, with mature ones locked behind the
-/// age check ([AgeGate]) and hidden from known minors.
+/// age check ([AgeGate]) and hidden from known minors, optionally filtered
+/// by a search query ([setQuery]) on their AI title and keywords.
 ///
 /// What the user sees for a mature story (`story.mature == true`):
 /// * before the stored birth year has been read: nothing, so a minor never
@@ -119,6 +121,20 @@ class CompleteStoriesViewModel extends ChangeNotifier {
   /// birth-year screen is open.
   Story? _awaitingBirthYear;
 
+  /// The search typed by the user; see [setQuery]. Reset by a room change.
+  StoryQuery _query = StoryQuery.empty;
+
+  /// The raw text of the current search, as last passed to [setQuery].
+  String get query => _query.text;
+
+  /// Whether a search filters the lists, i.e. the query has at least one
+  /// word. An empty or whitespace-only query lists everything.
+  bool get isSearching => !_query.isEmpty;
+
+  /// Whether [keyword] matches the current search, so the View can
+  /// highlight it. Always false when not searching.
+  bool highlights(String keyword) => _query.highlights(keyword);
+
   /// Whether the room's stories have arrived.
   bool get isLoaded => _all != null;
 
@@ -146,29 +162,56 @@ class CompleteStoriesViewModel extends ChangeNotifier {
   bool isLocked(Story story) => story.mature == true && !isUnlocked;
 
   /// The listed stories, newest completed first, split into those the user
-  /// wrote a part of and everyone else's. Known minors don't see mature
-  /// stories at all, and nobody sees them before the stored birth year is
-  /// known, so a stored minor never sees a locked tile flash in.
-  ({List<Story> mine, List<Story> others}) get sections {
+  /// wrote a part of and everyone else's, and filtered by the search query.
+  /// Known minors don't see mature stories at all, and nobody sees them
+  /// before the stored birth year is known, so a stored minor never sees a
+  /// locked tile flash in. The query only narrows what that leaves, so a
+  /// hidden mature story can never come back through a search.
+  ({List<Story> mine, List<Story> others}) get sections => _split(_query);
+
+  /// The size of each section without the search query (mature filtering
+  /// still applied), so the View tells a room or tab without stories from
+  /// one without matches. Never counts stories hidden from the user.
+  ({int mine, int others}) get totalCounts {
+    final (:mine, :others) = _split(StoryQuery.empty);
+    return (mine: mine.length, others: others.length);
+  }
+
+  ({List<Story> mine, List<Story> others}) _split(StoryQuery query) {
     final hideMature = !_birthYearLoaded || _isKnownMinor;
     final mine = <Story>[];
     final others = <Story>[];
-    // One pass keeps the repository's order inside both groups.
+    // One pass keeps the repository's order inside both groups. The mature
+    // check comes first: the query must never see hidden stories.
     for (final story in _all ?? const <Story>[]) {
       if (hideMature && story.mature == true) continue;
+      if (!query.matches(story)) continue;
       (story.hasPartBy(_email) ? mine : others).add(story);
     }
     return (mine: mine, others: others);
   }
 
+  /// Filters both sections by [text] (see [StoryQuery]: AI title and
+  /// keywords, folded case and accents, word prefixes, every word must
+  /// match). Notifies only when the effective query changes, so typing a
+  /// trailing space or a short article doesn't rebuild the lists.
+  void setQuery(String text) {
+    final query = StoryQuery(text);
+    final changed = !_query.hasSameTokens(query);
+    _query = query;
+    if (changed) notifyListeners();
+  }
+
   /// Switches to the room identified by [language]/[roomId]. Called by the
   /// View on every rebuild of the tab, so it does nothing when the room is
   /// the same. Age verdicts are per user, not per room: an unlock carries
-  /// over to the new room.
+  /// over to the new room. The search query is cleared: rooms are often in
+  /// another language, and an old query would quietly hide stories.
   void setRoom({required String language, String? roomId}) {
     if (language == _language && roomId == _roomId) return;
     _language = language;
     _roomId = roomId;
+    _query = StoryQuery.empty;
     // Back to the spinner rather than showing the old room's stories while
     // the new ones load.
     _all = null;

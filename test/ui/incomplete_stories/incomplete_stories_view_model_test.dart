@@ -125,6 +125,46 @@ void main() {
     expect(viewModel.stories!.map((s) => s.id), [created.id]);
   });
 
+  test('a user whose introduction waits for its second part cannot create',
+      () async {
+    stories = FakeStoryRepository(stories: [
+      story('mine', authors: [_me])
+    ]);
+    final viewModel = create();
+    expect(viewModel.canCreateStory, isFalse);
+    await pumpEventQueue();
+
+    expect(viewModel.canCreateStory, isFalse);
+  });
+
+  test(
+      'a user can create once their introduction is continued, or when '
+      'someone else wrote it', () async {
+    stories = FakeStoryRepository(stories: [
+      story('continued', authors: [_me, _other]),
+      story('theirs', authors: [_other]),
+      story('other room', authors: [_me], roomId: 'friends'),
+    ]);
+    final viewModel = create();
+    await pumpEventQueue();
+
+    expect(viewModel.canCreateStory, isTrue);
+  });
+
+  test('creating reuses an empty story the user can open', () async {
+    stories = FakeStoryRepository(stories: [
+      story('locked', lockedBy: _other, lockedAt: now),
+      story('empty'),
+    ]);
+    final viewModel = create();
+    await pumpEventQueue();
+
+    await viewModel.createStory.execute();
+
+    expect(viewModel.createStory.value!.id, 'empty');
+    expect(stories.stories, hasLength(2));
+  });
+
   test('a failed creation is reported', () async {
     stories = FakeStoryRepository()..failWith = Exception('offline');
     final viewModel = create();

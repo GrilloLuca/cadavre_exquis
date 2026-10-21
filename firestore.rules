@@ -84,7 +84,8 @@ service cloud.firestore {
       // submitPart: appends exactly one part by me at the current position
       // and advances (or completes) the story.
       // `title`, `mature`, `keywords` and `keywordsPartCount` are written by
-      // Cloud Functions only (reviewCompletedStory, extractStoryKeywords):
+      // Cloud Functions only (reviewCompletedStory, extractStoryKeywords,
+      // which also runs on the completing part):
       // clients can't write them because they're missing from the `hasOnly`
       // lists here, in isValidLockChange and in isValidCreate.
       function isValidSubmit() {

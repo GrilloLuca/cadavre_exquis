@@ -45,8 +45,8 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
   String? _roomId;
   StreamSubscription<List<Story>>? _subscription;
 
-  /// Creates an empty story in the room; its value is the new story, to
-  /// open straight away.
+  /// Creates an empty story in the room, or reuses one nobody has started
+  /// yet; its value is the story, to open straight away.
   late final Command0<Story> createStory;
 
   List<Story>? _list;
@@ -93,8 +93,29 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
     return IncompleteStoryStatus.available;
   }
 
-  Future<Story> _createStory() =>
-      _stories.createStory(language: _language, roomId: _roomId);
+  /// Whether the user may start a new story: not before the room list has
+  /// arrived, nor while an introduction they wrote is still waiting for
+  /// its second part.
+  bool get canCreateStory {
+    final list = _list;
+    if (list == null) return false;
+    final email = _auth.currentEmail;
+    return !list.any((story) =>
+        story.parts.length == 1 && story.parts.first.author == email);
+  }
+
+  /// Reuses an empty story the user can open rather than piling up another
+  /// one; creates a story only when there is none.
+  Future<Story> _createStory() async {
+    final email = _auth.currentEmail;
+    final now = _now();
+    for (final story in _list ?? const <Story>[]) {
+      if (story.parts.isEmpty && !story.isLockedFor(email, now: now)) {
+        return story;
+      }
+    }
+    return _stories.createStory(language: _language, roomId: _roomId);
+  }
 
   @override
   void dispose() {

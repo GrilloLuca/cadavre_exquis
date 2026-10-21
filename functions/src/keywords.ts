@@ -2,21 +2,24 @@ import { Type } from "@google/genai";
 import { getFirestore, Transaction } from "firebase-admin/firestore";
 import { BLOCKED_FINISH_REASONS, client, DEFAULT_LANGUAGE, LANGUAGE_NAMES, MODEL } from "./gemini";
 
-// Keywords of incomplete stories: after every part except the last, Gemini
-// summarizes the parts written so far in up to 4 keywords, which the chat
-// screen shows to the next player (Story.keywords in the app). Written to
-// `keywords` and `keywordsPartCount` by the Admin SDK only; clients can't
-// write them (see `isValidSubmit` in firestore.rules). See
-// docs/STORY_KEYWORDS_PLAN.md.
+// Story keywords: after every part, the last one included, Gemini
+// summarizes the parts written so far in up to 4 keywords (Story.keywords in
+// the app). On an incomplete story the chat screen shows them to the next
+// player; on a completed story they describe the whole story and are used
+// by the search of the complete stories list. Written to `keywords` and
+// `keywordsPartCount` by the Admin SDK only; clients can't write them (see
+// `isValidSubmit` in firestore.rules). See docs/STORY_KEYWORDS_PLAN.md and
+// docs/STORY_SEARCH_PLAN.md.
 
 const MAX_KEYWORDS = 4;
 const MAX_KEYWORD_LENGTH = 24;
 
 /**
  * The number of parts to extract keywords for, or undefined if [before] →
- * [after] isn't "a part was added and the story goes on". The same
- * condition as notifyIfContinued, so lock changes, completion and the
- * keywords write itself are all ignored.
+ * [after] isn't "a part was added". That includes the part that completes
+ * the story, so completed stories get keywords from all their parts. Lock
+ * changes, the review write (title/mature) and the keywords write itself
+ * don't change the part count, so they're all ignored.
  */
 export function keywordsPartCountFor(
   before: FirebaseFirestore.DocumentData,
@@ -24,8 +27,27 @@ export function keywordsPartCountFor(
 ): number | undefined {
   const n = (after.parts ?? []).length;
   if (n !== (before.parts ?? []).length + 1) return undefined;
-  if (after.status !== "incomplete") return undefined;
   return n;
+}
+
+/**
+ * Whether keywords computed from the first [partCount] parts may be stored
+ * on a story whose current document is [data] (undefined if it doesn't
+ * exist): it must exist, be incomplete or complete, still have exactly
+ * [partCount] parts (otherwise a newer event computes fresher keywords),
+ * and not already have keywords from as many parts or more (a duplicate or
+ * out-of-order event, or a re-run of the backfill).
+ */
+export function canSaveKeywords(
+  data: FirebaseFirestore.DocumentData | undefined,
+  partCount: number,
+): boolean {
+  if (data === undefined) return false;
+  if (data.status !== "incomplete" && data.status !== "complete") return false;
+  if ((data.parts ?? []).length !== partCount) return false;
+  const stored = data.keywordsPartCount;
+  if (typeof stored === "number" && stored >= partCount) return false;
+  return true;
 }
 
 /**
@@ -59,15 +81,16 @@ function trimEnds(text: string): string {
 }
 
 // Everyone sees the keywords, before the story is moderated (that happens
-// only once it's complete), and players are mostly children and teenagers:
-// same bar as the titles in REVIEW_INSTRUCTION (index.ts).
+// only once it's complete), even on a locked mature story (they're
+// searchable), and players are mostly children and teenagers: same bar as
+// the titles in REVIEW_INSTRUCTION (index.ts).
 const KEYWORDS_INSTRUCTION = (language: string) =>
-  "You read the beginning of a short story written collaboratively by " +
+  "You read a short story, possibly unfinished, written collaboratively by " +
   "several players, mostly children and teenagers. Give at most 4 keywords " +
   `in ${language} that capture its characters, setting and situation, so ` +
-  "the next player knows what the story is about. Each keyword is one or " +
-  "two words, lowercase unless it's a proper name, no punctuation, no " +
-  "quotes. Everyone sees the keywords, so they must always be suitable for " +
+  "readers know what the story is about. Each keyword is one or two " +
+  "words, lowercase unless it's a proper name, no punctuation, no quotes. " +
+  "Prefer singular nouns in their base form. Everyone sees the keywords, so they must always be suitable for " +
   "a 10-year-old: no sexual or suggestive words, graphic violence, gore, " +
   "profanity, slurs, drugs, alcohol, self-harm or suicide. If the story " +
   "contains such content, use neutral words about its plot, characters or " +
@@ -118,20 +141,17 @@ export async function extractKeywords(data: FirebaseFirestore.DocumentData): Pro
 
 /**
  * Stores [keywords], computed from the first [partCount] parts, on the
- * story, unless they're already stale: the story was completed, someone
- * added a part meanwhile (a newer event computes fresher keywords), or
- * keywords from as many parts or more are already stored (a duplicate or
- * out-of-order event). Returns whether they were stored.
+ * story (incomplete or complete), unless they're already stale: see
+ * [canSaveKeywords]. Transactional, so a part added meanwhile is never
+ * overwritten with older keywords, and idempotent. Returns whether they
+ * were stored.
  */
 export async function saveKeywords(storyId: string, partCount: number, keywords: string[]): Promise<boolean> {
   const db = getFirestore();
   const ref = db.doc(`stories/${storyId}`);
   return db.runTransaction(async (tx: Transaction) => {
     const snapshot = await tx.get(ref);
-    if (!snapshot.exists || snapshot.get("status") !== "incomplete") return false;
-    if ((snapshot.get("parts") ?? []).length !== partCount) return false;
-    const stored = snapshot.get("keywordsPartCount");
-    if (typeof stored === "number" && stored >= partCount) return false;
+    if (!canSaveKeywords(snapshot.exists ? snapshot.data() : undefined, partCount)) return false;
     tx.update(ref, { keywords, keywordsPartCount: partCount });
     return true;
   });

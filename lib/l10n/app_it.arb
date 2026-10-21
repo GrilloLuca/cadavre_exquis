@@ -92,6 +92,10 @@
   "storyBeingWritten": "Qualcuno sta scrivendo il prossimo capitolo...",
   "storyWaitingForOthers": "Hai scritto l'ultimo capitolo: aspetta un altro giocatore.",
   "newStoryTooltip": "Nuova storia",
+  "newStoryBlocked": "Hai già iniziato una storia: aspetta che qualcuno scriva il capitolo successivo.",
+  "@newStoryBlocked": {
+    "description": "Snackbar when the user taps New story while an introduction they wrote still waits for its second part."
+  },
   "authorsCount": "{count, plural, one{1 autore} other{{count} autori}}",
   "@authorsCount": {
     "placeholders": {
@@ -440,5 +444,72 @@
   "storyNotReadyYet": "La storia sarà pronta da leggere tra un momento.",
   "@storyNotReadyYet": {
     "description": "Snackbar when a tapped notification's completed story hasn't been reviewed yet."
+  },
+  "searchStoriesHint": "Cerca per titolo o argomento",
+  "@searchStoriesHint": {
+    "description": "Hint of the search field above the tabs of the Complete screen. Matches AI titles and keywords."
+  },
+  "searchStoriesLabel": "Cerca storie",
+  "@searchStoriesLabel": {
+    "description": "Screen-reader name of the completed-stories search field."
+  },
+  "clearSearch": "Cancella ricerca",
+  "@clearSearch": {
+    "description": "Tooltip of the clear (X) button in the search field, and label of the button in the no-results card."
+  },
+  "storiesTabCount": "{label} ({count})",
+  "@storiesTabCount": {
+    "description": "Tab label while searching: the tab name (otherStoriesTab or yourStoriesHeading) and how many stories in it match.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noMatchingStories": "Nessuna storia trovata per «{query}».",
+  "@noMatchingStories": {
+    "description": "No completed story in either tab matches the search; query is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noMatchingStoriesHere": "Nessuna storia trovata qui per «{query}».",
+  "@noMatchingStoriesHere": {
+    "description": "The current tab has no match but the other tab has some.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noMatchingStoriesHint": "Prova con un'altra parola, oppure scrivila al singolare.",
+  "@noMatchingStoriesHint": {
+    "description": "Below noMatchingStories. Keywords are stored as singular nouns, so the singular often helps."
+  },
+  "showMatchesInTab": "{count, plural, one{Vedi 1 storia in «{tab}»} other{Vedi {count} storie in «{tab}»}}",
+  "@showMatchesInTab": {
+    "description": "Button switching to the other tab, which has count matching stories; tab is that tab's name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "tab": {
+        "type": "String"
+      }
+    }
+  },
+  "storyKeywordsSemantics": "Argomenti: {keywords}",
+  "@storyKeywordsSemantics": {
+    "description": "Screen-reader text of the keyword line on a story tile; keywords is the story's keywords joined by ', '. The keywords are story content and are not translated.",
+    "placeholders": {
+      "keywords": {
+        "type": "String"
+      }
+    }
   }
 }

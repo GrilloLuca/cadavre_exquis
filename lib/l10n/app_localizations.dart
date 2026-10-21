@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Nuova storia'**
   String get newStoryTooltip;
 
+  /// Snackbar when the user taps New story while an introduction they wrote still waits for its second part.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai già iniziato una storia: aspetta che qualcuno scriva il capitolo successivo.'**
+  String get newStoryBlocked;
+
   /// No description provided for @authorsCount.
   ///
   /// In it, this message translates to:
@@ -919,6 +925,60 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'La storia sarà pronta da leggere tra un momento.'**
   String get storyNotReadyYet;
+
+  /// Hint of the search field above the tabs of the Complete screen. Matches AI titles and keywords.
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca per titolo o argomento'**
+  String get searchStoriesHint;
+
+  /// Screen-reader name of the completed-stories search field.
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca storie'**
+  String get searchStoriesLabel;
+
+  /// Tooltip of the clear (X) button in the search field, and label of the button in the no-results card.
+  ///
+  /// In it, this message translates to:
+  /// **'Cancella ricerca'**
+  String get clearSearch;
+
+  /// Tab label while searching: the tab name (otherStoriesTab or yourStoriesHeading) and how many stories in it match.
+  ///
+  /// In it, this message translates to:
+  /// **'{label} ({count})'**
+  String storiesTabCount(String label, int count);
+
+  /// No completed story in either tab matches the search; query is what the user typed.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia trovata per «{query}».'**
+  String noMatchingStories(String query);
+
+  /// The current tab has no match but the other tab has some.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna storia trovata qui per «{query}».'**
+  String noMatchingStoriesHere(String query);
+
+  /// Below noMatchingStories. Keywords are stored as singular nouns, so the singular often helps.
+  ///
+  /// In it, this message translates to:
+  /// **'Prova con un\'altra parola, oppure scrivila al singolare.'**
+  String get noMatchingStoriesHint;
+
+  /// Button switching to the other tab, which has count matching stories; tab is that tab's name.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Vedi 1 storia in «{tab}»} other{Vedi {count} storie in «{tab}»}}'**
+  String showMatchesInTab(int count, String tab);
+
+  /// Screen-reader text of the keyword line on a story tile; keywords is the story's keywords joined by ', '. The keywords are story content and are not translated.
+  ///
+  /// In it, this message translates to:
+  /// **'Argomenti: {keywords}'**
+  String storyKeywordsSemantics(String keywords);
 }
 
 class _AppLocalizationsDelegate

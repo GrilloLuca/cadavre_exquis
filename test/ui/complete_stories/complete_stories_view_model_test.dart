@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
@@ -23,7 +25,15 @@ class _Source implements AgeSignalsSource {
 void main() {
   final now = DateTime.utc(2026, 10, 12);
 
-  Story story(String id, {bool? mature = false, String author = 'x@y.it'}) =>
+  Story story(
+    String id, {
+    bool? mature = false,
+    String author = 'x@y.it',
+    String? title,
+    List<String> keywords = const [],
+    String language = 'en',
+    int minutesAgo = 0,
+  }) =>
       Story(
         id: id,
         status: 'complete',
@@ -33,10 +43,12 @@ void main() {
               position: 'introduzione',
               text: id,
               author: author,
-              timestamp: now),
+              timestamp: now.subtract(Duration(minutes: minutesAgo))),
         ],
         mature: mature,
-        language: 'en',
+        language: language,
+        title: title,
+        keywords: keywords,
       );
 
   late _Source source;
@@ -60,6 +72,197 @@ void main() {
     await pumpEventQueue();
     return viewModel;
   }
+
+  List<String> ids(List<Story> stories) => [for (final s in stories) s.id];
+
+  group('search', () {
+    // Newest completed first: o1, m1, o2, m2, o3.
+    List<Story> stories() => [
+          story('o1', title: 'Il drago di ghiaccio', minutesAgo: 1),
+          story('m1', author: _me, keywords: ['drago', 'isola'], minutesAgo: 2),
+          story('o2', title: 'Il faro', keywords: ['tempesta'], minutesAgo: 3),
+          story('m2', author: _me, title: 'Draghi a scuola', minutesAgo: 4),
+          story('o3', keywords: ['nonna', 'castello'], minutesAgo: 5),
+        ];
+
+    test('starts unfiltered', () async {
+      final viewModel = await create(stories());
+
+      expect(viewModel.query, '');
+      expect(viewModel.isSearching, isFalse);
+      expect(ids(viewModel.sections.others), ['o1', 'o2', 'o3']);
+      expect(ids(viewModel.sections.mine), ['m1', 'm2']);
+    });
+
+    test('filters both sections, by title and keyword, keeping the order',
+        () async {
+      final viewModel = await create(stories());
+
+      viewModel.setQuery('drag');
+
+      expect(viewModel.query, 'drag');
+      expect(viewModel.isSearching, isTrue);
+      expect(ids(viewModel.sections.others), ['o1']);
+      expect(ids(viewModel.sections.mine), ['m1', 'm2']);
+    });
+
+    test('clearing the query restores the full lists', () async {
+      final viewModel = await create(stories());
+      viewModel.setQuery('faro');
+      expect(ids(viewModel.sections.others), ['o2']);
+      expect(viewModel.sections.mine, isEmpty);
+
+      viewModel.setQuery('');
+
+      expect(viewModel.isSearching, isFalse);
+      expect(ids(viewModel.sections.others), ['o1', 'o2', 'o3']);
+      expect(ids(viewModel.sections.mine), ['m1', 'm2']);
+    });
+
+    test('a whitespace-only query does not filter', () async {
+      final viewModel = await create(stories());
+
+      viewModel.setQuery('   ');
+
+      expect(viewModel.isSearching, isFalse);
+      expect(viewModel.sections.others, hasLength(3));
+    });
+
+    test('notifies only when the effective query changes', () async {
+      final viewModel = await create(stories());
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+
+      viewModel.setQuery('drago');
+      expect(notified, 1);
+      viewModel.setQuery('drago ');
+      viewModel.setQuery('Drago');
+      viewModel.setQuery('il drago');
+      expect(notified, 1);
+      // The raw text still follows what was typed.
+      expect(viewModel.query, 'il drago');
+      viewModel.setQuery('drago isola');
+      expect(notified, 2);
+      viewModel.setQuery('   ');
+      expect(notified, 3);
+      viewModel.setQuery('');
+      expect(notified, 3);
+    });
+
+    test('totalCounts ignore the query', () async {
+      final viewModel = await create(stories());
+
+      viewModel.setQuery('astronave');
+
+      expect(viewModel.sections.mine, isEmpty);
+      expect(viewModel.sections.others, isEmpty);
+      expect(viewModel.totalCounts, (mine: 2, others: 3));
+    });
+
+    test('highlights the keywords matching the query', () async {
+      final viewModel = await create(stories());
+      expect(viewModel.highlights('drago'), isFalse);
+
+      viewModel.setQuery('drag');
+
+      expect(viewModel.highlights('drago'), isTrue);
+      expect(viewModel.highlights('isola'), isFalse);
+    });
+
+    test('setRoom to a different room clears the query', () async {
+      final viewModel = CompleteStoriesViewModel(
+        storyRepository: FakeStoryRepository(stories: [
+          ...stories(),
+          story('it1', title: 'Il drago', language: 'it'),
+          story('it2', title: 'La luna', language: 'it'),
+        ]),
+        authRepository: FakeAuthRepository(email: _me),
+        ageGate: gate,
+        language: 'en',
+        now: () => now,
+      );
+      await pumpEventQueue();
+      viewModel.setQuery('drago');
+
+      viewModel.setRoom(language: 'it');
+      await pumpEventQueue();
+
+      expect(viewModel.query, '');
+      expect(viewModel.isSearching, isFalse);
+      expect(ids(viewModel.sections.others), ['it1', 'it2']);
+    });
+
+    test('setRoom to the same room keeps the query', () async {
+      final viewModel = await create(stories());
+      viewModel.setQuery('faro');
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+
+      viewModel.setRoom(language: 'en');
+
+      expect(notified, 0);
+      expect(viewModel.query, 'faro');
+      expect(ids(viewModel.sections.others), ['o2']);
+    });
+
+    group('mature stories', () {
+      List<Story> withMature() => [
+            story('mature', mature: true, keywords: ['pirata']),
+            story('normal', title: 'Il faro'),
+          ];
+
+      test('a known minor never gets a mature story from a query', () async {
+        ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
+        gate = AgeGate(signals: source, storage: ages, clock: () => now);
+        final viewModel = await create(withMature());
+
+        viewModel.setQuery('pirata');
+
+        expect(viewModel.sections.mine, isEmpty);
+        expect(viewModel.sections.others, isEmpty);
+        expect(viewModel.totalCounts, (mine: 0, others: 1));
+      });
+
+      test('a session minor never gets a mature story from a query', () async {
+        source.signal = AgeSignal.minor;
+        final mature = withMature().first;
+        final viewModel = await create(withMature());
+        await viewModel.unlock.execute(mature);
+
+        viewModel.setQuery('pirata');
+
+        expect(viewModel.sections.others, isEmpty);
+        expect(viewModel.totalCounts, (mine: 0, others: 1));
+      });
+
+      test('while the birth year loads, mature stories do not match', () async {
+        final read = Completer<int?>();
+        gate = _DelayedReadGate(read.future, storage: ages);
+        final viewModel = await create(withMature());
+
+        viewModel.setQuery('pirata');
+
+        expect(viewModel.sections.others, isEmpty);
+        expect(viewModel.totalCounts, (mine: 0, others: 1));
+
+        // Once the read finds no minor the locked tile can match.
+        read.complete(null);
+        await pumpEventQueue();
+        expect(ids(viewModel.sections.others), ['mature']);
+      });
+
+      test('unknown age: the matching mature story is listed, still locked',
+          () async {
+        final viewModel = await create(withMature());
+
+        viewModel.setQuery('pirata');
+
+        expect(ids(viewModel.sections.others), ['mature']);
+        expect(viewModel.isLocked(viewModel.sections.others.single), isTrue);
+        expect(viewModel.totalCounts, (mine: 0, others: 2));
+      });
+    });
+  });
 
   test('lists my stories first, mature ones locked', () async {
     final viewModel = await create([
@@ -167,6 +370,16 @@ void main() {
     expect(failing.checkingStoryId, isNull);
     expect(viewModel.isLocked(mature), isTrue);
   });
+}
+
+/// An [AgeGate] whose quiet stored-birth-year read waits for [read].
+class _DelayedReadGate extends AgeGate {
+  _DelayedReadGate(this.read, {required super.storage});
+
+  final Future<int?> read;
+
+  @override
+  Future<int?> storedBirthYear(String email) => read;
 }
 
 class _FailingGate extends AgeGate {
