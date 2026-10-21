@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
@@ -9,6 +10,7 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/view_models/complete_stories_view_model.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/widgets/age_check_screen.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
+import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
@@ -17,11 +19,21 @@ import 'package:cadavre_exquisite/utils/command.dart';
 /// Index of the "Your stories" tab; everyone else's come first.
 const _yourStoriesTab = 1;
 
+/// Longest search the field accepts (no visible counter).
+const _maxQueryLength = 50;
+
+/// [text] as shown inside the no-match messages: trimmed, with inner runs
+/// of whitespace collapsed to one space.
+String _displayQuery(String text) =>
+    text.trim().replaceAll(RegExp(r'\s+'), ' ');
+
 /// The completed stories of the room, newest first, in two tabs: everyone
 /// else's, and those the user wrote a part of. Stories the AI review
 /// flagged as mature are listed with the others but locked behind the age
-/// check ([AgeGate]); known minors don't see them at all. Creates its
-/// [CompleteStoriesViewModel] once, in `initState` (see `ChatScreen`).
+/// check ([AgeGate]); known minors don't see them at all. A search field
+/// above the tabs filters both by AI title and keywords (see
+/// docs/STORY_SEARCH_UI_SPEC.md). Creates its [CompleteStoriesViewModel]
+/// once, in `initState` (see `ChatScreen`).
 class CompleteStoriesScreen extends StatefulWidget {
   /// Language code of the room the user has joined: only stories in this
   /// language are listed.
@@ -51,6 +63,11 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
   final _yourStoriesScroll = ScrollController();
   final _otherStoriesScroll = ScrollController();
 
+  /// The search field's text and focus. The ViewModel holds the query the
+  /// lists are filtered by; the View keeps the two in step.
+  late final TextEditingController _search;
+  late final FocusNode _searchFocus;
+
   /// Whether the current room's stories had arrived at the last change;
   /// see [_onViewModelChanged].
   bool _wasLoaded = false;
@@ -66,6 +83,8 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
       roomId: widget.roomId,
     );
     _tabs = TabController(length: 2, vsync: this);
+    _search = TextEditingController();
+    _searchFocus = FocusNode();
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.unlock.addListener(_onUnlockChanged);
     _viewModel.submitBirthYear.addListener(_onSubmitBirthYearChanged);
@@ -74,7 +93,13 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
   @override
   void didUpdateWidget(CompleteStoriesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The user switched room or language.
+    // The user switched room or language: the ViewModel drops the query
+    // (an old one would quietly hide the new room's stories), so the field
+    // is emptied too.
+    if (widget.language != oldWidget.language ||
+        widget.roomId != oldWidget.roomId) {
+      _search.clear();
+    }
     _viewModel.setRoom(language: widget.language, roomId: widget.roomId);
   }
 
@@ -87,18 +112,52 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
     _tabs.dispose();
     _yourStoriesScroll.dispose();
     _otherStoriesScroll.dispose();
+    _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   /// When a room's stories arrive, opens on the user's tab if only that
   /// one has stories. The tabs aren't shown before, so nothing jumps.
+  ///
+  /// If the room has no story left while a search is typed (say a minor
+  /// verdict hides its only stories), the field goes away, and so does the
+  /// search, so no invisible filter is left behind.
   void _onViewModelChanged() {
     final loaded = _viewModel.isLoaded;
     if (loaded && !_wasLoaded) {
-      final (:mine, :others) = _viewModel.sections;
-      _tabs.index = others.isEmpty && mine.isNotEmpty ? _yourStoriesTab : 0;
+      final (:mine, :others) = _viewModel.totalCounts;
+      _tabs.index = others == 0 && mine > 0 ? _yourStoriesTab : 0;
     }
     _wasLoaded = loaded;
+    if (loaded && _search.text.isNotEmpty) {
+      final (:mine, :others) = _viewModel.totalCounts;
+      if (mine + others == 0) {
+        _searchFocus.unfocus();
+        _search.clear();
+        _viewModel.setQuery('');
+      }
+    }
+  }
+
+  void _onSearchChanged(String text) {
+    _viewModel.setQuery(text);
+    _scrollListsToTop();
+  }
+
+  /// Empties the search, from the clear button or the no-match card.
+  /// Leaves the focus as it is.
+  void _clearSearch() {
+    _search.clear();
+    _viewModel.setQuery('');
+    _scrollListsToTop();
+  }
+
+  /// Results always start at the top after the user changes the search.
+  void _scrollListsToTop() {
+    for (final controller in [_otherStoriesScroll, _yourStoriesScroll]) {
+      if (controller.hasClients) controller.jumpTo(0);
+    }
   }
 
   void _openStory(Story story) {
@@ -166,39 +225,68 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
               return const Center(child: CircularProgressIndicator());
             }
 
+            // "No stories" is decided without the search; a search only
+            // ever leads to "no matches".
+            final totals = _viewModel.totalCounts;
+            if (totals.mine + totals.others == 0) {
+              return _buildEmpty(l10n.noCompleteStories);
+            }
+
             // Both tabs keep the repository's order (newest completed
             // first).
             final (:mine, :others) = _viewModel.sections;
-            if (mine.isEmpty && others.isEmpty) {
-              return _buildEmpty(l10n.noCompleteStories);
-            }
+            final searching = _viewModel.isSearching;
+            String tabLabel(String label, int count) =>
+                searching ? l10n.storiesTabCount(label, count) : label;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TabBar(
-                  controller: _tabs,
-                  labelColor: AppColors.primaryDark,
-                  unselectedLabelColor: AppColors.ink,
-                  indicatorColor: AppColors.primaryDark,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  tabs: [
-                    Tab(text: l10n.otherStoriesTab),
-                    Tab(text: l10n.yourStoriesHeading),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
+                  child: _buildSearchField(l10n),
+                ),
+                // Inside the field's tap region, so switching tab doesn't
+                // close the keyboard.
+                TextFieldTapRegion(
+                  child: TabBar(
+                    controller: _tabs,
+                    labelColor: AppColors.primaryDark,
+                    unselectedLabelColor: AppColors.ink,
+                    indicatorColor: AppColors.primaryDark,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    tabs: [
+                      _buildTab(tabLabel(l10n.otherStoriesTab, others.length)),
+                      _buildTab(tabLabel(l10n.yourStoriesHeading, mine.length)),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: TabBarView(
                     controller: _tabs,
                     children: [
-                      others.isEmpty
-                          ? _buildEmpty(l10n.noOtherCompleteStories)
-                          : _buildStoryList(others, _otherStoriesScroll,
-                              const PageStorageKey('otherStories')),
-                      mine.isEmpty
-                          ? _buildEmpty(l10n.noYourCompleteStories)
-                          : _buildStoryList(mine, _yourStoriesScroll,
-                              const PageStorageKey('yourStories')),
+                      _buildTabBody(
+                        l10n,
+                        stories: others,
+                        total: totals.others,
+                        noStories: l10n.noOtherCompleteStories,
+                        otherTabMatches: mine.length,
+                        otherTabIndex: _yourStoriesTab,
+                        otherTabLabel: l10n.yourStoriesHeading,
+                        controller: _otherStoriesScroll,
+                        storageKey: const PageStorageKey('otherStories'),
+                      ),
+                      _buildTabBody(
+                        l10n,
+                        stories: mine,
+                        total: totals.mine,
+                        noStories: l10n.noYourCompleteStories,
+                        otherTabMatches: others.length,
+                        otherTabIndex: 0,
+                        otherTabLabel: l10n.otherStoriesTab,
+                        controller: _yourStoriesScroll,
+                        storageKey: const PageStorageKey('yourStories'),
+                      ),
                     ],
                   ),
                 ),
@@ -210,7 +298,150 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
     );
   }
 
+  Widget _buildSearchField(AppLocalizations l10n) {
+    // The label names the field also once text hides the hint. Rebuilt
+    // with the text alone (for the clear button), not the whole screen.
+    return Semantics(
+      label: l10n.searchStoriesLabel,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _search,
+        builder: (context, value, _) => TextField(
+          key: const ValueKey('storySearchField'),
+          controller: _search,
+          focusNode: _searchFocus,
+          decoration: kTextFieldDecoration.copyWith(
+            filled: true,
+            fillColor: AppColors.cream,
+            hintText: l10n.searchStoriesHint,
+            hintMaxLines: 1,
+            hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7)),
+            prefixIcon: const Icon(
+              Icons.search,
+              color: AppColors.primaryDark,
+              size: 24.0,
+            ),
+            // Any text, spaces included, so stray spaces can be cleared.
+            suffixIcon: value.text.isEmpty
+                ? null
+                : IconButton(
+                    key: const ValueKey('storySearchClear'),
+                    icon: const Icon(Icons.close),
+                    color: AppColors.ink,
+                    tooltip: l10n.clearSearch,
+                    onPressed: _clearSearch,
+                  ),
+          ),
+          style: const TextStyle(color: AppColors.ink, fontSize: 16.0),
+          cursorColor: AppColors.primaryDark,
+          textInputAction: TextInputAction.search,
+          keyboardType: TextInputType.text,
+          autocorrect: false,
+          enableSuggestions: true,
+          textCapitalization: TextCapitalization.none,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(_maxQueryLength),
+          ],
+          onChanged: _onSearchChanged,
+          // Results are already live: the keyboard action only closes it.
+          onSubmitted: (_) => _searchFocus.unfocus(),
+          onTapOutside: (_) => _searchFocus.unfocus(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab(String label) {
+    return Tab(
+      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+  }
+
+  /// One tab's list, or the card explaining why it's empty: no stories at
+  /// all in this tab, no match here but some in [otherTabIndex], or no
+  /// match anywhere.
+  Widget _buildTabBody(
+    AppLocalizations l10n, {
+    required List<Story> stories,
+    required int total,
+    required String noStories,
+    required int otherTabMatches,
+    required int otherTabIndex,
+    required String otherTabLabel,
+    required ScrollController controller,
+    required Key storageKey,
+  }) {
+    if (total == 0) return _buildEmpty(noStories);
+    if (stories.isNotEmpty) {
+      return _buildStoryList(stories, controller, storageKey);
+    }
+    // Searching, and nothing here matches.
+    if (otherTabMatches > 0) {
+      return _buildEmptyCard([
+        _buildNoMatchMessage(l10n.noMatchingStoriesHere),
+        const SizedBox(height: 8.0),
+        _buildCardButton(
+          l10n.showMatchesInTab(otherTabMatches, otherTabLabel),
+          () => _tabs.animateTo(otherTabIndex),
+        ),
+      ]);
+    }
+    return _buildEmptyCard([
+      _buildNoMatchMessage(l10n.noMatchingStories),
+      const SizedBox(height: 8.0),
+      Text(
+        l10n.noMatchingStoriesHint,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: AppColors.ink, fontSize: 14.0),
+      ),
+      const SizedBox(height: 8.0),
+      _buildCardButton(l10n.clearSearch, _clearSearch),
+    ]);
+  }
+
+  /// A no-match message quoting the search, announced when it appears.
+  /// Follows the field's text, which may change without the lists
+  /// changing (a trailing word too short to filter).
+  Widget _buildNoMatchMessage(String Function(String query) message) {
+    return Semantics(
+      liveRegion: true,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _search,
+        builder: (context, value, _) => Text(
+          message(_displayQuery(value.text)),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.ink),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardButton(String label, VoidCallback onPressed) {
+    // Inside the field's tap region, so the keyboard stays as it is.
+    return TextFieldTapRegion(
+      child: TextButton(
+        style: TextButton.styleFrom(foregroundColor: AppColors.primaryDark),
+        onPressed: onPressed,
+        child: Text(
+          label,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmpty(String text) {
+    return _buildEmptyCard([
+      Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: AppColors.ink),
+      ),
+    ]);
+  }
+
+  Widget _buildEmptyCard(List<Widget> children) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -219,11 +450,9 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
             horizontal: 20.0,
             vertical: 16.0,
           ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.ink),
-          ),
+          child: children.length == 1
+              ? children.single
+              : Column(mainAxisSize: MainAxisSize.min, children: children),
         ),
       ),
     );
@@ -241,6 +470,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
       child: ListView.builder(
         key: storageKey,
         controller: controller,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(12.0),
         itemCount: stories.length,
         itemBuilder: (context, index) =>
@@ -282,7 +512,9 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(
+          subtitle: _buildSubtitle(
+            l10n,
+            story,
             title == null
                 ? l10n.authorsCount(story.parts.length)
                 : '${l10n.matureStoryLockedTitle} · '
@@ -295,7 +527,11 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
                   child: CircularProgressIndicator(strokeWidth: 2.0),
                 )
               : null,
-          onTap: () => _viewModel.unlock.execute(story),
+          onTap: () {
+            // Unfocused first, so coming back doesn't reopen the keyboard.
+            _searchFocus.unfocus();
+            _viewModel.unlock.execute(story);
+          },
         ),
       );
     } else {
@@ -314,7 +550,8 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(l10n.authorsCount(story.parts.length)),
+        subtitle:
+            _buildSubtitle(l10n, story, l10n.authorsCount(story.parts.length)),
         trailing: unlockedMature
             ? Icon(
                 Icons.lock_open,
@@ -322,13 +559,78 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
                 semanticLabel: l10n.matureStoryAdultContent,
               )
             : null,
-        onTap: () => _openStory(story),
+        onTap: () {
+          _searchFocus.unfocus();
+          _openStory(story);
+        },
       );
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: CreamCard(child: tile),
+    );
+  }
+
+  /// The tile's [text] line and, when the story has keywords, a line with
+  /// them; while searching, the matching ones are bold. Keywords are
+  /// generated child-safe, so locked tiles show them too.
+  Widget _buildSubtitle(AppLocalizations l10n, Story story, String text) {
+    final keywords = story.keywords;
+    if (keywords.isEmpty) return Text(text);
+    final searching = _viewModel.isSearching;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(text),
+        const SizedBox(height: 4.0),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 1.0),
+              child: ExcludeSemantics(
+                child: Icon(
+                  Icons.tag,
+                  size: 14.0,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4.0),
+            Flexible(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    for (var i = 0; i < keywords.length; i++) ...[
+                      if (i > 0) const TextSpan(text: ' · '),
+                      TextSpan(
+                        text: keywords[i],
+                        style: searching && _viewModel.highlights(keywords[i])
+                            ? const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              )
+                            : null,
+                      ),
+                    ],
+                  ],
+                ),
+                semanticsLabel:
+                    l10n.storyKeywordsSemantics(keywords.join(', ')),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

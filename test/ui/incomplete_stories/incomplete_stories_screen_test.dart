@@ -85,6 +85,35 @@ void main() {
     expect(stories.stories.values.single.roomId, 'friends');
   });
 
+  testWidgets(
+      'the new story button explains why a user with a waiting '
+      'introduction cannot start another', (tester) async {
+    final stories = FakeStoryRepository(stories: [
+      Story(
+        id: 's1',
+        status: 'incomplete',
+        currentPosition: kStoryPositions[1],
+        parts: [
+          StoryPart(
+            position: kStoryPositions.first,
+            text: 'Once upon a time',
+            author: 'me@example.com',
+            timestamp: DateTime.utc(2026, 10, 1),
+          ),
+        ],
+        language: 'it',
+      ),
+    ]);
+    await pump(tester, stories);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.newStoryBlocked), findsOneWidget);
+    expect(find.byType(ChatScreen), findsNothing);
+    expect(stories.stories, hasLength(1));
+  });
+
   testWidgets('a failed creation shows an error', (tester) async {
     final stories = FakeStoryRepository()..failWith = Exception('offline');
     await pump(tester, stories);

@@ -11,7 +11,7 @@ import { deleteTokensOf, notifyIfContinued, notifyStoryCompleted } from "./notif
 initializeApp();
 
 // The backfill script imports these from lib/index.js.
-export { cleanKeywords, extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
+export { canSaveKeywords, cleanKeywords, extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
 
 const MAX_TITLE_LENGTH = 80;
 
@@ -182,10 +182,14 @@ export const notifyStoryContinued = onDocumentUpdated(
 
 /**
  * Extracts up to 4 keywords from the parts written so far each time a part
- * is added to a story that goes on, so the next player has some context
- * (see keywords.ts). Separate from notifyStoryContinued so that a Gemini
- * failure doesn't affect notifications, and vice versa. Failures are logged,
- * not retried: the story keeps the previous part's keywords, if any.
+ * is added, so the next player has some context, and, on the part that
+ * completes the story, so the complete stories can be searched by keyword
+ * (see keywords.ts). Separate from notifyStoryContinued and from
+ * reviewCompletedStory so that a Gemini failure here doesn't affect
+ * notifications or hide a completed story, and vice versa: on completion
+ * both fire and write disjoint fields in separate transactions, and each
+ * write re-triggers both, which then exit early. Failures are logged, not
+ * retried: the story keeps the previous part's keywords, if any.
  */
 export const extractStoryKeywords = onDocumentUpdated(
   { document: "stories/{storyId}", region: "us-central1" },

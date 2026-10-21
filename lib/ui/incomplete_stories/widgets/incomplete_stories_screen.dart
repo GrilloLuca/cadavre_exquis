@@ -84,6 +84,19 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
     }
   }
 
+  /// Starts a story, or explains why the user has to wait first.
+  void _onNewStoryPressed() {
+    if (!_viewModel.canCreateStory) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.newStoryBlocked),
+        ),
+      );
+      return;
+    }
+    _viewModel.createStory.execute();
+  }
+
   /// Opens the chat screen to write the next part of [story].
   void _openChat(Story story) {
     Navigator.push(
@@ -104,9 +117,10 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
           child: _buildList(context, l10n),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _viewModel.createStory.running
-              ? null
-              : _viewModel.createStory.execute,
+          onPressed:
+              _viewModel.createStory.running || _viewModel.stories == null
+                  ? null
+                  : _onNewStoryPressed,
           tooltip: l10n.newStoryTooltip,
           child: const Icon(Icons.add),
         ),

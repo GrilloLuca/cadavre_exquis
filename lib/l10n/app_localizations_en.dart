@@ -128,6 +128,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newStoryTooltip => 'New story';
 
   @override
+  String get newStoryBlocked =>
+      'You\'ve already started a story: wait for someone to write the next chapter.';
+
+  @override
   String authorsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -517,4 +521,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storyNotReadyYet =>
       'This story will be ready to read in a moment.';
+
+  @override
+  String get searchStoriesHint => 'Search by title or topic';
+
+  @override
+  String get searchStoriesLabel => 'Search stories';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String storiesTabCount(String label, int count) {
+    return '$label ($count)';
+  }
+
+  @override
+  String noMatchingStories(String query) {
+    return 'No stories found for “$query”.';
+  }
+
+  @override
+  String noMatchingStoriesHere(String query) {
+    return 'No stories found here for “$query”.';
+  }
+
+  @override
+  String get noMatchingStoriesHint =>
+      'Try another word, or write it in the singular.';
+
+  @override
+  String showMatchesInTab(int count, String tab) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'See $count stories in “$tab”',
+      one: 'See 1 story in “$tab”',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String storyKeywordsSemantics(String keywords) {
+    return 'Topics: $keywords';
+  }
 }

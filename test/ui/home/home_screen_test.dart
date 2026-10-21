@@ -242,4 +242,79 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AdBanner), findsNothing);
   });
+
+  testWidgets(
+      'switching bottom tab closes the search keyboard and keeps the search',
+      (tester) async {
+    Story complete(String id, String title) => Story(
+          id: id,
+          status: 'complete',
+          currentPosition: kStoryPositions.last,
+          parts: [
+            StoryPart(
+              position: kStoryPositions.first,
+              text: 'text of $id',
+              author: 'someone@example.com',
+              timestamp: DateTime.utc(2026, 10, 1),
+            ),
+          ],
+          language: 'it',
+          title: title,
+          mature: false,
+        );
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>(
+            create: (_) => FakeAuthRepository(email: 'me@example.com')),
+        ChangeNotifierProvider<RoomRepository>(
+            create: (_) => FakeRoomRepository(languageCode: 'it')),
+        Provider<StoryRepository>(
+            create: (_) => FakeStoryRepository(stories: [
+                  complete('a', 'The lighthouse'),
+                  complete('b', 'The dragon'),
+                ])),
+        ChangeNotifierProvider<NotificationRepository>(
+            create: (_) => FakeNotificationRepository()),
+        ChangeNotifierProvider<AdsRepository>(
+            create: (_) => FakeAdsRepository()),
+        Provider<UserProfileRepository>(
+            create: (_) => FakeUserProfileRepository()),
+        Provider<AgeGate>(
+            create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+      ],
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('en'),
+        home: HomeScreen(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    const field = ValueKey('storySearchField');
+    bool fieldFocused() => tester
+        .widget<EditableText>(find.descendant(
+            of: find.byKey(field, skipOffstage: false),
+            matching: find.byType(EditableText, skipOffstage: false),
+            skipOffstage: false))
+        .focusNode
+        .hasFocus;
+
+    await tester.tap(find.text('Complete'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(field), 'dragon');
+    await tester.pump();
+    expect(find.text('The lighthouse'), findsNothing);
+    expect(fieldFocused(), isTrue);
+
+    await tester.tap(find.text('Incomplete'));
+    await tester.pumpAndSettle();
+    expect(fieldFocused(), isFalse);
+
+    await tester.tap(find.text('Complete'));
+    await tester.pumpAndSettle();
+    expect(find.text('dragon'), findsOneWidget);
+    expect(find.text('The dragon'), findsOneWidget);
+    expect(find.text('The lighthouse'), findsNothing);
+    expect(fieldFocused(), isFalse);
+  });
 }

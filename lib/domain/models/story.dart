@@ -77,8 +77,9 @@ class Story {
 
   /// Up to 4 AI-generated keywords describing the parts written so far,
   /// set by the `extractStoryKeywords` Cloud Function shortly after each
-  /// part except the last. Empty until then, if extraction failed or gave
-  /// nothing usable, and for legacy stories.
+  /// part, the last one included (so a completed story has keywords for
+  /// the whole story). Empty until then, if extraction failed or gave
+  /// nothing usable, and for legacy stories not yet backfilled.
   final List<String> keywords;
 
   Story({
