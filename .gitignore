@@ -88,6 +88,8 @@ android/key.properties
 **/fastlane/report.xml
 **/fastlane/Preview.html
 **/fastlane/screenshots/**/*.png
+# Rendered by tool/store_screenshots (Play screenshots, feature graphic, icon)
+android/fastlane/metadata/android/*/images/
 **/fastlane/test_output
 **/fastlane/README.md
 **/fastlane/*.ipa

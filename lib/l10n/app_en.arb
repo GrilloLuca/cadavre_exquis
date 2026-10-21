@@ -75,6 +75,7 @@
   "chatLeaveConfirm": "Leave",
   "sendButton": "Send",
   "logoutButton": "Logout",
+  "adPrivacySettingsButton": "Ad privacy settings",
   "deleteAccountButton": "Delete account",
   "deleteAccountTitle": "Delete your account?",
   "deleteAccountMessage": "Your account and nickname will be deleted permanently. The parts you wrote stay in their stories, shown as Anonymous.",

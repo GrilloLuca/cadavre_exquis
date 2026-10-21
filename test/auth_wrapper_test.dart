@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
@@ -16,6 +17,7 @@ import 'package:cadavre_exquisite/main.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 
+import '../testing/fakes/repositories/fake_ads_repository.dart';
 import '../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../testing/fakes/repositories/fake_auth_repository.dart';
 import '../testing/fakes/repositories/fake_notification_repository.dart';
@@ -33,6 +35,8 @@ void main() {
           ChangeNotifierProvider<RoomRepository>(
               create: (_) => FakeRoomRepository()),
           Provider<StoryRepository>(create: (_) => FakeStoryRepository()),
+          ChangeNotifierProvider<AdsRepository>(
+              create: (_) => FakeAdsRepository()),
           ChangeNotifierProvider<NotificationRepository>(
               create: (_) => FakeNotificationRepository()),
           Provider<UserProfileRepository>(

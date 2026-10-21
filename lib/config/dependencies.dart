@@ -1,8 +1,14 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+// The mobile implementation pulls in google_mobile_ads, which has no web
+// support, so web builds get a factory that never imports it.
+import 'package:cadavre_exquisite/config/ads_repository_factory.dart'
+    if (dart.library.js_interop) 'package:cadavre_exquisite/config/ads_repository_factory_web.dart';
+
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository_firebase.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
@@ -62,5 +68,10 @@ List<SingleChildWidget> providers({
         create: (context) => NotificationRepositoryFirebase(
           authRepository: context.read<AuthRepository>(),
         ),
+      ),
+      // Started by the signed-in home after its first frame: the consent
+      // form needs a screen to show on.
+      ChangeNotifierProvider<AdsRepository>(
+        create: (_) => createAdsRepository(),
       ),
     ];
