@@ -61,69 +61,71 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       body: Background(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // Row(
-              //   children: <Widget>[
-              //     Hero(
-              //       tag: "logo",
-              //       child: SizedBox(
-              //         height: animation.value * 100,
-              //         child: Image.asset('images/logo.png'),
-              //       ),
-              //     ),
-              //     Expanded(
-              //       child: Text(
-              //         'Cadavre Exquisite',
-              //         style: TextStyle(
-              //           color: AppColors.ink,
-              //           fontSize: 36.0,
-              //           fontWeight: FontWeight.w900,
-              //         ),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              SizedBox(
-                height: 48.0,
-              ),
-              // Email/password login is only offered in debug builds.
-              if (kDebugMode)
-                ChatButton(
-                  text: AppLocalizations.of(context)!.loginButton,
-                  color: AppColors.primary,
-                  onPressed: () {
-                    Navigator.pushNamed(context, LoginScreen.id);
-                  },
-                ),
-              // ChatButton(
-              //   text: AppLocalizations.of(context)!.registerButton,
-              //   color: AppColors.primaryDark,
-              //   onPressed: () {
-              //     Navigator.pushNamed(context, RegistrationScreen.id);
-              //   },
-              // ),
-              ListenableBuilder(
-                listenable: _viewModel.signInWithGoogle,
-                builder: (context, _) => _viewModel.signInWithGoogle.running
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : ChatButton(
-                        text: AppLocalizations.of(context)!.googleSignInButton,
-                        color: Colors.white,
-                        icon: SvgPicture.asset(
-                          'images/google_g.svg',
-                          height: 20.0,
-                          width: 20.0,
+          // y = 0.5 centers the buttons at three quarters of the height.
+          child: Align(
+            alignment: const Alignment(0.0, 0.5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Row(
+                //   children: <Widget>[
+                //     Hero(
+                //       tag: "logo",
+                //       child: SizedBox(
+                //         height: animation.value * 100,
+                //         child: Image.asset('images/logo.png'),
+                //       ),
+                //     ),
+                //     Expanded(
+                //       child: Text(
+                //         'Cadavre Exquisite',
+                //         style: TextStyle(
+                //           color: AppColors.ink,
+                //           fontSize: 36.0,
+                //           fontWeight: FontWeight.w900,
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+                // Email/password login is only offered in debug builds.
+                if (kDebugMode)
+                  ChatButton(
+                    text: AppLocalizations.of(context)!.loginButton,
+                    color: AppColors.primary,
+                    onPressed: () {
+                      Navigator.pushNamed(context, LoginScreen.id);
+                    },
+                  ),
+                // ChatButton(
+                //   text: AppLocalizations.of(context)!.registerButton,
+                //   color: AppColors.primaryDark,
+                //   onPressed: () {
+                //     Navigator.pushNamed(context, RegistrationScreen.id);
+                //   },
+                // ),
+                ListenableBuilder(
+                  listenable: _viewModel.signInWithGoogle,
+                  builder: (context, _) => _viewModel.signInWithGoogle.running
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : ChatButton(
+                          text:
+                              AppLocalizations.of(context)!.googleSignInButton,
+                          color: Colors.white,
+                          icon: SvgPicture.asset(
+                            'images/google_g.svg',
+                            height: 20.0,
+                            width: 20.0,
+                          ),
+                          onPressed: _viewModel.signInWithGoogle.execute,
                         ),
-                        onPressed: _viewModel.signInWithGoogle.execute,
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
