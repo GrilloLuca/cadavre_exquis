@@ -74,6 +74,7 @@ tap locked tile
   ├─ another gate check is running on this screen → ignore the tap
   ├─ no signed-in email → ignore (same as today)
   ├─ user is a known minor (session set or stored minor year) → snackbar matureStoryUnavailable, stop (no gate, no system sheet)
+  │     [superseded 2026-10-22: a known minor's tile is disabled, so this tap can't happen; see PART_MODERATION_PLAN.md D4b]
   └─ show spinner in this tile's trailing slot, call AgeGate.resolve(email)
        ├─ adult        → mark session unlocked → push StoryReadScreen(story)
        ├─ minor        → add to session minors → snackbar matureStoryUnavailable
@@ -96,6 +97,7 @@ Rules:
 
 - After a verdict of **adult** (from signals, a stored year or a freshly entered year), **every** mature tile switches to the Unlocked state (3.3) right away, for the rest of the app session. Keep this in a static set keyed by `UserProfileService.profileKey(email)`, the same pattern as `_sessionMinors`, so the state survives stream rebuilds and leaving and reopening the screen.
 - **New app session:** tiles start Locked again. The first tap calls `resolve` again. For a user with a stored adult year this is usually instant, with at most one system sheet that the `AgeGate` session cache then remembers. We do not read anything at `initState` to pre-unlock tiles. A stored adult year is not sufficient on its own because a minor signal must still be able to override it, and the signal check may show UI, so it only runs on a tap.
+- > **Superseded (2026-10-22, owner decision):** known minors see mature tiles as locked and **disabled**: padlock, title, subtitle `matureStoryUnavailableLabel` ("Non disponibile") · authors, no tap action, `AgeGate` never called. While the stored-year read runs, the tiles show as normal locked tiles; they are no longer hidden. After a minor verdict from a tap, the snackbar shows once and the tiles turn disabled instead of disappearing. The same applies to the incomplete list. See `docs/PART_MODERATION_PLAN.md` D4b. Original rule, kept for history:
 - **Known minor** (in the session set, or a stored year that is not adult, which the screen reads quietly at init through `AgeGate.storedBirthYear`): mature tiles are hidden from the list (user decision, overriding Q2). Mature tiles also stay hidden until the stored-year read finishes, so a known minor never sees one even for a frame. A minor verdict from a tap shows `matureStoryUnavailable` once, then hides the tiles for the session.
 - The session-unlocked and session-minor sets must be cleared on sign-out. `clearSessionState()` clears both; sign-out calls it together with `AgeGate.clearSessionCache()`.
 

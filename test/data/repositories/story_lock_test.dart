@@ -154,6 +154,80 @@ void main() {
       expect(stored['lockedAt'], isNull);
     });
 
+    group('a story whose last part awaits review', () {
+      Matcher throwsUnderReview() => throwsA(isA<StoryException>()
+          .having((e) => e.code, 'code', StoryErrorCode.underReview));
+
+      Future<void> seedWithPart({Object? partReviews}) => doc().set({
+            'status': 'incomplete',
+            'currentPosition': kStoryPositions[1],
+            'parts': [
+              {
+                'position': kStoryPositions.first,
+                'text': 'first',
+                'author': _holder,
+                'timestamp': Timestamp.fromDate(_lockedAt),
+              },
+            ],
+            'lockedBy': null,
+            'lockedAt': null,
+            'language': 'it',
+            'roomId': null,
+            if (partReviews != null) 'partReviews': partReviews,
+          });
+
+      Future<void> submit() => service.submitPart(
+            storyId: 's',
+            expectedPosition: kStoryPositions[1],
+            text: 'second',
+            authorEmail: _other,
+          );
+
+      test('refuses lock and submit, writing nothing', () async {
+        // Legacy (no field), no entry yet, and an unknown value.
+        for (final reviews in [
+          null,
+          <String, Object>{},
+          {kStoryPositions.first: 'pending'},
+        ]) {
+          await seedWithPart(partReviews: reviews);
+
+          await expectLater(
+            service.lockStory(storyId: 's', authorEmail: _other),
+            throwsUnderReview(),
+            reason: '$reviews',
+          );
+          await expectLater(submit(), throwsUnderReview(), reason: '$reviews');
+          final stored = await data();
+          expect(stored['lockedBy'], isNull);
+          expect(stored['parts'] as List<dynamic>, hasLength(1));
+        }
+      });
+
+      test('allows lock and submit once the part has a verdict', () async {
+        for (final verdict in ['safe', 'mature']) {
+          await seedWithPart(partReviews: {kStoryPositions.first: verdict});
+
+          await service.lockStory(storyId: 's', authorEmail: _other);
+          expect((await data())['lockedBy'], _other, reason: verdict);
+          await submit();
+          expect((await data())['parts'] as List<dynamic>, hasLength(2));
+        }
+      });
+
+      test('the holder can still release a lock', () async {
+        await seedWithPart();
+        await doc().update({
+          'lockedBy': _holder,
+          'lockedAt': Timestamp.fromDate(_lockedAt),
+        });
+
+        await service.unlockStory(storyId: 's', authorEmail: _holder);
+
+        expect((await data())['lockedBy'], isNull);
+      });
+    });
+
     test('createStory starts with no lock', () async {
       final story = await service.createStory(language: 'it');
 

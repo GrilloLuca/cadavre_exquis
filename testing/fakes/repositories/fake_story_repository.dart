@@ -4,8 +4,9 @@ import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart'
 import 'package:cadavre_exquisite/domain/models/story.dart';
 
 /// In-memory [StoryRepository] for ViewModel and widget tests. Applies the
-/// same turn rules as the Firestore implementation; [now] decides lock
-/// expiry, and [failWith] makes every write throw.
+/// same turn rules as the Firestore implementation (a story awaiting the AI
+/// review included); [now] decides lock expiry, [failWith] makes every
+/// write throw, and [review] and [put] stand in for server writes.
 class FakeStoryRepository implements StoryRepository {
   FakeStoryRepository({Iterable<Story> stories = const [], this.now})
       : _stories = {for (final story in stories) story.id: story};
@@ -21,6 +22,29 @@ class FakeStoryRepository implements StoryRepository {
 
   /// The stored stories, by id.
   Map<String, Story> get stories => Map.unmodifiable(_stories);
+
+  /// Replaces (or adds) [story] and notifies the streams, as a server write
+  /// would: e.g. an AI verdict landing in `partReviews`, `mature` or
+  /// `reviewedAt`.
+  void put(Story story) => _put(story);
+
+  /// Stores [verdict] on the latest part of the story [storyId], as the
+  /// server's review does: a mature verdict also sets `mature: true`, and a
+  /// complete story gets its `reviewedAt` (and `mature: false` if nothing
+  /// was flagged).
+  void review(String storyId, {PartVerdict verdict = PartVerdict.safe}) {
+    final story = _stories[storyId]!;
+    final flagged = verdict == PartVerdict.mature || story.mature == true;
+    _put(_copy(
+      story,
+      partReviews: {
+        ...story.partReviews,
+        if (story.parts.isNotEmpty) story.parts.last.position: verdict,
+      },
+      mature: flagged ? true : (story.isComplete ? false : story.mature),
+      reviewedAt: story.isComplete ? _now() : story.reviewedAt,
+    ));
+  }
 
   DateTime _now() => (now ?? DateTime.now)();
 
@@ -58,6 +82,8 @@ class FakeStoryRepository implements StoryRepository {
     String? roomId,
   }) =>
       _watch(() => _stories.values
+          // Like the Firestore query, which filters on `mature` only:
+          // stories awaiting the completion review can be included.
           .where((s) =>
               s.isComplete && s.mature != null && _inRoom(s, language, roomId))
           .toList()
@@ -101,6 +127,9 @@ class FakeStoryRepository implements StoryRepository {
     if (story.isComplete) {
       throw const StoryException(StoryErrorCode.alreadyCompleted);
     }
+    if (story.awaitingReview) {
+      throw const StoryException(StoryErrorCode.underReview);
+    }
     if (story.wasLastWrittenBy(authorEmail)) {
       throw const StoryException(StoryErrorCode.consecutiveTurnNotAllowed);
     }
@@ -137,6 +166,9 @@ class FakeStoryRepository implements StoryRepository {
     if (story.currentPosition != expectedPosition) {
       throw const StoryException(StoryErrorCode.positionTaken);
     }
+    if (story.awaitingReview) {
+      throw const StoryException(StoryErrorCode.underReview);
+    }
     if (story.isLockedFor(authorEmail, now: _now())) {
       throw const StoryException(StoryErrorCode.lockedByOther);
     }
@@ -172,6 +204,9 @@ Story _copy(
   List<StoryPart>? parts,
   Object? lockedBy = _keep,
   Object? lockedAt = _keep,
+  Map<String, PartVerdict>? partReviews,
+  bool? mature,
+  DateTime? reviewedAt,
 }) =>
     Story(
       id: story.id,
@@ -185,6 +220,8 @@ Story _copy(
       language: story.language,
       roomId: story.roomId,
       title: story.title,
-      mature: story.mature,
+      mature: mature ?? story.mature,
+      partReviews: partReviews ?? story.partReviews,
+      reviewedAt: reviewedAt ?? story.reviewedAt,
       keywords: story.keywords,
     );

@@ -9,7 +9,9 @@ import 'package:cadavre_exquisite/domain/models/story_language.dart';
 
 /// The [Story] stored in [doc]. Stories created before language rooms have
 /// no `language` and count as [kDefaultStoryLanguage]; stories without
-/// `keywords` (never extracted, or legacy) have none.
+/// `keywords` (never extracted, or legacy) have none; stories without
+/// `partReviews` or `reviewedAt` (legacy, or not reviewed yet) have no
+/// verdicts and no review date.
 Story storyFromSnapshot(DocumentSnapshot doc) {
   final data = doc.data() as Map<String, dynamic>;
   return Story(
@@ -24,9 +26,27 @@ Story storyFromSnapshot(DocumentSnapshot doc) {
     language: data['language'] as String? ?? kDefaultStoryLanguage,
     roomId: data['roomId'] as String?,
     title: data['title'] as String?,
-    mature: data['mature'] as bool?,
+    mature: data['mature'] is bool ? data['mature'] as bool : null,
+    partReviews: partReviewsFromField(data['partReviews']),
+    reviewedAt: data['reviewedAt'] is Timestamp
+        ? (data['reviewedAt'] as Timestamp).toDate()
+        : null,
     keywords: keywordsFromField(data['keywords']),
   );
+}
+
+/// The verdicts stored in a story's `partReviews` field: the entries whose
+/// value is a known verdict (`"safe"` or `"mature"`). Anything else, a
+/// missing field included, gives none, as the server's `hasVerdict` counts
+/// only known values; so a malformed document can't break the story lists.
+Map<String, PartVerdict> partReviewsFromField(Object? field) {
+  if (field is! Map) return const {};
+  return Map.unmodifiable({
+    for (final MapEntry(:key, :value) in field.entries)
+      if (key is String)
+        if (PartVerdict.values.asNameMap()[value] case final verdict?)
+          key: verdict,
+  });
 }
 
 /// The keywords stored in a story's `keywords` field: only its strings, at

@@ -82,8 +82,8 @@ class AgeGate {
   /// unlocked until sign-out or restart.
   bool isSessionAdult(String email) => _sessionAdults.contains(emailKey(email));
 
-  /// Whether [email] was found minor this session: their mature stories stay
-  /// hidden.
+  /// Whether [email] was found minor this session: their mature stories are
+  /// unavailable (shown disabled, never opened).
   bool isSessionMinor(String email) => _sessionMinors.contains(emailKey(email));
 
   /// Remembers the final verdict for [email] for the rest of the session.
@@ -103,7 +103,7 @@ class AgeGate {
 
   /// The birth year stored for [email], or null if never asked. Quiet: no
   /// platform call and no UI, so it is safe from `initState` (for example,
-  /// to hide mature stories from known minors).
+  /// to show mature stories as unavailable to known minors).
   Future<int?> storedBirthYear(String email) => _storage.getBirthYear(email);
 
   /// Decides access for [email]. May show a system sheet, so call it only on

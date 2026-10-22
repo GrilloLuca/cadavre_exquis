@@ -44,8 +44,9 @@ export function recipientsFor(
 
 // The texts of the notifications, in the app's languages (lib/l10n). Only
 // the nickname and the AI title (child-safe by construction) are shown:
-// never the story text, which isn't moderated until the story is complete
-// and can show on a lock screen.
+// never the story text, which may not have a moderation verdict yet (see
+// moderation.ts), can show on a lock screen and reaches every author,
+// whatever their age (the server doesn't know it).
 const STRINGS = {
   it: {
     someone: "Qualcuno",
@@ -154,22 +155,29 @@ export async function nicknameOf(email: string): Promise<string | undefined> {
 }
 
 /**
- * Tells the earlier authors of a story that someone wrote the next part,
- * when [before] → [after] appended a part and the story is still open (the
- * last part is notified once reviewed, see [notifyStoryCompleted]).
+ * Who gets the story_continued push for the story [after] whose last part
+ * was just written: the authors of the earlier parts, without the new
+ * part's author (see [recipientsFor]). None once the story is complete: the
+ * completing part is notified once reviewed, see [notifyStoryCompleted].
  */
-export async function notifyIfContinued(
-  storyId: string,
-  before: FirebaseFirestore.DocumentData,
-  after: FirebaseFirestore.DocumentData,
-): Promise<void> {
-  const previous = (before.parts ?? []) as { author?: string }[];
+export function continuedRecipients(after: FirebaseFirestore.DocumentData): string[] {
   const parts = (after.parts ?? []) as { author?: string }[];
-  if (parts.length !== previous.length + 1 || after.status !== "incomplete") return;
-  const newAuthor = parts[parts.length - 1].author;
-  const recipients = recipientsFor(previous, newAuthor);
+  if (parts.length === 0 || after.status !== "incomplete") return [];
+  return recipientsFor(parts.slice(0, -1), parts[parts.length - 1].author);
+}
+
+/**
+ * Tells the earlier authors of the story [storyId], whose document was
+ * [after] when its last part was written, that someone wrote the next part
+ * (see [continuedRecipients]). Sent by moderateStoryPart once the part has a
+ * verdict, since nobody can open the story before.
+ */
+export async function notifyContinued(storyId: string, after: FirebaseFirestore.DocumentData): Promise<void> {
+  const recipients = continuedRecipients(after);
   if (recipients.length === 0) return;
-  const nickname = newAuthor ? await nicknameOf(newAuthor) : undefined;
+  const parts = after.parts as { author?: string }[];
+  const newAuthor = parts[parts.length - 1].author;
+  const nickname = typeof newAuthor === "string" && newAuthor ? await nicknameOf(newAuthor) : undefined;
   await sendToUsers(recipients, "story_continued", storyId, { nickname });
 }
 

@@ -131,7 +131,9 @@ void main() {
     final viewModel = create();
     await pumpEventQueue();
     await viewModel.submit.execute('hello');
-    // Someone else takes the next turn before the screen closes.
+    // Someone else takes the next turn, once reviewed, before the screen
+    // closes.
+    stories.review('s1');
     await stories.lockStory(storyId: 's1', authorEmail: _other);
 
     viewModel.dispose();
@@ -164,6 +166,7 @@ void main() {
           currentPosition: kStoryPositions[1],
           parts: [introduction()],
           language: 'it',
+          partReviews: {kStoryPositions.first: PartVerdict.safe},
         );
 
     test('is masked until the nickname loads, then named by it', () async {

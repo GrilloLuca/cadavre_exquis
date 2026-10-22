@@ -91,6 +91,14 @@
   "storyNotStarted": "Nessuno ha ancora iniziato questa storia.",
   "storyBeingWritten": "Qualcuno sta scrivendo il prossimo capitolo...",
   "storyWaitingForOthers": "Hai scritto l'ultimo capitolo: aspetta un altro giocatore.",
+  "storyUnderReview": "In revisione...",
+  "@storyUnderReview": {
+    "description": "Subtitle of a disabled incomplete-story tile whose latest part is still being checked; it can't be opened yet. Uses three dots like `storyBeingWritten`."
+  },
+  "storyUnderReviewError": "Questa storia è in revisione: riprova tra poco.",
+  "@storyUnderReviewError": {
+    "description": "Snackbar when a story can't be opened for writing because its latest part is still being checked (chat closed, or a notification tapped)."
+  },
   "newStoryTooltip": "Nuova storia",
   "newStoryBlocked": "Hai già iniziato una storia: aspetta che qualcuno scriva il capitolo successivo.",
   "@newStoryBlocked": {
@@ -374,23 +382,27 @@
 
   "matureStoryLockedTitle": "Contenuto esplicito",
   "@matureStoryLockedTitle": {
-    "description": "Label of a locked mature story in the completed stories list: shown next to the authors count, and as the title when the story has no AI title."
+    "description": "Label of a mature story locked behind the age check, in both story lists: the subtitle of an incomplete story, next to the authors count in the completed list, and the title of a completed story without an AI title."
   },
   "matureStoryLockedLabel": "bloccata",
   "@matureStoryLockedLabel": {
-    "description": "Screen-reader label of the padlock on a locked mature story."
+    "description": "Screen-reader label of the padlock on a mature story tile (locked or unavailable), in both story lists."
   },
   "matureStoryUnlockHint": "sbloccare",
   "@matureStoryUnlockHint": {
-    "description": "Screen-reader tap hint on a locked mature story; the platform adds the 'Double tap to' prefix, so this is just the verb."
+    "description": "Screen-reader tap hint on a locked mature story in either list; the platform adds the 'Double tap to' prefix, so this is just the verb."
   },
   "matureStoryAdultContent": "contenuto esplicito",
   "@matureStoryAdultContent": {
-    "description": "Screen-reader label of the open padlock on an unlocked mature story."
+    "description": "Screen-reader label of the open padlock on an unlocked mature story, in either list."
   },
   "matureStoryUnavailable": "Questa storia non è disponibile.",
   "@matureStoryUnavailable": {
-    "description": "Snackbar when an age check denies a mature story."
+    "description": "Snackbar when an age check or a tapped notification denies a mature story to a minor."
+  },
+  "matureStoryUnavailableLabel": "Non disponibile",
+  "@matureStoryUnavailableLabel": {
+    "description": "Subtitle label on a disabled mature-story tile shown to a known minor, in both story lists (followed by the authors count in the completed list). Neutral: no mention of age or content."
   },
   "ageCheckTitle": "Prima di continuare",
   "ageCheckQuestion": "Qual è il tuo anno di nascita?",
@@ -444,7 +456,7 @@
   },
   "storyNotReadyYet": "La storia sarà pronta da leggere tra un momento.",
   "@storyNotReadyYet": {
-    "description": "Snackbar when a tapped notification's completed story hasn't been reviewed yet."
+    "description": "Snackbar when a tapped notification's completed story hasn't finished its review yet."
   },
   "searchStoriesHint": "Cerca per titolo o argomento",
   "@searchStoriesHint": {

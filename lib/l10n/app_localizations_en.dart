@@ -125,6 +125,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'You wrote the last chapter — waiting for another player.';
 
   @override
+  String get storyUnderReview => 'Being reviewed...';
+
+  @override
+  String get storyUnderReviewError =>
+      'This story is being reviewed: try again in a moment.';
+
+  @override
   String get newStoryTooltip => 'New story';
 
   @override
@@ -464,6 +471,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get matureStoryUnavailable => 'This story isn\'t available.';
+
+  @override
+  String get matureStoryUnavailableLabel => 'Not available';
 
   @override
   String get ageCheckTitle => 'Before you continue';

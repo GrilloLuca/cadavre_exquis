@@ -23,7 +23,15 @@ enum StoryErrorCode {
   positionTaken,
   lockedByOther,
   consecutiveTurnNotAllowed,
+
+  /// The story's latest part has no AI verdict yet, so nobody may open it
+  /// (see [Story.awaitingReview]).
+  underReview,
 }
+
+/// The AI verdict on one part of a story, stored by the server in the
+/// story's `partReviews`.
+enum PartVerdict { safe, mature }
 
 /// Thrown by `StoryRepository` operations on invalid story state. The UI
 /// layer maps [code] to a localized message, so no user-facing text lives
@@ -71,9 +79,21 @@ class Story {
   /// generation failed.
   final String? title;
 
-  /// Whether the AI review judged the story unsuitable for children, set
-  /// alongside [title]. Null until the story is complete and reviewed.
+  /// Whether the story is unsuitable for children. Set to true as soon as
+  /// the AI review flags one of its parts (incomplete stories included), or
+  /// by the completion review alongside [title], which sets false when
+  /// nothing was flagged. Never goes back from true to false. Null while no
+  /// review has flagged or cleared it.
   final bool? mature;
+
+  /// The AI verdict on each reviewed part, keyed by part position. Empty
+  /// for legacy stories and until the first verdict lands.
+  final Map<String, PartVerdict> partReviews;
+
+  /// When the completion review (or the legacy backfill) marked the
+  /// complete story as reviewed. Null for incomplete stories and until
+  /// then.
+  final DateTime? reviewedAt;
 
   /// Up to 4 AI-generated keywords describing the parts written so far,
   /// set by the `extractStoryKeywords` Cloud Function shortly after each
@@ -93,10 +113,21 @@ class Story {
     this.roomId,
     this.title,
     this.mature,
+    this.partReviews = const {},
+    this.reviewedAt,
     this.keywords = const [],
   });
 
   bool get isComplete => status == 'complete';
+
+  /// Whether the story can't be opened yet because the AI review hasn't
+  /// judged it: a complete story until [reviewedAt] is set; an incomplete
+  /// one while its latest part has no verdict in [partReviews] (one without
+  /// parts has nothing to review). Mirrors `lastPartReviewed` in
+  /// firestore.rules, which refuses locks and submits meanwhile.
+  bool get awaitingReview => isComplete
+      ? reviewedAt == null
+      : parts.isNotEmpty && !partReviews.containsKey(parts.last.position);
 
   /// When the story was completed: the timestamp of its last part, or null
   /// if no part has been written. Part timestamps exist on every story,

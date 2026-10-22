@@ -10,10 +10,12 @@ abstract class StoryRepository {
     String? roomId,
   });
 
-  /// Completed stories of the room that the AI review has already judged,
-  /// both mature and not (the UI locks the former behind the age check),
-  /// newest completed first (see [Story.compareByCompletedAtDesc]). Stories
-  /// still waiting for their review are left out.
+  /// Completed stories of the room with a `mature` verdict, both mature and
+  /// not (the UI locks the former behind the age check), newest completed
+  /// first (see [Story.compareByCompletedAtDesc]). Stories without a
+  /// verdict are left out; stories flagged by a part but still awaiting the
+  /// completion review ([Story.awaitingReview]) may be included, and the UI
+  /// drops them.
   Stream<List<Story>> completeStoriesStream({
     required String language,
     String? roomId,
@@ -29,8 +31,9 @@ abstract class StoryRepository {
   /// Exclusively locks the story for [authorEmail] so no one else can open
   /// or edit it while they're writing their part. The lock expires after
   /// [Story.lockDuration]. Throws a [StoryException] if the story was
-  /// completed, has an unexpired lock held by someone else, or the author
-  /// wrote the immediately preceding part.
+  /// completed, its latest part awaits the AI review
+  /// ([StoryErrorCode.underReview]), it has an unexpired lock held by
+  /// someone else, or the author wrote the immediately preceding part.
   Future<void> lockStory(
       {required String storyId, required String authorEmail});
 
@@ -43,8 +46,9 @@ abstract class StoryRepository {
 
   /// Appends the next part of the story at [expectedPosition], completing
   /// the story after the last position and releasing the lock. Throws a
-  /// [StoryException] if the story moved on, was completed, is locked by
-  /// someone else, or the author wrote the immediately preceding part.
+  /// [StoryException] if the story moved on, was completed, its latest part
+  /// awaits the AI review, it is locked by someone else, or the author
+  /// wrote the immediately preceding part.
   Future<void> submitPart({
     required String storyId,
     required String expectedPosition,
