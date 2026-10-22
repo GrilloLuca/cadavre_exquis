@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -13,6 +14,7 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
+import 'package:cadavre_exquisite/ui/core/view_models/mature_story_access.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
@@ -30,7 +32,10 @@ String _displayQuery(String text) =>
 /// The completed stories of the room, newest first, in two tabs: everyone
 /// else's, and those the user wrote a part of. Stories the AI review
 /// flagged as mature are listed with the others but locked behind the age
-/// check ([AgeGate]); known minors don't see them at all. A search field
+/// check ([AgeGate]); known minors see them as disabled "unavailable" tiles
+/// (docs/PART_MODERATION_UI_SPEC.md §3), or not at all when
+/// [AppConfig.matureVisibleToMinors] is off. Stories still awaiting their
+/// review aren't listed. A search field
 /// above the tabs filters both by AI title and keywords (see
 /// docs/STORY_SEARCH_UI_SPEC.md). Creates its [CompleteStoriesViewModel]
 /// once, in `initState` (see `ChatScreen`).
@@ -81,6 +86,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
       ageGate: context.read<AgeGate>(),
       language: widget.language,
       roomId: widget.roomId,
+      matureVisibleToMinors: context.read<AppConfig>().matureVisibleToMinors,
     );
     _tabs = TabController(length: 2, vsync: this);
     _search = TextEditingController();
@@ -120,9 +126,11 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
   /// When a room's stories arrive, opens on the user's tab if only that
   /// one has stories. The tabs aren't shown before, so nothing jumps.
   ///
-  /// If the room has no story left while a search is typed (say a minor
-  /// verdict hides its only stories), the field goes away, and so does the
-  /// search, so no invisible filter is left behind.
+  /// If the room has no story left while a search is typed (say its only
+  /// stories were deleted), the field goes away, and so does the search, so
+  /// no invisible filter is left behind. With mature stories visible to
+  /// minors, a minor verdict never empties the list (they stay, as
+  /// unavailable tiles); with them hidden, it may, and the search goes too.
   void _onViewModelChanged() {
     final loaded = _viewModel.isLoaded;
     if (loaded && !_wasLoaded) {
@@ -481,33 +489,80 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
 
   Widget _buildStoryCard(BuildContext context, Story story) {
     final l10n = AppLocalizations.of(context)!;
-    final locked = _viewModel.isLocked(story);
-    final unlockedMature = story.mature == true && !locked;
+    final mature = _viewModel.matureStateOf(story);
 
     final Widget tile;
-    if (locked) {
-      // The AI title is generated child-safe, so it is shown; the part text
-      // never is, as it can contain what the review flagged. A story the
-      // model refused to read has no title and falls back to the label.
-      final title = story.title;
-      tile = Semantics(
-        button: true,
-        onTapHint: l10n.matureStoryUnlockHint,
-        child: ListTile(
+    switch (mature) {
+      case MatureTileState.locked:
+        // The AI title is generated child-safe, so it is shown; the part
+        // text never is, as it can contain what the review flagged. A story
+        // the model refused to read has no title and falls back to the
+        // label.
+        final title = story.title;
+        tile = Semantics(
+          button: true,
+          onTapHint: l10n.matureStoryUnlockHint,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            iconColor: AppColors.primary,
+            textColor: AppColors.ink,
+            leading: Icon(
+              Icons.lock,
+              size: 24.0,
+              color: AppColors.primaryDark,
+              semanticLabel: l10n.matureStoryLockedLabel,
+            ),
+            title: Text(
+              title ?? l10n.matureStoryLockedTitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: _buildSubtitle(
+              l10n,
+              story,
+              title == null
+                  ? l10n.authorsCount(story.parts.length)
+                  : '${l10n.matureStoryLockedTitle} · '
+                      '${l10n.authorsCount(story.parts.length)}',
+            ),
+            trailing: _viewModel.checkingStoryId == story.id
+                ? const SizedBox(
+                    width: 18.0,
+                    height: 18.0,
+                    child: CircularProgressIndicator(strokeWidth: 2.0),
+                  )
+                : null,
+            onTap: () {
+              // Unfocused first, so coming back doesn't reopen the keyboard.
+              _searchFocus.unfocus();
+              _viewModel.unlock.execute(story);
+            },
+          ),
+        );
+      case MatureTileState.unavailable:
+        // A known minor's tile: disabled, the reason in the subtitle, and
+        // no tap action, so the age check never runs. Same title rule as a
+        // locked tile (the AI title is child-safe), never the part text.
+        // The padlock and the keywords take the disabled tint.
+        tile = ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16.0,
             vertical: 8.0,
           ),
           iconColor: AppColors.primary,
           textColor: AppColors.ink,
+          enabled: false,
           leading: Icon(
             Icons.lock,
             size: 24.0,
-            color: AppColors.primaryDark,
             semanticLabel: l10n.matureStoryLockedLabel,
           ),
           title: Text(
-            title ?? l10n.matureStoryLockedTitle,
+            story.title ?? l10n.matureStoryLockedTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -515,58 +570,51 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
           subtitle: _buildSubtitle(
             l10n,
             story,
-            title == null
-                ? l10n.authorsCount(story.parts.length)
-                : '${l10n.matureStoryLockedTitle} · '
-                    '${l10n.authorsCount(story.parts.length)}',
+            '${l10n.matureStoryUnavailableLabel} · '
+            '${l10n.authorsCount(story.parts.length)}',
+            disabled: true,
           ),
-          trailing: _viewModel.checkingStoryId == story.id
-              ? const SizedBox(
-                  width: 18.0,
-                  height: 18.0,
-                  child: CircularProgressIndicator(strokeWidth: 2.0),
+        );
+      case MatureTileState.hidden:
+        // Never listed (the ViewModel leaves hidden stories out).
+        return const SizedBox.shrink();
+      case MatureTileState.none:
+      case MatureTileState.unlocked:
+        final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
+        tile = ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 8.0,
+          ),
+          iconColor: AppColors.primary,
+          textColor: AppColors.ink,
+          leading: const Icon(Icons.menu_book),
+          title: Text(
+            story.title ?? preview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: _buildSubtitle(
+              l10n, story, l10n.authorsCount(story.parts.length)),
+          trailing: mature == MatureTileState.unlocked
+              ? Icon(
+                  Icons.lock_open,
+                  size: 20.0,
+                  semanticLabel: l10n.matureStoryAdultContent,
                 )
               : null,
           onTap: () {
-            // Unfocused first, so coming back doesn't reopen the keyboard.
             _searchFocus.unfocus();
-            _viewModel.unlock.execute(story);
+            _openStory(story);
           },
-        ),
-      );
-    } else {
-      final preview = story.parts.isNotEmpty ? story.parts.first.text : '';
-      tile = ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16.0,
-          vertical: 8.0,
-        ),
-        iconColor: AppColors.primary,
-        textColor: AppColors.ink,
-        leading: const Icon(Icons.menu_book),
-        title: Text(
-          story.title ?? preview,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle:
-            _buildSubtitle(l10n, story, l10n.authorsCount(story.parts.length)),
-        trailing: unlockedMature
-            ? Icon(
-                Icons.lock_open,
-                size: 20.0,
-                semanticLabel: l10n.matureStoryAdultContent,
-              )
-            : null,
-        onTap: () {
-          _searchFocus.unfocus();
-          _openStory(story);
-        },
-      );
+        );
     }
 
+    // Keyed by story, so a tile that changes state in place keeps
+    // screen-reader focus.
     return Padding(
+      key: ValueKey(story.id),
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: CreamCard(child: tile),
     );
@@ -574,11 +622,19 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
 
   /// The tile's [text] line and, when the story has keywords, a line with
   /// them; while searching, the matching ones are bold. Keywords are
-  /// generated child-safe, so locked tiles show them too.
-  Widget _buildSubtitle(AppLocalizations l10n, Story story, String text) {
+  /// generated child-safe, so locked and unavailable tiles show them too.
+  /// On a [disabled] tile they take the disabled tint, like the title, and
+  /// matches stay bold.
+  Widget _buildSubtitle(
+    AppLocalizations l10n,
+    Story story,
+    String text, {
+    bool disabled = false,
+  }) {
     final keywords = story.keywords;
     if (keywords.isEmpty) return Text(text);
     final searching = _viewModel.isSearching;
+    final disabledColor = Theme.of(context).disabledColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -588,13 +644,13 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 1.0),
+            Padding(
+              padding: const EdgeInsets.only(top: 1.0),
               child: ExcludeSemantics(
                 child: Icon(
                   Icons.tag,
                   size: 14.0,
-                  color: AppColors.primaryDark,
+                  color: disabled ? disabledColor : AppColors.primaryDark,
                 ),
               ),
             ),
@@ -608,9 +664,11 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
                       TextSpan(
                         text: keywords[i],
                         style: searching && _viewModel.highlights(keywords[i])
-                            ? const TextStyle(
+                            ? TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
+                                color: disabled
+                                    ? disabledColor
+                                    : AppColors.primaryDark,
                               )
                             : null,
                       ),
@@ -621,10 +679,10 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
                     l10n.storyKeywordsSemantics(keywords.join(', ')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13.0,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.ink,
+                  color: disabled ? disabledColor : AppColors.ink,
                 ),
               ),
             ),

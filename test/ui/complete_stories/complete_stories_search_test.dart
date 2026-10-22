@@ -11,6 +11,7 @@ import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart'
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/widgets/age_check_screen.dart';
@@ -47,6 +48,19 @@ class _DelayedReadGate extends AgeGate {
   Future<int?> storedBirthYear(String email) => read;
 }
 
+/// An [AgeGate] counting its [resolve] calls.
+class _CountingGate extends AgeGate {
+  _CountingGate({required super.signals, required super.storage, super.clock});
+
+  int resolves = 0;
+
+  @override
+  Future<AgeVerdict> resolve(String email) {
+    resolves++;
+    return super.resolve(email);
+  }
+}
+
 /// A [StoryRepository] whose completed stories never arrive.
 class _SilentStoryRepository extends FakeStoryRepository {
   @override
@@ -59,6 +73,8 @@ class _SilentStoryRepository extends FakeStoryRepository {
 
 final _now = DateTime.utc(2026, 10, 21);
 
+/// A completed story; with [reviewed] false it still awaits its completion
+/// review (no `reviewedAt`).
 Story _story(
   String id, {
   String? title,
@@ -68,6 +84,7 @@ Story _story(
   bool mature = false,
   String language = 'it',
   int minutesAgo = 0,
+  bool reviewed = true,
 }) =>
     Story(
       id: id,
@@ -85,6 +102,7 @@ Story _story(
       keywords: keywords,
       mature: mature,
       language: language,
+      reviewedAt: reviewed ? _now : null,
     );
 
 /// Newest first: others o-drago, o-faro, o-nonna; mine m-isola, m-scuola.
@@ -122,6 +140,7 @@ void main() {
     String language = 'it',
     String? roomId,
     Locale locale = const Locale('it'),
+    bool matureVisibleToMinors = true,
   }) {
     return MultiProvider(
       providers: [
@@ -130,6 +149,9 @@ void main() {
         ChangeNotifierProvider<AdsRepository>(
             create: (_) => FakeAdsRepository()),
         Provider<StoryRepository>.value(value: stories),
+        Provider<AppConfig>.value(
+            value:
+                AppConfig(matureVisibleToMinors: matureVisibleToMinors)),
         Provider<AgeGate>.value(value: gate),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
@@ -147,9 +169,12 @@ void main() {
     WidgetTester tester, {
     List<Story>? stories,
     Locale locale = const Locale('it'),
+    bool matureVisibleToMinors = true,
   }) async {
-    await tester.pumpWidget(
-        app(FakeStoryRepository(stories: stories ?? _room()), locale: locale));
+    await tester.pumpWidget(app(
+        FakeStoryRepository(stories: stories ?? _room()),
+        locale: locale,
+        matureVisibleToMinors: matureVisibleToMinors));
     await tester.pumpAndSettle();
   }
 
@@ -529,53 +554,208 @@ void main() {
       expect(find.byIcon(Icons.lock_open), findsOneWidget);
     });
 
-    testWidgets('a known minor never gets a mature story from a keyword',
+    testWidgets(
+        'a known minor finds a mature story by keyword as an unavailable '
+        'tile, bold match and tab count included, and never runs the gate',
         (tester) async {
       ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
-      gate = AgeGate(signals: source, storage: ages, clock: () => _now);
+      final counting =
+          _CountingGate(signals: source, storage: ages, clock: () => _now);
+      gate = counting;
       await pumpScreen(tester, stories: withMature());
 
       await type(tester, 'pirata');
 
-      expect(find.text('Nessuna storia trovata per «pirata».'), findsOneWidget);
-      expect(find.text('Il veliero'), findsNothing);
-      expect(find.byIcon(Icons.lock), findsNothing);
-      expect(tab('Altre storie (0)'), findsOneWidget);
+      expect(visibleTitles(tester), ['Il veliero']);
+      expect(tab('Altre storie (1)'), findsOneWidget);
+      expect(find.byIcon(Icons.lock), findsOneWidget);
+      expect(
+          find.text(
+              '${l10n.matureStoryUnavailableLabel} · ${l10n.authorsCount(1)}'),
+          findsOneWidget);
+      expect(find.textContaining(matureText), findsNothing);
+      final line = keywordLine(tester, 'pirata · tesoro');
+      expect(keywordStyle(line, 'pirata')!.fontWeight, FontWeight.w700);
+      expect(tester.widget<ListTile>(find.byType(ListTile)).enabled, isFalse);
+
+      await tester.tap(find.text('Il veliero'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.byType(AgeCheckScreen), findsNothing);
+      expect(find.byType(StoryReadScreen), findsNothing);
+      expect(counting.resolves, 0);
     });
 
-    testWidgets('a known minor in a room with only mature stories sees none',
-        (tester) async {
+    testWidgets(
+        'a known minor in a room with only mature stories sees them, not the '
+        'empty state', (tester) async {
       ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
       gate = AgeGate(signals: source, storage: ages, clock: () => _now);
       await pumpScreen(tester, stories: [withMature().first]);
 
-      expect(find.text(l10n.noCompleteStories), findsOneWidget);
-      expect(find.byKey(_field), findsNothing);
-    });
-
-    testWidgets('while the birth year loads, no mature story matches',
-        (tester) async {
-      final read = Completer<int?>();
-      gate = _DelayedReadGate(read.future, signals: source, storage: ages);
-      await pumpScreen(tester, stories: withMature());
-
-      await type(tester, 'pirata');
-
-      expect(find.text('Nessuna storia trovata per «pirata».'), findsOneWidget);
-      expect(find.text('Il veliero'), findsNothing);
-
-      read.complete(2015);
-      await tester.pumpAndSettle();
-      expect(find.text('Il veliero'), findsNothing);
+      expect(find.text(l10n.noCompleteStories), findsNothing);
+      expect(find.byKey(_field), findsOneWidget);
+      expect(find.text('Il veliero'), findsOneWidget);
+      expect(
+          find.text(
+              '${l10n.matureStoryUnavailableLabel} · ${l10n.authorsCount(1)}'),
+          findsOneWidget);
     });
 
     testWidgets(
-        'a minor verdict hiding the only stories drops the field and the '
+        'while the birth year loads, a mature story matches as locked, then '
+        'turns unavailable for a stored minor', (tester) async {
+      final read = Completer<int?>();
+      gate = _DelayedReadGate(read.future, signals: source, storage: ages);
+      await tester.pumpWidget(app(FakeStoryRepository(stories: withMature())));
+      await tester.pump();
+
+      await type(tester, 'pirata');
+
+      expect(visibleTitles(tester), ['Il veliero']);
+      expect(
+          find.text('${l10n.matureStoryLockedTitle} · ${l10n.authorsCount(1)}'),
+          findsOneWidget);
+
+      read.complete(2015);
+      await tester.pumpAndSettle();
+      expect(visibleTitles(tester), ['Il veliero']);
+      expect(
+          find.text(
+              '${l10n.matureStoryUnavailableLabel} · ${l10n.authorsCount(1)}'),
+          findsOneWidget);
+    });
+
+    testWidgets(
+        'a minor verdict keeps the only story listed as unavailable, and the '
         'search', (tester) async {
       source.signal = AgeSignal.minor;
       final repository = FakeStoryRepository(stories: [withMature().first]);
       await tester.pumpWidget(app(repository));
       await tester.pumpAndSettle();
+      await type(tester, 'pirata');
+
+      await tester.tap(find.text('Il veliero'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.matureStoryUnavailable), findsOneWidget);
+      expect(find.text(l10n.noCompleteStories), findsNothing);
+      expect(fieldText(tester), 'pirata');
+      expect(visibleTitles(tester), ['Il veliero']);
+      expect(tester.widget<ListTile>(find.byType(ListTile)).enabled, isFalse);
+    });
+
+    testWidgets(
+        'a story awaiting its completion review is never listed, matched or '
+        'counted, even flagged mature', (tester) async {
+      await pumpScreen(tester, stories: [
+        _story('pending',
+            mature: true,
+            reviewed: false,
+            title: 'Il veliero nascosto',
+            keywords: ['segreto'],
+            minutesAgo: 1),
+        _story('normal', title: 'Il faro', minutesAgo: 2),
+      ]);
+
+      expect(visibleTitles(tester), ['Il faro']);
+      await type(tester, 'segreto');
+      expect(find.text('Il veliero nascosto'), findsNothing);
+      expect(tab('Altre storie (0)'), findsOneWidget);
+      await type(tester, 'veliero');
+      expect(find.text('Il veliero nascosto'), findsNothing);
+
+      // Alone in the room, it leaves the room empty.
+      await tester.pumpWidget(const SizedBox());
+      await pumpScreen(tester, stories: [
+        _story('pending', mature: true, reviewed: false, title: 'Nascosto'),
+      ]);
+      expect(find.text(l10n.noCompleteStories), findsOneWidget);
+    });
+  });
+
+  group('mature stories hidden from minors (flag off)', () {
+    List<Story> withMature() => [
+          _story('mature',
+              mature: true,
+              title: 'Il veliero',
+              keywords: ['pirata', 'tesoro'],
+              minutesAgo: 1),
+          _story('normal', title: 'Il faro', minutesAgo: 2),
+        ];
+
+    testWidgets(
+        'a known minor neither sees nor finds a mature story, and it is not '
+        'counted', (tester) async {
+      ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
+      gate = AgeGate(signals: source, storage: ages, clock: () => _now);
+      await pumpScreen(tester,
+          stories: withMature(), matureVisibleToMinors: false);
+
+      expect(visibleTitles(tester), ['Il faro']);
+      expect(find.byIcon(Icons.lock), findsNothing);
+
+      await type(tester, 'pirata');
+      expect(find.text('Il veliero'), findsNothing);
+      expect(tab('Altre storie (0)'), findsOneWidget);
+      expect(find.text(l10n.noMatchingStories('pirata')), findsOneWidget);
+    });
+
+    testWidgets(
+        'a known minor in a room with only mature stories gets the empty '
+        'state, without the search field', (tester) async {
+      ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
+      gate = AgeGate(signals: source, storage: ages, clock: () => _now);
+      await pumpScreen(tester,
+          stories: [withMature().first], matureVisibleToMinors: false);
+
+      expect(find.text(l10n.noCompleteStories), findsOneWidget);
+      expect(find.byKey(_field), findsNothing);
+      expect(find.text('Il veliero'), findsNothing);
+    });
+
+    testWidgets(
+        'while the birth year loads, a mature story matches as locked, then '
+        'disappears for a stored minor', (tester) async {
+      final read = Completer<int?>();
+      gate = _DelayedReadGate(read.future, signals: source, storage: ages);
+      await tester.pumpWidget(app(FakeStoryRepository(stories: withMature()),
+          matureVisibleToMinors: false));
+      await tester.pump();
+
+      await type(tester, 'pirata');
+      expect(visibleTitles(tester), ['Il veliero']);
+      expect(
+          find.text('${l10n.matureStoryLockedTitle} · ${l10n.authorsCount(1)}'),
+          findsOneWidget);
+
+      read.complete(2015);
+      await tester.pumpAndSettle();
+      expect(find.text('Il veliero'), findsNothing);
+      expect(tab('Altre storie (0)'), findsOneWidget);
+    });
+
+    testWidgets(
+        'a minor verdict shows the snackbar once, then hides the mature '
+        'tiles', (tester) async {
+      source.signal = AgeSignal.minor;
+      await pumpScreen(tester,
+          stories: withMature(), matureVisibleToMinors: false);
+
+      await tester.tap(find.text('Il veliero'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.matureStoryUnavailable), findsOneWidget);
+      expect(find.byType(StoryReadScreen), findsNothing);
+      expect(visibleTitles(tester), ['Il faro']);
+      expect(find.byIcon(Icons.lock), findsNothing);
+    });
+
+    testWidgets(
+        'a minor verdict on the only story empties the room and drops the '
+        'search', (tester) async {
+      source.signal = AgeSignal.minor;
+      await pumpScreen(tester,
+          stories: [withMature().first], matureVisibleToMinors: false);
       await type(tester, 'pirata');
 
       await tester.tap(find.text('Il veliero'));

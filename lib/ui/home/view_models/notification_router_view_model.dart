@@ -8,6 +8,7 @@ import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart'
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
+import 'package:cadavre_exquisite/ui/core/view_models/mature_story_access.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
 /// Where a tapped notification leads.
@@ -33,6 +34,10 @@ enum StoryLinkOutcome {
   /// The story isn't complete or reviewed yet, so it can't be read.
   notReadyYet,
 
+  /// The story's latest part is still being reviewed, so it can't be
+  /// written yet.
+  underReview,
+
   /// The story was completed meanwhile: there's nothing left to write.
   alreadyCompleted,
 
@@ -55,9 +60,12 @@ typedef StoryLink = ({StoryLinkOutcome outcome, Story? story});
 /// sent. Notifications arriving in the foreground are offered as a banner
 /// ([takeBanner]).
 ///
-/// A mature story goes through the same age check as the complete stories
-/// list (see `CompleteStoriesViewModel`), sharing its verdicts via
-/// [AgeGate].
+/// A mature story, complete or not, goes through the same age check as the
+/// story lists ([MatureStoryAccess]), sharing their verdicts via [AgeGate]:
+/// a known minor (session verdict or stored birth year) is told it's
+/// unavailable without the check ever running. A story awaiting the AI
+/// review can't be opened (see docs/PART_MODERATION_UI_SPEC.md §5 for the
+/// order of the checks).
 class NotificationRouterViewModel extends ChangeNotifier {
   NotificationRouterViewModel({
     required NotificationRepository notificationRepository,
@@ -67,7 +75,12 @@ class NotificationRouterViewModel extends ChangeNotifier {
   })  : _notifications = notificationRepository,
         _stories = storyRepository,
         _auth = authRepository,
-        _gate = ageGate {
+        _access = MatureStoryAccess(
+          ageGate: ageGate,
+          authRepository: authRepository,
+          // Nothing on screen follows the check's progress.
+          onChanged: () {},
+        ) {
     open = Command1<StoryLink, StoryNotification>(_open);
     submitBirthYear = Command1<StoryLink, int>(_submitBirthYear);
     _opened = _notifications.opened.listen(open.execute);
@@ -78,7 +91,7 @@ class NotificationRouterViewModel extends ChangeNotifier {
   final NotificationRepository _notifications;
   final StoryRepository _stories;
   final AuthRepository _auth;
-  final AgeGate _gate;
+  final MatureStoryAccess _access;
   late final StreamSubscription<StoryNotification> _opened;
   late final StreamSubscription<StoryNotification> _received;
 
@@ -92,8 +105,9 @@ class NotificationRouterViewModel extends ChangeNotifier {
   /// [StoryLinkOutcome.askBirthYear] and decides with it.
   late final Command1<StoryLink, int> submitBirthYear;
 
-  /// The mature story waiting for [submitBirthYear].
-  Story? _awaitingBirthYear;
+  /// The kind of the notification whose mature story waits for
+  /// [submitBirthYear]: an adult then writes it or reads it.
+  StoryNotificationKind? _awaitingKind;
 
   StoryNotification? _banner;
 
@@ -120,69 +134,93 @@ class NotificationRouterViewModel extends ChangeNotifier {
     if (email == null) return (outcome: StoryLinkOutcome.ignored, story: null);
     final story = await _stories.getStory(notification.storyId);
     if (story == null) return (outcome: StoryLinkOutcome.notFound, story: null);
+    StoryLink link(StoryLinkOutcome outcome) =>
+        (outcome: outcome, story: story);
 
     switch (notification.kind) {
       case StoryNotificationKind.continued:
-        final StoryLinkOutcome outcome;
-        if (story.isComplete) {
-          outcome = StoryLinkOutcome.alreadyCompleted;
-        } else if (story.wasLastWrittenBy(email)) {
-          outcome = StoryLinkOutcome.alreadyContinued;
-        } else if (story.isLockedFor(email)) {
-          outcome = StoryLinkOutcome.lockedByOther;
-        } else {
-          // Taking the lock is left to the chat screen, which handles losing
-          // a race for it.
-          outcome = StoryLinkOutcome.write;
+        if (story.isComplete) return link(StoryLinkOutcome.alreadyCompleted);
+        // Before "under review", as in the incomplete list: `mature` is
+        // never downgraded, so a pending verdict can't change this answer.
+        if (await _isKnownMinorFor(story)) {
+          return link(StoryLinkOutcome.matureUnavailable);
         }
-        return (outcome: outcome, story: story);
+        if (story.awaitingReview) return link(StoryLinkOutcome.underReview);
+        if (story.wasLastWrittenBy(email)) {
+          return link(StoryLinkOutcome.alreadyContinued);
+        }
+        if (story.isLockedFor(email)) {
+          return link(StoryLinkOutcome.lockedByOther);
+        }
+        if (story.mature == true && !_access.isSessionAdult) {
+          return _unlock(story, notification.kind);
+        }
+        // Taking the lock is left to the chat screen, which handles losing
+        // a race for it (or the story going into review meanwhile).
+        return link(StoryLinkOutcome.write);
       case StoryNotificationKind.completed:
-        if (!story.isComplete || story.mature == null) {
-          return (outcome: StoryLinkOutcome.notReadyYet, story: story);
+        if (!story.isComplete || story.awaitingReview) {
+          return link(StoryLinkOutcome.notReadyYet);
         }
-        if (story.mature != true || _gate.isSessionAdult(email)) {
-          return (outcome: StoryLinkOutcome.read, story: story);
+        if (story.mature != true || _access.isSessionAdult) {
+          return link(StoryLinkOutcome.read);
         }
-        if (_gate.isSessionMinor(email)) {
-          return (outcome: StoryLinkOutcome.matureUnavailable, story: story);
+        if (await _isKnownMinorFor(story)) {
+          return link(StoryLinkOutcome.matureUnavailable);
         }
-        switch (await _gate.resolve(email)) {
-          case AgeVerdict.adult:
-            _gate.rememberVerdict(email, adult: true);
-            return (outcome: StoryLinkOutcome.read, story: story);
-          case AgeVerdict.minor:
-            _gate.rememberVerdict(email, adult: false);
-            return (outcome: StoryLinkOutcome.matureUnavailable, story: story);
-          case AgeVerdict.askBirthYear:
-            _awaitingBirthYear = story;
-            return (outcome: StoryLinkOutcome.askBirthYear, story: story);
-        }
+        return _unlock(story, notification.kind);
     }
+  }
+
+  /// Whether [story] is mature and the user a known minor, reading the
+  /// stored birth year quietly first (it may have been entered since the
+  /// last tap). Never asks the platform.
+  Future<bool> _isKnownMinorFor(Story story) async {
+    if (story.mature != true) return false;
+    await _access.loadBirthYear();
+    return _access.isKnownMinor;
+  }
+
+  /// Runs the age check for the mature [story] of a [kind] notification.
+  Future<StoryLink> _unlock(Story story, StoryNotificationKind kind) async {
+    final result = await _access.unlock(story);
+    if (result.outcome == UnlockOutcome.askBirthYear) _awaitingKind = kind;
+    return _linkFor(result, kind);
+  }
+
+  /// Where an unlock [result] leads for a [kind] notification.
+  StoryLink _linkFor(UnlockResult result, StoryNotificationKind kind) {
+    final outcome = switch (result.outcome) {
+      UnlockOutcome.open => kind == StoryNotificationKind.continued
+          ? StoryLinkOutcome.write
+          : StoryLinkOutcome.read,
+      UnlockOutcome.minor => StoryLinkOutcome.matureUnavailable,
+      UnlockOutcome.askBirthYear => StoryLinkOutcome.askBirthYear,
+      UnlockOutcome.ignored => StoryLinkOutcome.ignored,
+    };
+    return (outcome: outcome, story: result.story);
   }
 
   Future<StoryLink> _submitBirthYear(int birthYear) async {
-    final email = _auth.currentEmail;
-    final story = _awaitingBirthYear;
-    _awaitingBirthYear = null;
-    if (email == null || story == null) {
+    final kind = _awaitingKind;
+    _awaitingKind = null;
+    if (kind == null || _access.awaitingBirthYear == null) {
       return (outcome: StoryLinkOutcome.ignored, story: null);
     }
-    // Stored once and for all, like from the complete stories list.
-    final adult = await _gate.recordBirthYear(email, birthYear);
-    _gate.rememberVerdict(email, adult: adult);
-    return (
-      outcome:
-          adult ? StoryLinkOutcome.read : StoryLinkOutcome.matureUnavailable,
-      story: story,
-    );
+    // Stored once and for all, like from the story lists.
+    return _linkFor(await _access.submitBirthYear(birthYear), kind);
   }
 
   /// The user left the birth-year screen without answering.
-  void cancelBirthYear() => _awaitingBirthYear = null;
+  void cancelBirthYear() {
+    _awaitingKind = null;
+    _access.cancelBirthYear();
+  }
 
   @override
   void dispose() {
     _disposed = true;
+    _access.dispose();
     _opened.cancel();
     _received.cancel();
     open.dispose();

@@ -15,6 +15,7 @@ import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
@@ -58,6 +59,7 @@ void main() {
             create: (_) =>
                 FakeRoomRepository(pendingLoad: stillLoading.future)),
         Provider<StoryRepository>(create: (_) => FakeStoryRepository()),
+        Provider<AppConfig>.value(value: const AppConfig()),
         Provider<AgeGate>(
             create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
         ChangeNotifierProvider<AdsRepository>(

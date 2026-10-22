@@ -151,6 +151,8 @@ class _ChatScreenState extends State<ChatScreen> {
           return l10n.errorStoryLockedByOther;
         case StoryErrorCode.consecutiveTurnNotAllowed:
           return l10n.errorConsecutiveTurnNotAllowed;
+        case StoryErrorCode.underReview:
+          return l10n.storyUnderReviewError;
       }
     }
     return l10n.genericError;

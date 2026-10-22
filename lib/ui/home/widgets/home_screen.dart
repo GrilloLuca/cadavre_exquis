@@ -145,6 +145,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _showSnackBar(l10n.storyNotFound);
       case StoryLinkOutcome.notReadyYet:
         _showSnackBar(l10n.storyNotReadyYet);
+      case StoryLinkOutcome.underReview:
+        _showSnackBar(l10n.storyUnderReviewError);
       case StoryLinkOutcome.alreadyCompleted:
         _showSnackBar(l10n.errorStoryAlreadyCompleted);
       case StoryLinkOutcome.lockedByOther:

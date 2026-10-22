@@ -17,7 +17,7 @@ lib/
     models/            plain Dart: Story, PrivateRoom, Nickname, AgeRules, coded exceptions...
     use_cases/         AgeGate (the only use case, decision D2)
   ui/
-    core/              theme, shared widgets, positionLabel
+    core/              theme, shared widgets, positionLabel, view_models/ (MatureStoryAccess: the mature-story gate shared by the story lists and the notification router)
     <feature>/view_models/  one ViewModel per screen
     <feature>/widgets/      the screen and its pieces
   utils/               Command

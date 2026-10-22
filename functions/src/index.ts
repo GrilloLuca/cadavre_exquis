@@ -1,17 +1,39 @@
 import { Type } from "@google/genai";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, Transaction } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import * as functionsV1 from "firebase-functions/v1";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { BLOCKED_FINISH_REASONS, client, DEFAULT_LANGUAGE, LANGUAGE_NAMES, MODEL } from "./gemini";
 import { extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
-import { deleteTokensOf, notifyIfContinued, notifyStoryCompleted } from "./notifications";
+import {
+  currentStory,
+  MATURE_CRITERION,
+  moderatePart,
+  needsCompletionReview,
+  partToModerate,
+  reviewCompletion,
+  reviewPart,
+  saveCompletionReview,
+  savePartReview,
+  StoryReview,
+} from "./moderation";
+import { deleteTokensOf, notifyContinued, notifyStoryCompleted } from "./notifications";
 
 initializeApp();
 
 // The backfill script imports these from lib/index.js.
 export { canSaveKeywords, cleanKeywords, extractKeywords, keywordsPartCountFor, saveKeywords } from "./keywords";
+export {
+  isLegacyReviewed,
+  lastPartToReview,
+  markLegacyReviewed,
+  needsBackfillReview,
+  partsToReview,
+  reviewPart,
+  saveCompletionReview,
+  savePartReview,
+} from "./moderation";
 
 const MAX_TITLE_LENGTH = 80;
 
@@ -40,16 +62,11 @@ export const normalizeStory = onDocumentCreated(
   },
 );
 
-/** What [reviewStory] decided about a completed story. */
-export interface StoryReview {
-  /** Absent when the model gave no usable title. */
-  title?: string;
-  /** Whether the story is unsuitable for children and teenagers. */
-  mature: boolean;
-}
+export type { StoryReview } from "./moderation";
 
 // Players are mostly children and teenagers, so the bar is deliberately low:
-// anything a parent wouldn't want a 10-year-old to read counts as mature.
+// anything a parent wouldn't want a 10-year-old to read counts as mature
+// (MATURE_CRITERION, shared with the part review in moderation.ts).
 // The app shows the title even on mature stories, so the title itself must
 // always be suitable for a 10-year-old.
 const REVIEW_INSTRUCTION = (language: string) =>
@@ -64,11 +81,7 @@ const REVIEW_INSTRUCTION = (language: string) =>
   "suicide. If the story contains such content, allude to its plot, " +
   "characters or setting in neutral terms instead of quoting or " +
   "describing the explicit parts.\n" +
-  "2. mature: true if the story is unsuitable for a 10-year-old: sexual " +
-  "or sexually suggestive content, graphic violence or gore, strong " +
-  "profanity or slurs, drug or alcohol abuse, self-harm or suicide, hate " +
-  "or harassment towards real people or groups. Cartoonish peril, mild " +
-  "scares and slapstick are fine. When unsure, answer true.";
+  `2. mature: true if the story is ${MATURE_CRITERION}`;
 
 const REVIEW_SCHEMA = {
   type: Type.OBJECT,
@@ -115,68 +128,39 @@ export async function reviewStory(data: FirebaseFirestore.DocumentData): Promise
 }
 
 /**
- * Stores [review] on the story. Both fields are fixed once set (clients
- * can't write them either, see `isValidSubmit` in firestore.rules), so a
- * duplicate event or a re-run of the backfill script changes nothing.
- * Returns whether this call set the verdict, i.e. the story has just
- * become readable.
- */
-export async function saveReview(storyId: string, review: StoryReview): Promise<boolean> {
-  const db = getFirestore();
-  const ref = db.doc(`stories/${storyId}`);
-  return db.runTransaction(async (tx: Transaction) => {
-    const snapshot = await tx.get(ref);
-    const fields: Record<string, unknown> = {};
-    if (review.title && !snapshot.get("title")) fields.title = review.title;
-    const setsVerdict = typeof snapshot.get("mature") !== "boolean";
-    if (setsVerdict) fields.mature = review.mature;
-    if (Object.keys(fields).length > 0) tx.update(ref, fields);
-    return setsVerdict;
-  });
-}
-
-/**
- * Reviews a story once its last part is written: the complete stories list
- * only shows reviewed stories (`mature` set), and those with
- * `mature == true` appear there locked behind the app's age check. Once
- * reviewed, its authors are told it can be read. The backfill script calls
- * reviewStory/saveReview directly, so it never notifies anyone.
+ * Reviews a story once its last part is written, together with that part
+ * (moderateStoryPart skips it): the title, the story's `mature` verdict and
+ * the last part's verdict are stored in one transaction with `reviewedAt`,
+ * which is what makes a complete story readable in the app (see
+ * [reviewCompletion] and [completionFields] in moderation.ts). Stories with
+ * `mature == true` appear in the complete list locked behind the app's age
+ * check, and one a part review already flagged keeps `mature: true` (never
+ * downgraded). Once reviewed, its authors are told it can be read. Failures
+ * are retried for up to 6 hours, then logged as "Story review gave up" and
+ * left to scripts/review-complete-stories.js, which uses the same review and
+ * transaction but never notifies anyone.
  */
 export const reviewCompletedStory = onDocumentUpdated(
-  { document: "stories/{storyId}", region: "us-central1" },
+  { document: "stories/{storyId}", region: "us-central1", retry: true },
   async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
     if (!before || !after) return;
-    if (before.status === "complete" || after.status !== "complete") return;
-    if (typeof after.mature === "boolean") return;
+    if (!needsCompletionReview(before, after)) return;
 
     const storyId = event.params.storyId;
-    let review: StoryReview;
-    try {
-      review = await reviewStory(after);
-    } catch (error) {
-      logger.error("Story review failed", { storyId, error });
-      return;
-    }
-    if (!review.title) logger.warn("Model returned no usable title", { storyId });
-    // Only the run that set the verdict notifies, so a duplicate event
-    // doesn't notify twice.
-    if (await saveReview(storyId, review)) await notifyStoryCompleted(storyId);
-  },
-);
-
-/**
- * Tells the earlier authors of a story that someone wrote the next part (see
- * notifications.ts). The last part is notified by reviewCompletedStory.
- */
-export const notifyStoryContinued = onDocumentUpdated(
-  { document: "stories/{storyId}", region: "us-central1" },
-  async (event) => {
-    const before = event.data?.before.data();
-    const after = event.data?.after.data();
-    if (!before || !after) return;
-    await notifyIfContinued(event.params.storyId, before, after);
+    await reviewCompletion(
+      { storyId, eventTime: event.time },
+      {
+        read: () => currentStory(storyId),
+        reviewStory,
+        reviewPart,
+        save: (review, partVerdict) => saveCompletionReview(storyId, review, partVerdict),
+        notify: () => notifyStoryCompleted(storyId),
+        now: () => new Date(),
+        logger,
+      },
+    );
   },
 );
 
@@ -184,9 +168,9 @@ export const notifyStoryContinued = onDocumentUpdated(
  * Extracts up to 4 keywords from the parts written so far each time a part
  * is added, so the next player has some context, and, on the part that
  * completes the story, so the complete stories can be searched by keyword
- * (see keywords.ts). Separate from notifyStoryContinued and from
- * reviewCompletedStory so that a Gemini failure here doesn't affect
- * notifications or hide a completed story, and vice versa: on completion
+ * (see keywords.ts). Separate from moderateStoryPart and from
+ * reviewCompletedStory so that a Gemini failure here doesn't block a story
+ * or delay its notifications, and vice versa: on completion
  * both fire and write disjoint fields in separate transactions, and each
  * write re-triggers both, which then exit early. Failures are logged, not
  * retried: the story keeps the previous part's keywords, if any.
@@ -209,6 +193,53 @@ export const extractStoryKeywords = onDocumentUpdated(
     }
   },
 );
+
+/**
+ * Reviews each part when it's submitted, except the 4th, which the
+ * completion review covers (see [partToModerate]), so the last five words
+ * shown to anyone in the room are moderated before the story is complete
+ * (see moderation.ts and docs/PART_MODERATION_PLAN.md): the verdict goes to
+ * `partReviews.<position>`, and a mature one also sets the story's
+ * `mature: true`, which gates it in the app even while incomplete. Nobody
+ * can lock or continue the story until the verdict is stored (firestore.rules),
+ * so the earlier authors get the story_continued push only then, from the
+ * run that stored it (see [moderatePart]). Separate from the keywords and
+ * the completion review, so a Gemini failure in one doesn't affect the
+ * others. Its write re-triggers all of them, and they exit early: the part
+ * count and the status don't change. Failures are retried for up to 6
+ * hours, then logged as "Part review gave up" and left to
+ * scripts/review-incomplete-parts.js, which doesn't notify. The story isn't
+ * marked mature because of an outage.
+ */
+export const moderateStoryPart = onDocumentUpdated(
+  { document: "stories/{storyId}", region: "us-central1", retry: true },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+    const part = partToModerate(before, after);
+    if (!part) return;
+
+    const storyId = event.params.storyId;
+    const position = part.position;
+    if (typeof position !== "string" || position === "" || typeof part.text !== "string") {
+      logger.warn("Added part has no position or text", { storyId });
+      return;
+    }
+    await moderatePart(
+      { storyId, position, text: part.text, language: after.language, eventTime: event.time },
+      {
+        read: () => currentStory(storyId),
+        review: reviewPart,
+        save: (verdict) => savePartReview(storyId, position, verdict),
+        notify: () => notifyContinued(storyId, after),
+        now: () => new Date(),
+        logger,
+      },
+    );
+  },
+);
+
 function cleanTitle(raw: string | undefined): string | undefined {
   const line = raw?.trim().split("\n")[0] ?? "";
   const title = line

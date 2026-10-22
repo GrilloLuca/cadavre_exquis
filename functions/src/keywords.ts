@@ -80,10 +80,10 @@ function trimEnds(text: string): string {
   return text.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
 }
 
-// Everyone sees the keywords, before the story is moderated (that happens
-// only once it's complete), even on a locked mature story (they're
-// searchable), and players are mostly children and teenagers: same bar as
-// the titles in REVIEW_INSTRUCTION (index.ts).
+// Everyone sees the keywords, even on a locked mature story (they're
+// searchable) and before the latest part has a moderation verdict
+// (moderateStoryPart runs alongside), and players are mostly children and
+// teenagers: same bar as the titles in REVIEW_INSTRUCTION (index.ts).
 const KEYWORDS_INSTRUCTION = (language: string) =>
   "You read a short story, possibly unfinished, written collaboratively by " +
   "several players, mostly children and teenagers. Give at most 4 keywords " +

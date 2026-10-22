@@ -302,6 +302,18 @@ abstract class AppLocalizations {
   /// **'Hai scritto l\'ultimo capitolo: aspetta un altro giocatore.'**
   String get storyWaitingForOthers;
 
+  /// Subtitle of a disabled incomplete-story tile whose latest part is still being checked; it can't be opened yet. Uses three dots like `storyBeingWritten`.
+  ///
+  /// In it, this message translates to:
+  /// **'In revisione...'**
+  String get storyUnderReview;
+
+  /// Snackbar when a story can't be opened for writing because its latest part is still being checked (chat closed, or a notification tapped).
+  ///
+  /// In it, this message translates to:
+  /// **'Questa storia è in revisione: riprova tra poco.'**
+  String get storyUnderReviewError;
+
   /// No description provided for @newStoryTooltip.
   ///
   /// In it, this message translates to:
@@ -800,35 +812,41 @@ abstract class AppLocalizations {
   /// **'Hai già scelto un nickname e non può essere cambiato.'**
   String get errorNicknameAlreadySet;
 
-  /// Label of a locked mature story in the completed stories list: shown next to the authors count, and as the title when the story has no AI title.
+  /// Label of a mature story locked behind the age check, in both story lists: the subtitle of an incomplete story, next to the authors count in the completed list, and the title of a completed story without an AI title.
   ///
   /// In it, this message translates to:
   /// **'Contenuto esplicito'**
   String get matureStoryLockedTitle;
 
-  /// Screen-reader label of the padlock on a locked mature story.
+  /// Screen-reader label of the padlock on a mature story tile (locked or unavailable), in both story lists.
   ///
   /// In it, this message translates to:
   /// **'bloccata'**
   String get matureStoryLockedLabel;
 
-  /// Screen-reader tap hint on a locked mature story; the platform adds the 'Double tap to' prefix, so this is just the verb.
+  /// Screen-reader tap hint on a locked mature story in either list; the platform adds the 'Double tap to' prefix, so this is just the verb.
   ///
   /// In it, this message translates to:
   /// **'sbloccare'**
   String get matureStoryUnlockHint;
 
-  /// Screen-reader label of the open padlock on an unlocked mature story.
+  /// Screen-reader label of the open padlock on an unlocked mature story, in either list.
   ///
   /// In it, this message translates to:
   /// **'contenuto esplicito'**
   String get matureStoryAdultContent;
 
-  /// Snackbar when an age check denies a mature story.
+  /// Snackbar when an age check or a tapped notification denies a mature story to a minor.
   ///
   /// In it, this message translates to:
   /// **'Questa storia non è disponibile.'**
   String get matureStoryUnavailable;
+
+  /// Subtitle label on a disabled mature-story tile shown to a known minor, in both story lists (followed by the authors count in the completed list). Neutral: no mention of age or content.
+  ///
+  /// In it, this message translates to:
+  /// **'Non disponibile'**
+  String get matureStoryUnavailableLabel;
 
   /// No description provided for @ageCheckTitle.
   ///
@@ -926,7 +944,7 @@ abstract class AppLocalizations {
   /// **'Questa storia non è più disponibile.'**
   String get storyNotFound;
 
-  /// Snackbar when a tapped notification's completed story hasn't been reviewed yet.
+  /// Snackbar when a tapped notification's completed story hasn't finished its review yet.
   ///
   /// In it, this message translates to:
   /// **'La storia sarà pronta da leggere tra un momento.'**

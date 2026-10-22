@@ -79,10 +79,13 @@ class _GatedStoryRepository extends FakeStoryRepository {
 void main() {
   final now = DateTime.utc(2026, 10, 12, 10);
 
+  /// A story whose [parts] all have a verdict, unless [reviewed] is false
+  /// (then the last one awaits the AI review).
   Story story({
     String? lockedBy,
     List<StoryPart> parts = const [],
     List<String> keywords = const [],
+    bool reviewed = true,
   }) =>
       Story(
         id: 's1',
@@ -93,6 +96,11 @@ void main() {
         lockedAt: lockedBy == null ? null : now,
         language: 'it',
         keywords: keywords,
+        partReviews: {
+          for (final (i, part) in parts.indexed)
+            if (reviewed || i < parts.length - 1)
+              part.position: PartVerdict.safe,
+        },
       );
 
   StoryPart part(int index, String text) => StoryPart(
@@ -231,6 +239,34 @@ void main() {
 
     expect(find.byType(ChatScreen), findsNothing);
     expect(find.text(l10n.errorStoryLockedByOther), findsOneWidget);
+  });
+
+  testWidgets(
+      'a story whose last part is under review closes with a message on the '
+      'screen below', (tester) async {
+    final stories = FakeStoryRepository(
+        stories: [story(parts: parts(1), reviewed: false)], now: () => now);
+    await pumpAndOpen(tester, stories);
+
+    expect(find.byType(ChatScreen), findsNothing);
+    expect(find.text(l10n.storyUnderReviewError), findsOneWidget);
+    expect(stories.stories['s1']!.lockedBy, isNull);
+  });
+
+  testWidgets('a submit refused as under review keeps the text, in the chat',
+      (tester) async {
+    final stories = _GatedStoryRepository(stories: [story()], now: () => now)
+      ..submitError = const StoryException(StoryErrorCode.underReview);
+    await pumpAndOpen(tester, stories);
+
+    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.text(l10n.storyUnderReviewError), findsOneWidget);
+    expect(find.text('Once upon a time'), findsOneWidget);
   });
 
   testWidgets('a failed submit keeps the text, editable', (tester) async {

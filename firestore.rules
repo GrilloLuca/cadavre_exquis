@@ -41,6 +41,18 @@ service cloud.firestore {
           || lockExpired();
       }
 
+      // Nobody can open a story until its last part has an AI verdict
+      // (`partReviews.<position>`, written by moderateStoryPart, or by
+      // scripts/review-incomplete-parts.js for legacy and failed reviews),
+      // so its last five words are never shown in the chat unmoderated. A
+      // story with no parts has nothing to review. Mirrors
+      // Story.awaitingReview in the app. Checked on lock and submit, not on
+      // unlock: a holder can always release.
+      function lastPartReviewed(data) {
+        return data.parts.size() == 0
+          || data.parts[data.parts.size() - 1].position in data.get('partReviews', {});
+      }
+
       // createStory
       function isValidCreate() {
         let d = request.resource.data;
@@ -68,11 +80,13 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lockedBy', 'lockedAt'])
           && (
             // lock: story still open, not held by someone else (or held but
-            // expired), not my second turn in a row; `lockedAt` is now
+            // expired), not my second turn in a row, last part reviewed;
+            // `lockedAt` is now
             (newLock == myEmail()
               && resource.data.status == 'incomplete'
               && freeForMe()
               && !wroteLastPart(resource.data.parts)
+              && lastPartReviewed(resource.data)
               && (!lockedAtChanged || newLockedAt == request.time))
             // unlock: only the holder can release it
             || (newLock == null
@@ -82,12 +96,20 @@ service cloud.firestore {
       }
 
       // submitPart: appends exactly one part by me at the current position
-      // and advances (or completes) the story.
-      // `title`, `mature`, `keywords` and `keywordsPartCount` are written by
-      // Cloud Functions only (reviewCompletedStory, extractStoryKeywords,
-      // which also runs on the completing part):
+      // and advances (or completes) the story, once the previous part is
+      // reviewed. Submit doesn't require holding the lock, so the review is
+      // checked here too.
+      // `title`, `mature`, `reviewedAt`, `partReviews`, `keywords` and
+      // `keywordsPartCount` are written by Cloud Functions only
+      // (moderateStoryPart, on parts 1-3: `partReviews` and `mature: true`;
+      // reviewCompletedStory: `title`, `mature`, `reviewedAt` and the last
+      // part's `partReviews`; extractStoryKeywords, which also runs on the
+      // completing part):
       // clients can't write them because they're missing from the `hasOnly`
-      // lists here, in isValidLockChange and in isValidCreate.
+      // lists here, in isValidLockChange and in isValidCreate. A client
+      // transaction sends back the earlier parts as read and doesn't list
+      // these fields, so it keeps them. `partReviews` is top-level, not in
+      // `parts[]`, so the part key check below stays as is.
       function isValidSubmit() {
         let before = resource.data;
         let after = request.resource.data;
@@ -102,6 +124,7 @@ service cloud.firestore {
           && before.currentPosition == positions()[n]
           && freeForMe()
           && !wroteLastPart(before.parts)
+          && lastPartReviewed(before)
           && after.parts.size() == n + 1
           // A [0:0] slice doesn't compare equal to [], so the first part is
           // checked separately.
@@ -125,9 +148,12 @@ service cloud.firestore {
       // Lists are queried by `status` plus `roomId` (private rooms) or
       // `language` + `roomId == null` (public rooms); complete lists also by
       // `mature in [false, true]` (stories with an AI review verdict), with
-      // mature stories shown locked in the same list. Every signed-in
-      // player can read any story: the age gate on mature stories is
-      // enforced by the app, not here.
+      // mature stories shown locked in the same list. `mature` applies to
+      // incomplete stories too (set as soon as a part is flagged, never
+      // reset), and lock and submit don't check it (only that the last part
+      // has a verdict, see lastPartReviewed). Every signed-in player
+      // can read any story: the age gate on mature stories is enforced by
+      // the app, not here (see docs/PART_MODERATION_PLAN.md, Q5).
       allow read: if signedIn();
       allow create: if signedIn() && isValidCreate();
       allow update: if signedIn() && (isValidLockChange() || isValidSubmit());

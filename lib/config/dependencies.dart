@@ -23,7 +23,17 @@ import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_re
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/services/google_sign_in_service.dart';
 import 'package:cadavre_exquisite/data/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
+
+/// What known minors see of mature stories: disabled tiles (default) or
+/// nothing. Turn off with `--dart-define=MATURE_VISIBLE_TO_MINORS=false`;
+/// see [AppConfig.matureVisibleToMinors].
+const bool _matureVisibleToMinors =
+    bool.fromEnvironment('MATURE_VISIBLE_TO_MINORS', defaultValue: true);
+
+/// The app's build-time switches, read from `--dart-define` here only.
+const appConfig = AppConfig(matureVisibleToMinors: _matureVisibleToMinors);
 
 /// The app's repositories, provided above `MaterialApp` so every screen can
 /// `context.read` them. Tests provide fakes instead.
@@ -31,6 +41,7 @@ List<SingleChildWidget> providers({
   required GoogleSignInService googleSignIn,
 }) =>
     [
+      Provider<AppConfig>.value(value: appConfig),
       ChangeNotifierProvider<AuthRepository>(
         create: (_) => AuthRepositoryFirebase(googleSignIn: googleSignIn),
       ),

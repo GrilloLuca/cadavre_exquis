@@ -48,6 +48,17 @@ For iOS, make sure `GoogleService-Info.plist` is added to the `Runner` target in
 flutter run
 ```
 
+Build-time switches (`--dart-define`):
+
+| Define | Default | Effect |
+|---|---|---|
+| `MATURE_VISIBLE_TO_MINORS` | `true` | Known minors see mature stories as disabled "Not available" tiles. With `false` they don't see them at all (lists, search, counts). |
+| `ADMOB_DEBUG_EEA` | `false` | Debug only: simulate the EEA ad-consent flow (see `docs/ADMOB.md`). |
+
+```bash
+flutter run --dart-define=MATURE_VISIBLE_TO_MINORS=false
+```
+
 ### 5. (Optional) Deploy the backend
 
 Story titles and content moderation run in Cloud Functions (`functions/`), which need the **Blaze** plan and the **Vertex AI API** enabled on the project. Gemini is called with the functions' service account, so there is no API key to configure.

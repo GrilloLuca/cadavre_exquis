@@ -41,6 +41,8 @@ A locked row shows a neutral label ("Storia per adulti" / "Story for adults"), t
 - Rejected: proactively unlocking from a stored adult year in `initState`. A minor platform signal must be able to override a stored adult year, and signals may only be requested on tap.
 
 ### D5. Minors: snackbar, then hide mature rows for the session
+
+> **Superseded (2026-10-22, owner decision):** known minors no longer have mature stories hidden. They see them as locked, **disabled** tiles ("Non disponibile", no tap action, `AgeGate` never called), in both the complete and the incomplete list. A minor verdict from a tap shows the snackbar once, then turns the tiles into that disabled state instead of removing them. See `docs/PART_MODERATION_PLAN.md` D4b. The text below is kept as the original decision.
 Reuse the current behaviour, applied to rows instead of the entry:
 - Known minor (stored minor birth year, read quietly in `initState`, or the session minors set): mature rows are filtered out of the list entirely. If nothing remains, show the normal `noCompleteStories` empty state.
 - Unknown user who taps and gets `minor` (signal or birth-year answer): snackbar "This story isn't available." and all mature rows disappear for the session.
@@ -123,7 +125,8 @@ Reuse the current behaviour, applied to rows instead of the entry:
 5. **Repeated system sheet.** Each launch, the first locked tap may trigger Apple's/Play's sheet (where available). Already accepted; mitigated by the existing session and "permanently unavailable" caches.
 6. **Known-minor UX.** Hiding rows (D5) means a minor sees fewer stories without explanation. If product prefers showing locked rows to minors too, it's a one-condition change in F1 (keep the row, show the snackbar on tap without calling the gate).
 7. **`fake_cloud_firestore` fidelity** for `whereIn` + `isNull`: tests could pass while production needs an index (or vice versa). Mitigated by the one-off real query check in B1.
+8. **Incomplete stories aren't moderated** (known gap, recorded with the mature-stories rollout): only completed stories are reviewed, so the last five words of an incomplete story are shown to anyone in the room unmoderated. Addressed by `docs/PART_MODERATION_PLAN.md`: each part is reviewed when submitted (`moderateStoryPart`), a flagged part sets `mature: true` while the story is still incomplete, and the completion review now marks itself with `reviewedAt` instead of relying on `mature` being a boolean.
 
 ## Open questions (non-blocking; defaults above)
 - Newest first or oldest first? (Default: newest first.)
-- Should known minors see locked rows at all? (Default: no, D5.)
+- Should known minors see locked rows at all? (Default: no, D5.) **Decided 2026-10-22: yes, as disabled locked rows; see `docs/PART_MODERATION_PLAN.md` D4b.**

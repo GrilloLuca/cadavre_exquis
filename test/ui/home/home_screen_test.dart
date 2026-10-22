@@ -8,10 +8,12 @@ import 'package:cadavre_exquisite/data/repositories/notification/notification_re
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/domain/models/ad_placement.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
@@ -26,6 +28,16 @@ import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
+
+/// An [AgeSignalsSource] answering [signal].
+class _FixedSource implements AgeSignalsSource {
+  _FixedSource(this.signal);
+
+  final AgeSignal signal;
+
+  @override
+  Future<AgeSignal> check() async => signal;
+}
 
 void main() {
   const friends = PrivateRoom(id: 'friends', name: 'Friends');
@@ -77,6 +89,7 @@ void main() {
             create: (_) => FakeNotificationRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
+        Provider<AppConfig>.value(value: const AppConfig()),
         Provider<AgeGate>(
             create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
       ],
@@ -118,6 +131,10 @@ void main() {
           ),
       ],
       language: 'en',
+      partReviews: {
+        kStoryPositions[0]: PartVerdict.safe,
+        kStoryPositions[1]: PartVerdict.safe,
+      },
     );
     const tapped = StoryNotification(
       kind: StoryNotificationKind.continued,
@@ -126,7 +143,9 @@ void main() {
     );
 
     Future<FakeNotificationRepository> pumpHome(WidgetTester tester,
-        {StoryNotification? launch}) async {
+        {StoryNotification? launch,
+        List<Story>? stories,
+        AgeSignal signal = AgeSignal.unavailable}) async {
       final notifications =
           FakeNotificationRepository(launchNotification: launch);
       await tester.pumpWidget(MultiProvider(
@@ -136,11 +155,15 @@ void main() {
           ChangeNotifierProvider<RoomRepository>(
               create: (_) => FakeRoomRepository(languageCode: 'it')),
           Provider<StoryRepository>(
-              create: (_) => FakeStoryRepository(stories: [continued])),
+              create: (_) =>
+                  FakeStoryRepository(stories: stories ?? [continued])),
           Provider<UserProfileRepository>(
               create: (_) => FakeUserProfileRepository()),
+          Provider<AppConfig>.value(value: const AppConfig()),
           Provider<AgeGate>(
-              create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
+              create: (_) => AgeGate(
+                  signals: _FixedSource(signal),
+                  storage: FakeAgeCheckRepository())),
           ChangeNotifierProvider<AdsRepository>(
               create: (_) => FakeAdsRepository()),
           ChangeNotifierProvider<NotificationRepository>.value(
@@ -200,6 +223,47 @@ void main() {
       expect(find.byType(ChatScreen), findsNothing);
       expect(find.text('This story is no longer available.'), findsOneWidget);
     });
+
+    testWidgets(
+        'a story whose last part is under review says so and opens nothing',
+        (tester) async {
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      final pending = Story(
+        id: continued.id,
+        status: continued.status,
+        currentPosition: continued.currentPosition,
+        parts: continued.parts,
+        language: continued.language,
+        partReviews: {kStoryPositions[0]: PartVerdict.safe},
+      );
+      final notifications = await pumpHome(tester, stories: [pending]);
+
+      notifications.tap(tapped);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatScreen), findsNothing);
+      expect(find.text(l10n.storyUnderReviewError), findsOneWidget);
+    });
+
+    testWidgets('a mature story goes through the age check; an adult writes it',
+        (tester) async {
+      final mature = Story(
+        id: continued.id,
+        status: continued.status,
+        currentPosition: continued.currentPosition,
+        parts: continued.parts,
+        language: continued.language,
+        partReviews: continued.partReviews,
+        mature: true,
+      );
+      final notifications =
+          await pumpHome(tester, stories: [mature], signal: AgeSignal.adult);
+
+      notifications.tap(tapped);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatScreen), findsOneWidget);
+    });
   });
 
   testWidgets(
@@ -219,6 +283,7 @@ void main() {
         ChangeNotifierProvider<AdsRepository>.value(value: ads),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
+        Provider<AppConfig>.value(value: const AppConfig()),
         Provider<AgeGate>(
             create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
       ],
@@ -261,6 +326,7 @@ void main() {
           language: 'it',
           title: title,
           mature: false,
+          reviewedAt: DateTime.utc(2026, 10, 1),
         );
     await tester.pumpWidget(MultiProvider(
       providers: [
@@ -279,6 +345,7 @@ void main() {
             create: (_) => FakeAdsRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
+        Provider<AppConfig>.value(value: const AppConfig()),
         Provider<AgeGate>(
             create: (_) => AgeGate(storage: FakeAgeCheckRepository())),
       ],

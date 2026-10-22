@@ -28,12 +28,42 @@ void main() {
         text: 'part $i',
         authorEmail: author,
       );
+      // The next writer waits for the verdict.
+      repository.review(story.id);
     }
 
     final stored = repository.stories[story.id]!;
     expect(stored.isComplete, isTrue);
     expect(stored.parts, hasLength(4));
     expect(stored.lockedBy, isNull);
+    expect(stored.awaitingReview, isFalse);
+    expect(stored.mature, isFalse);
+  });
+
+  test('refuses lock and submit while the last part awaits review', () async {
+    final story = await repository.createStory(language: 'it');
+    await repository.submitPart(
+      storyId: story.id,
+      expectedPosition: kStoryPositions.first,
+      text: 'hi',
+      authorEmail: 'a@x.it',
+    );
+
+    expect(repository.lockStory(storyId: story.id, authorEmail: 'b@x.it'),
+        throwsStory(StoryErrorCode.underReview));
+    expect(
+        repository.submitPart(
+          storyId: story.id,
+          expectedPosition: kStoryPositions[1],
+          text: 'next',
+          authorEmail: 'b@x.it',
+        ),
+        throwsStory(StoryErrorCode.underReview));
+
+    repository.review(story.id, verdict: PartVerdict.mature);
+    await repository.lockStory(storyId: story.id, authorEmail: 'b@x.it');
+    expect(repository.stories[story.id]!.mature, isTrue);
+    expect(repository.stories[story.id]!.lockedBy, 'b@x.it');
   });
 
   test('applies the lock and turn rules', () async {
@@ -51,6 +81,7 @@ void main() {
       text: 'hi',
       authorEmail: 'b@x.it',
     );
+    repository.review(story.id);
 
     expect(repository.lockStory(storyId: story.id, authorEmail: 'b@x.it'),
         throwsStory(StoryErrorCode.consecutiveTurnNotAllowed));

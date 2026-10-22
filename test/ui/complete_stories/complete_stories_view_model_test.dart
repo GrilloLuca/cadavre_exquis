@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/ui/complete_stories/view_models/complete_stories_view_model.dart';
+import 'package:cadavre_exquisite/ui/core/view_models/mature_story_access.dart';
 
 import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
@@ -33,6 +34,7 @@ void main() {
     List<String> keywords = const [],
     String language = 'en',
     int minutesAgo = 0,
+    bool reviewed = true,
   }) =>
       Story(
         id: id,
@@ -49,6 +51,7 @@ void main() {
         language: language,
         title: title,
         keywords: keywords,
+        reviewedAt: reviewed ? now : null,
       );
 
   late _Source source;
@@ -61,13 +64,17 @@ void main() {
     gate = AgeGate(signals: source, storage: ages, clock: () => now);
   });
 
-  Future<CompleteStoriesViewModel> create(List<Story> stories) async {
+  Future<CompleteStoriesViewModel> create(
+    List<Story> stories, {
+    bool matureVisibleToMinors = true,
+  }) async {
     final viewModel = CompleteStoriesViewModel(
       storyRepository: FakeStoryRepository(stories: stories),
       authRepository: FakeAuthRepository(email: _me),
       ageGate: gate,
       language: 'en',
       now: () => now,
+      matureVisibleToMinors: matureVisibleToMinors,
     );
     await pumpEventQueue();
     return viewModel;
@@ -211,7 +218,9 @@ void main() {
             story('normal', title: 'Il faro'),
           ];
 
-      test('a known minor never gets a mature story from a query', () async {
+      test(
+          'a known minor gets a matching mature story too, unavailable, and '
+          'it is counted', () async {
         ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
         gate = AgeGate(signals: source, storage: ages, clock: () => now);
         final viewModel = await create(withMature());
@@ -219,11 +228,14 @@ void main() {
         viewModel.setQuery('pirata');
 
         expect(viewModel.sections.mine, isEmpty);
-        expect(viewModel.sections.others, isEmpty);
-        expect(viewModel.totalCounts, (mine: 0, others: 1));
+        expect(ids(viewModel.sections.others), ['mature']);
+        expect(viewModel.matureStateOf(viewModel.sections.others.single),
+            MatureTileState.unavailable);
+        expect(viewModel.totalCounts, (mine: 0, others: 2));
       });
 
-      test('a session minor never gets a mature story from a query', () async {
+      test('a session minor gets a matching mature story too, unavailable',
+          () async {
         source.signal = AgeSignal.minor;
         final mature = withMature().first;
         final viewModel = await create(withMature());
@@ -231,24 +243,29 @@ void main() {
 
         viewModel.setQuery('pirata');
 
-        expect(viewModel.sections.others, isEmpty);
-        expect(viewModel.totalCounts, (mine: 0, others: 1));
+        expect(ids(viewModel.sections.others), ['mature']);
+        expect(viewModel.matureStateOf(mature), MatureTileState.unavailable);
+        expect(viewModel.totalCounts, (mine: 0, others: 2));
       });
 
-      test('while the birth year loads, mature stories do not match', () async {
+      test('while the birth year loads, mature stories match, locked',
+          () async {
         final read = Completer<int?>();
         gate = _DelayedReadGate(read.future, storage: ages);
         final viewModel = await create(withMature());
 
         viewModel.setQuery('pirata');
 
-        expect(viewModel.sections.others, isEmpty);
-        expect(viewModel.totalCounts, (mine: 0, others: 1));
+        expect(ids(viewModel.sections.others), ['mature']);
+        expect(viewModel.isLocked(viewModel.sections.others.single), isTrue);
+        expect(viewModel.totalCounts, (mine: 0, others: 2));
 
-        // Once the read finds no minor the locked tile can match.
-        read.complete(null);
+        // A stored minor year turns it unavailable once read.
+        read.complete(2015);
         await pumpEventQueue();
         expect(ids(viewModel.sections.others), ['mature']);
+        expect(viewModel.matureStateOf(viewModel.sections.others.single),
+            MatureTileState.unavailable);
       });
 
       test('unknown age: the matching mature story is listed, still locked',
@@ -262,6 +279,98 @@ void main() {
         expect(viewModel.totalCounts, (mine: 0, others: 2));
       });
     });
+  });
+
+  group('mature stories hidden from minors (flag off)', () {
+    List<Story> withMature() => [
+          story('mature', mature: true, keywords: ['pirata']),
+          story('mineMature', mature: true, author: _me, title: 'Pirati'),
+          story('normal', title: 'Il faro'),
+        ];
+
+    test('a known minor: not listed, matched or counted', () async {
+      ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
+      gate = AgeGate(signals: source, storage: ages, clock: () => now);
+      final viewModel =
+          await create(withMature(), matureVisibleToMinors: false);
+
+      expect(viewModel.sections.mine, isEmpty);
+      expect(ids(viewModel.sections.others), ['normal']);
+      expect(viewModel.totalCounts, (mine: 0, others: 1));
+
+      viewModel.setQuery('pirat');
+      expect(viewModel.sections.mine, isEmpty);
+      expect(viewModel.sections.others, isEmpty);
+      expect(viewModel.totalCounts, (mine: 0, others: 1));
+    });
+
+    test('a known minor whose room has only mature stories gets no stories',
+        () async {
+      ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
+      gate = AgeGate(signals: source, storage: ages, clock: () => now);
+      final viewModel = await create([withMature().first],
+          matureVisibleToMinors: false);
+
+      expect(viewModel.isLoaded, isTrue);
+      expect(viewModel.totalCounts, (mine: 0, others: 0));
+    });
+
+    test('while the birth year loads, mature stories are listed, locked',
+        () async {
+      final read = Completer<int?>();
+      gate = _DelayedReadGate(read.future, storage: ages);
+      final viewModel =
+          await create(withMature(), matureVisibleToMinors: false);
+
+      expect(ids(viewModel.sections.others), ['mature', 'normal']);
+      expect(viewModel.isLocked(viewModel.sections.others.first), isTrue);
+      expect(viewModel.totalCounts, (mine: 1, others: 2));
+
+      read.complete(2015);
+      await pumpEventQueue();
+      expect(ids(viewModel.sections.others), ['normal']);
+      expect(viewModel.totalCounts, (mine: 0, others: 1));
+    });
+
+    test('a minor signal answers minor, then hides every mature story',
+        () async {
+      source.signal = AgeSignal.minor;
+      final mature = withMature().first;
+      final viewModel =
+          await create(withMature(), matureVisibleToMinors: false);
+      expect(viewModel.isLocked(mature), isTrue);
+
+      await viewModel.unlock.execute(mature);
+
+      expect(viewModel.unlock.value!.outcome, UnlockOutcome.minor);
+      expect(ids(viewModel.sections.others), ['normal']);
+      expect(viewModel.sections.mine, isEmpty);
+      expect(viewModel.matureStateOf(mature), MatureTileState.hidden);
+    });
+
+    test('unknown age: mature stories are listed and locked', () async {
+      final viewModel =
+          await create(withMature(), matureVisibleToMinors: false);
+
+      viewModel.setQuery('pirata');
+      expect(ids(viewModel.sections.others), ['mature']);
+      expect(viewModel.isLocked(viewModel.sections.others.single), isTrue);
+    });
+  });
+
+  test(
+      'stories awaiting their completion review are never listed, matched '
+      'or counted, even flagged mature', () async {
+    final viewModel = await create([
+      story('pending', mature: true, reviewed: false, title: 'Il veliero'),
+      story('legacy', reviewed: false, title: 'Il vecchio veliero'),
+      story('normal', title: 'Il faro'),
+    ]);
+
+    expect(ids(viewModel.sections.others), ['normal']);
+    expect(viewModel.totalCounts, (mine: 0, others: 1));
+    viewModel.setQuery('veliero');
+    expect(viewModel.sections.others, isEmpty);
   });
 
   test('lists my stories first, mature ones locked', () async {
@@ -290,7 +399,7 @@ void main() {
     expect(viewModel.checkingStoryId, isNull);
   });
 
-  test('a minor signal hides mature stories', () async {
+  test('a minor signal keeps mature stories listed, unavailable', () async {
     source.signal = AgeSignal.minor;
     final mature = story('mature', mature: true);
     final viewModel = await create([mature, story('normal')]);
@@ -298,7 +407,8 @@ void main() {
     await viewModel.unlock.execute(mature);
 
     expect(viewModel.unlock.value!.outcome, UnlockOutcome.minor);
-    expect(viewModel.sections.others.map((s) => s.id), ['normal']);
+    expect(viewModel.sections.others.map((s) => s.id), ['mature', 'normal']);
+    expect(viewModel.matureStateOf(mature), MatureTileState.unavailable);
   });
 
   test('no signal asks the birth year, keeping the check running', () async {
@@ -328,7 +438,8 @@ void main() {
     await viewModel.submitBirthYear.execute(2015);
 
     expect(viewModel.submitBirthYear.value!.outcome, UnlockOutcome.minor);
-    expect(viewModel.sections.others, isEmpty);
+    expect(ids(viewModel.sections.others), ['mature']);
+    expect(viewModel.matureStateOf(mature), MatureTileState.unavailable);
   });
 
   test('cancelling the birth year changes nothing', () async {
@@ -344,12 +455,24 @@ void main() {
     expect(await ages.getBirthYear(_me), isNull);
   });
 
-  test('a stored minor never sees mature stories', () async {
+  test(
+      'a stored minor sees mature stories unavailable, and unlock answers '
+      'minor without the gate', () async {
     ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
-    gate = AgeGate(signals: source, storage: ages, clock: () => now);
-    final viewModel = await create([story('mature', mature: true)]);
+    final counting = _CountingGate(storage: ages, signals: source);
+    gate = counting;
+    final mature = story('mature', mature: true);
+    final viewModel = await create([mature]);
 
-    expect(viewModel.sections.others, isEmpty);
+    expect(ids(viewModel.sections.others), ['mature']);
+    expect(viewModel.matureStateOf(mature), MatureTileState.unavailable);
+    expect(viewModel.totalCounts, (mine: 0, others: 1));
+
+    await viewModel.unlock.execute(mature);
+
+    expect(viewModel.unlock.value!.outcome, UnlockOutcome.minor);
+    expect(counting.resolves, 0);
+    expect(viewModel.checkingStoryId, isNull);
   });
 
   test('a failing check reports the error and stops checking', () async {
@@ -380,6 +503,19 @@ class _DelayedReadGate extends AgeGate {
 
   @override
   Future<int?> storedBirthYear(String email) => read;
+}
+
+/// An [AgeGate] counting its [resolve] calls.
+class _CountingGate extends AgeGate {
+  _CountingGate({required super.storage, super.signals});
+
+  int resolves = 0;
+
+  @override
+  Future<AgeVerdict> resolve(String email) {
+    resolves++;
+    return super.resolve(email);
+  }
 }
 
 class _FailingGate extends AgeGate {

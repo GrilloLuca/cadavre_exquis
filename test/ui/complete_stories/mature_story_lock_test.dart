@@ -15,6 +15,7 @@ import 'package:cadavre_exquisite/data/repositories/age_check/age_check_reposito
 import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository_firestore.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
@@ -52,6 +53,19 @@ class _DelayedReadGate extends AgeGate {
   Future<int?> storedBirthYear(String email) => read;
 }
 
+/// An [AgeGate] counting its [resolve] calls.
+class _CountingGate extends AgeGate {
+  _CountingGate({required super.signals, required super.storage});
+
+  int resolves = 0;
+
+  @override
+  Future<AgeVerdict> resolve(String email) {
+    resolves++;
+    return super.resolve(email);
+  }
+}
+
 /// An [AgeGate] whose [resolve] always fails.
 class _FailingGate extends AgeGate {
   _FailingGate({required super.signals, required super.storage});
@@ -66,14 +80,15 @@ const _docId = 'luca@example.com';
 const _adultYear = 1990;
 const _minorYear = 2015;
 
-// Mature stories: their texts must never leak while locked; their
-// (child-safe) AI titles are shown, but not to known minors.
+// Mature stories: their texts must never leak while locked or unavailable;
+// their (child-safe) AI titles are shown, to known minors too.
 const _matureNewTitle = 'Spicy newest title';
 const _matureNewText = 'spicy newest first part';
 const _matureOldTitle = 'Spicy older title';
 const _matureOldText = 'spicy older first part';
 const _normalTitle = 'A gentle story';
 const _unreviewedTitle = 'Not reviewed yet';
+const _pendingTitle = 'Flagged, completion review pending';
 
 void main() {
   late FakeFirebaseFirestore firestore;
@@ -94,6 +109,8 @@ void main() {
     String firstAuthor = 'someone@example.com',
     String language = 'en',
     String? roomId,
+    bool reviewed = true,
+    List<String> keywords = const [],
   }) {
     return firestore.collection('stories').doc(id).set({
       'status': 'complete',
@@ -111,6 +128,10 @@ void main() {
       'language': language,
       'roomId': roomId,
       if (mature != null) 'mature': mature,
+      // Set by the completion review, with or after `mature`.
+      if (mature != null && reviewed)
+        'reviewedAt': Timestamp.fromMillisecondsSinceEpoch(seconds * 1000),
+      if (keywords.isNotEmpty) 'keywords': keywords,
     });
   }
 
@@ -122,7 +143,8 @@ void main() {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
     // Service order (newest completed first): mature-new, normal,
-    // mature-old. The unreviewed story is never listed.
+    // mature-old. The unreviewed story and the one flagged by a part but
+    // still awaiting its completion review are never listed.
     await addStory('mature-new',
         title: _matureNewTitle,
         seconds: 300,
@@ -136,6 +158,8 @@ void main() {
         firstText: _matureOldText);
     await addStory('unreviewed',
         title: _unreviewedTitle, seconds: 400, mature: null);
+    await addStory('flagged-pending',
+        title: _pendingTitle, seconds: 450, mature: true, reviewed: false);
   });
 
   Future<void> seedBirthYear(int year) =>
@@ -165,6 +189,7 @@ void main() {
           value:
               storyRepository ?? StoryRepositoryFirestore(firestore: firestore),
         ),
+        Provider<AppConfig>.value(value: const AppConfig()),
         Provider<AgeGate>.value(
           value: gate ??
               (sharedGate ??= AgeGate(
@@ -203,6 +228,15 @@ void main() {
   Finder lockIcons() => find.byIcon(Icons.lock);
   Finder unavailable() => find.text(l10n.matureStoryUnavailable);
 
+  /// The subtitle of a known minor's tile (every test story has one part).
+  Finder unavailableTiles() => find
+      .text('${l10n.matureStoryUnavailableLabel} · ${l10n.authorsCount(1)}');
+
+  /// The tile showing [text].
+  ListTile tileWith(WidgetTester tester, String text) =>
+      tester.widget<ListTile>(
+          find.ancestor(of: find.text(text), matching: find.byType(ListTile)));
+
   /// Id of the story open in [StoryReadScreen], or null if none is open.
   String? openStoryId(WidgetTester tester) {
     final screens = find.byType(StoryReadScreen);
@@ -218,14 +252,6 @@ void main() {
   /// No part text of a mature story is on screen.
   void expectNoMatureContent() {
     for (final text in [_matureNewText, _matureOldText]) {
-      expect(find.text(text), findsNothing, reason: text);
-    }
-  }
-
-  /// Nothing at all of a mature story is on screen, title included.
-  void expectNoMatureStories() {
-    expectNoMatureContent();
-    for (final text in [_matureNewTitle, _matureOldTitle]) {
       expect(find.text(text), findsNothing, reason: text);
     }
   }
@@ -248,6 +274,7 @@ void main() {
     expectNoMatureContent();
     expect(find.text(_normalTitle), findsOneWidget);
     expect(find.text(_unreviewedTitle), findsNothing);
+    expect(find.text(_pendingTitle), findsNothing);
 
     // Newest first: locked (300), normal (200), locked (100).
     final lockedY = [
@@ -373,8 +400,8 @@ void main() {
   });
 
   testWidgets(
-      'a minor birth year from the age screen shows the snackbar and hides '
-      'mature stories', (tester) async {
+      'a minor birth year from the age screen shows the snackbar and turns '
+      'mature stories unavailable', (tester) async {
     final source = _FakeSource.value(AgeSignal.unavailable);
     await pumpScreen(tester, source);
 
@@ -386,9 +413,11 @@ void main() {
     expect(await storedYear(), _minorYear);
     expect(openStoryId(tester), isNull);
     expect(unavailable(), findsOneWidget);
-    expect(locked(), findsNothing);
-    expect(lockIcons(), findsNothing);
-    expectNoMatureStories();
+    expect(unavailableTiles(), findsNWidgets(2));
+    expect(lockIcons(), findsNWidgets(2));
+    expect(tileWith(tester, _matureNewTitle).enabled, isFalse);
+    expect(tileWith(tester, _matureOldTitle).enabled, isFalse);
+    expectNoMatureContent();
     expect(find.text(_normalTitle), findsOneWidget);
   });
 
@@ -416,8 +445,8 @@ void main() {
   });
 
   testWidgets(
-      'minor signal shows the snackbar once and hides mature stories for the '
-      'session', (tester) async {
+      'minor signal shows the snackbar once and turns every mature story '
+      'unavailable for the session, still listed', (tester) async {
     final source = _FakeSource.value(AgeSignal.minor);
     await pumpScreen(tester, source);
 
@@ -427,42 +456,114 @@ void main() {
     expect(find.byType(AgeCheckScreen), findsNothing);
     expect(openStoryId(tester), isNull);
     expect(unavailable(), findsOneWidget);
-    expect(locked(), findsNothing);
+    expect(unavailableTiles(), findsNWidgets(2));
+    expect(find.text(_matureNewTitle), findsOneWidget);
+    expect(find.text(_matureOldTitle), findsOneWidget);
     expect(find.text(_normalTitle), findsOneWidget);
     expect(await storedYear(), isNull);
 
+    // Tapping an unavailable tile does nothing: no second snackbar.
+    ScaffoldMessenger.of(tester.element(find.byType(CompleteStoriesScreen)))
+        .removeCurrentSnackBar();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(_matureOldTitle), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(unavailable(), findsNothing);
+    expect(openStoryId(tester), isNull);
+
     await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester, source);
-    expect(locked(), findsNothing);
+    expect(unavailableTiles(), findsNWidgets(2));
     expect(find.text(_normalTitle), findsOneWidget);
     expect(source.calls, 1);
   });
 
   testWidgets(
-      'stored minor year hides mature stories without asking the platform',
-      (tester) async {
+      'stored minor year shows mature stories as unavailable tiles without '
+      'asking the platform or the gate', (tester) async {
     await seedBirthYear(_minorYear);
     final source = _FakeSource.value(AgeSignal.adult);
-    await pumpScreen(tester, source);
+    final gate = _CountingGate(signals: source, storage: storage);
+    await pumpScreen(tester, source, gate: gate);
 
-    expect(locked(), findsNothing);
-    expect(lockIcons(), findsNothing);
-    expectNoMatureStories();
+    expect(unavailableTiles(), findsNWidgets(2));
+    expect(lockIcons(), findsNWidgets(2));
+    expect(find.text(_matureNewTitle), findsOneWidget);
+    expect(find.text(_matureOldTitle), findsOneWidget);
+    expectNoMatureContent();
     expect(find.text(_normalTitle), findsOneWidget);
+    expect(find.text(_pendingTitle), findsNothing);
+
+    await tester.tap(find.text(_matureNewTitle), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(openStoryId(tester), isNull);
+    expect(find.byType(AgeCheckScreen), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
     expect(source.calls, 0);
+    expect(gate.resolves, 0);
   });
 
   testWidgets(
-      'stored minor year with only mature stories shows the empty state',
-      (tester) async {
+      'an unavailable tile: disabled padlock, title or label (never the '
+      'text), "Not available" with the authors, keywords in the disabled '
+      'tint, no unlock hint', (tester) async {
+    final handle = tester.ensureSemantics();
+    await addStory('untitled-mature',
+        title: null,
+        seconds: 50,
+        mature: true,
+        firstText: 'untitled spicy part',
+        keywords: ['pirates', 'treasure']);
+    await seedBirthYear(_minorYear);
+    await pumpScreen(tester, _FakeSource.value(AgeSignal.adult));
+
+    expect(unavailableTiles(), findsNWidgets(3));
+    expect(find.text(l10n.matureStoryLockedTitle), findsOneWidget);
+    expect(find.text('untitled spicy part'), findsNothing);
+    final tile = tileWith(tester, l10n.matureStoryLockedTitle);
+    expect(tile.enabled, isFalse);
+    expect(tile.onTap, isNull);
+    final padlock = tester.widget<Icon>(find.descendant(
+        of: find.ancestor(
+            of: find.text(l10n.matureStoryLockedTitle),
+            matching: find.byType(ListTile)),
+        matching: find.byIcon(Icons.lock)));
+    expect(padlock.color, isNull);
+    expect(padlock.semanticLabel, l10n.matureStoryLockedLabel);
+
+    final keywords = tester.widget<RichText>(find.byWidgetPredicate(
+        (w) => w is RichText && w.text.toPlainText() == 'pirates · treasure'));
+    final disabled =
+        Theme.of(tester.element(find.byType(ListTile).first)).disabledColor;
+    expect(keywords.text.style?.color, disabled);
+
+    final data = tester
+        .getSemantics(find.text(l10n.matureStoryLockedTitle))
+        .getSemanticsData();
+    expect(data.label, contains(l10n.matureStoryLockedLabel));
+    expect(data.label, contains(l10n.matureStoryUnavailableLabel));
+    expect(
+      find.ancestor(
+        of: find.text(l10n.matureStoryLockedTitle),
+        matching: find.byWidgetPredicate((w) =>
+            w is Semantics && w.properties.hintOverrides?.onTapHint != null),
+      ),
+      findsNothing,
+    );
+    handle.dispose();
+  });
+
+  testWidgets(
+      'stored minor year with only mature stories lists them, not the empty '
+      'state', (tester) async {
     await firestore.collection('stories').doc('normal').delete();
     await seedBirthYear(_minorYear);
     final source = _FakeSource.value(AgeSignal.adult);
     await pumpScreen(tester, source);
 
-    expect(find.text(l10n.noCompleteStories), findsOneWidget);
-    expect(locked(), findsNothing);
-    expect(find.byType(ListTile), findsNothing);
+    expect(find.text(l10n.noCompleteStories), findsNothing);
+    expect(unavailableTiles(), findsNWidgets(2));
+    expect(find.byType(ListTile), findsNWidgets(2));
     expect(source.calls, 0);
   });
 
@@ -648,40 +749,70 @@ void main() {
 
   group('slow stored birth-year read', () {
     /// Pumps single frames (never settles) while the read is pending, and
-    /// checks that no locked tile is shown in any of them.
-    Future<void> pumpFramesWithoutLockedTiles(WidgetTester tester) async {
+    /// checks that both mature stories show as locked tiles in each.
+    Future<void> pumpFramesWithLockedTiles(WidgetTester tester) async {
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 16));
-        expect(locked(), findsNothing, reason: 'frame $i');
-        expect(lockIcons(), findsNothing, reason: 'frame $i');
-        expectNoMatureStories();
+        expect(locked(), findsNWidgets(2), reason: 'frame $i');
+        expect(unavailableTiles(), findsNothing, reason: 'frame $i');
+        expectNoMatureContent();
       }
     }
 
-    testWidgets('a stored minor never sees a locked tile', (tester) async {
+    testWidgets(
+        'a stored minor sees locked tiles until the read finishes, then '
+        'unavailable ones', (tester) async {
       await seedBirthYear(_minorYear);
       final read = Completer<int?>();
       final source = _FakeSource.value(AgeSignal.adult);
       await tester.pumpWidget(app(source,
           gate: _DelayedReadGate(read.future,
               signals: source, storage: storage)));
-      expect(locked(), findsNothing);
 
-      await pumpFramesWithoutLockedTiles(tester);
-      // Normal stories don't wait for the read.
+      await pumpFramesWithLockedTiles(tester);
       expect(find.text(_normalTitle), findsOneWidget);
+      expect(tileWith(tester, _matureNewTitle).enabled, isTrue);
 
       read.complete(_minorYear);
-      await tester.pump();
-      expect(locked(), findsNothing);
-      await pumpFramesWithoutLockedTiles(tester);
       await tester.pumpAndSettle();
-      expect(locked(), findsNothing);
+      expect(unavailableTiles(), findsNWidgets(2));
+      expect(tileWith(tester, _matureNewTitle).enabled, isFalse);
       expect(find.text(_normalTitle), findsOneWidget);
       expect(source.calls, 0);
     });
 
-    testWidgets('locked tiles appear once the read finds no minor',
+    testWidgets(
+        'a tap while the read runs is answered minor for a stored minor, '
+        'without asking the platform', (tester) async {
+      await seedBirthYear(_minorYear);
+      final read = Completer<int?>();
+      final source = _FakeSource.value(AgeSignal.adult);
+      await tester.pumpWidget(app(source,
+          gate: _DelayedReadGate(read.future,
+              signals: source, storage: storage)));
+      await tester.pump();
+
+      await tester.tap(locked().first);
+      await tester.pump();
+      // The gate reads the stored year itself (here: the same slow read).
+      expect(
+        find.descendant(
+          of: find.byType(ListTile),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+
+      read.complete(_minorYear);
+      await tester.pumpAndSettle();
+      expect(unavailable(), findsOneWidget);
+      expect(openStoryId(tester), isNull);
+      expect(find.byType(AgeCheckScreen), findsNothing);
+      expect(source.calls, 0);
+      expect(unavailableTiles(), findsNWidgets(2));
+    });
+
+    testWidgets('locked tiles stay once the read finds no minor',
         (tester) async {
       final read = Completer<int?>();
       final source = _FakeSource.value(AgeSignal.adult);
@@ -689,27 +820,29 @@ void main() {
           gate: _DelayedReadGate(read.future,
               signals: source, storage: storage)));
 
-      await pumpFramesWithoutLockedTiles(tester);
+      await pumpFramesWithLockedTiles(tester);
       expect(find.text(_normalTitle), findsOneWidget);
 
       read.complete(null);
       await tester.pumpAndSettle();
       expect(locked(), findsNWidgets(2));
+      expect(unavailableTiles(), findsNothing);
       expect(find.text(_normalTitle), findsOneWidget);
       expectNoMatureContent();
     });
 
-    testWidgets('locked tiles appear when the read fails', (tester) async {
+    testWidgets('locked tiles stay when the read fails', (tester) async {
       final read = Completer<int?>();
       final source = _FakeSource.value(AgeSignal.adult);
       await tester.pumpWidget(app(source,
           gate: _DelayedReadGate(read.future,
               signals: source, storage: storage)));
-      await pumpFramesWithoutLockedTiles(tester);
+      await pumpFramesWithLockedTiles(tester);
 
       read.completeError(StateError('read failure'));
       await tester.pumpAndSettle();
       expect(locked(), findsNWidgets(2));
+      expect(unavailableTiles(), findsNothing);
       expect(find.text(_normalTitle), findsOneWidget);
     });
   });
@@ -817,12 +950,14 @@ void main() {
     await pumpScreen(tester, source);
     await tester.tap(locked().first);
     await tester.pumpAndSettle();
-    expect(locked(), findsNothing);
+    expect(unavailableTiles(), findsNWidgets(2));
 
     await signOutAndIn();
 
     await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester, source);
+    expect(unavailableTiles(), findsNothing);
     expect(locked(), findsNWidgets(2));
+    expect(tileWith(tester, _matureNewTitle).enabled, isTrue);
   });
 }

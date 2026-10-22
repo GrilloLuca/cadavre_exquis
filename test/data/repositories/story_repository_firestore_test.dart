@@ -113,6 +113,7 @@ void main() {
       'lockedBy': null,
       'language': 'it',
       'roomId': null,
+      'partReviews': {kStoryPositions.first: 'safe'},
     });
 
     await service.submitPart(
@@ -127,6 +128,38 @@ void main() {
     expect(parts, hasLength(2));
     expect((parts.first as Map)['timestamp'], timestamp);
     expect((parts.last as Map)['text'], 'second');
+  });
+
+  test('submitPart keeps the server fields it does not write', () async {
+    await firestore.collection('stories').doc('ongoing').set({
+      'status': 'incomplete',
+      'currentPosition': kStoryPositions[1],
+      'parts': [
+        {
+          'position': kStoryPositions.first,
+          'text': 'first',
+          'author': 'a@example.com',
+          'timestamp': Timestamp.fromMillisecondsSinceEpoch(1000),
+        },
+      ],
+      'lockedBy': null,
+      'language': 'it',
+      'roomId': null,
+      'partReviews': {kStoryPositions.first: 'mature'},
+      'mature': true,
+    });
+
+    await service.submitPart(
+      storyId: 'ongoing',
+      expectedPosition: kStoryPositions[1],
+      text: 'second',
+      authorEmail: 'b@example.com',
+    );
+
+    final data =
+        (await firestore.collection('stories').doc('ongoing').get()).data()!;
+    expect(data['partReviews'], {kStoryPositions.first: 'mature'});
+    expect(data['mature'], isTrue);
   });
 
   test('complete list is newest completed first, ties by id', () async {

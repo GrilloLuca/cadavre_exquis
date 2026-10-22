@@ -43,11 +43,14 @@ class StoryRepositoryFirestore implements StoryRepository {
         .map((snapshot) => snapshot.docs.map(storyFromSnapshot).toList());
   }
 
-  /// Completed stories of the room that the AI review has already judged,
-  /// both `mature == false` and `mature == true` (the UI locks the latter
-  /// behind the age check). Stories still waiting for their review (no
-  /// `mature` field) are left out: they could be mature and there is
-  /// nothing to lock yet.
+  /// Completed stories of the room with a `mature` verdict, both
+  /// `mature == false` and `mature == true` (the UI locks the latter behind
+  /// the age check). Stories without one (not reviewed yet) are left out.
+  /// A part flagged before completion sets `mature: true` before the
+  /// completion review, so this can include stories still awaiting it
+  /// ([Story.awaitingReview]); the UI drops those on the client, because
+  /// filtering on `reviewedAt` here would need an inequality and new
+  /// indexes.
   ///
   /// The `in` filter is served like an equality, so the composite indexes
   /// `(status, language, roomId, mature)` and `(status, roomId, mature)`
@@ -99,10 +102,11 @@ class StoryRepositoryFirestore implements StoryRepository {
   /// Exclusively locks the story for [authorEmail] so no one else can open
   /// or edit it while they're writing their part. The lock expires after
   /// [Story.lockDuration], so an abandoned turn doesn't block the story
-  /// forever. Throws a [StoryException] if the story was completed,
-  /// has an unexpired lock held by someone else, or the author wrote the
-  /// immediately preceding part (two consecutive turns by the same author
-  /// aren't allowed).
+  /// forever. Throws a [StoryException] if the story was completed, its
+  /// latest part awaits the AI review ([Story.awaitingReview], also refused
+  /// by firestore.rules), it has an unexpired lock held by someone else, or
+  /// the author wrote the immediately preceding part (two consecutive turns
+  /// by the same author aren't allowed).
   @override
   Future<void> lockStory({
     required String storyId,
@@ -115,6 +119,9 @@ class StoryRepositoryFirestore implements StoryRepository {
 
       if (story.status != 'incomplete') {
         throw const StoryException(StoryErrorCode.alreadyCompleted);
+      }
+      if (story.awaitingReview) {
+        throw const StoryException(StoryErrorCode.underReview);
       }
       if (story.wasLastWrittenBy(authorEmail)) {
         throw const StoryException(StoryErrorCode.consecutiveTurnNotAllowed);
@@ -151,9 +158,11 @@ class StoryRepositoryFirestore implements StoryRepository {
 
   /// Appends the next part of the story inside a transaction, so two players
   /// submitting at the same time can't both write the same position. Throws
-  /// a [StoryException] if the story moved on, was completed, is
-  /// locked by someone else, or the author wrote the immediately preceding
-  /// part (two consecutive turns by the same author aren't allowed).
+  /// a [StoryException] if the story moved on, was completed, its latest
+  /// part awaits the AI review (also refused by firestore.rules, since a
+  /// submit doesn't need the lock), it is locked by someone else, or the
+  /// author wrote the immediately preceding part (two consecutive turns by
+  /// the same author aren't allowed).
   @override
   Future<void> submitPart({
     required String storyId,
@@ -171,6 +180,9 @@ class StoryRepositoryFirestore implements StoryRepository {
       }
       if (story.currentPosition != expectedPosition) {
         throw const StoryException(StoryErrorCode.positionTaken);
+      }
+      if (story.awaitingReview) {
+        throw const StoryException(StoryErrorCode.underReview);
       }
       if (story.isLockedFor(authorEmail, now: _now())) {
         throw const StoryException(StoryErrorCode.lockedByOther);
