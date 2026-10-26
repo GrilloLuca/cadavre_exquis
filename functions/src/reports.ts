@@ -11,9 +11,15 @@ import { shouldRetry, StoryPart } from "./moderation";
 // allowed (adults read it behind the age check), a violation isn't.
 // * violation: the part is removed. Its `text` becomes "" and it gets
 //   `removed: true`, which the app shows as "removed by moderation". The
-//   story's `keywords` are cleared, since they may quote it (the next part
-//   extracts new ones). The original text stays in the report, which only
-//   the Admin SDK reads.
+//   story's `keywords` and AI `title` are cleared in the same write, since
+//   they may quote it, and `keywordsPartCount` is set to the part count, so
+//   a keyword extraction still running on the old text can't store its
+//   result (see canSaveKeywords in keywords.ts). Then the keywords, and the
+//   title of a story that had one, are computed again on the text without
+//   the part (see [describeFields]): a completed story gets no more parts,
+//   so nothing else would, and without them the search can't find it. If
+//   that fails it's logged, not retried: the story just stays without them.
+//   The original text stays in the report, which only the Admin SDK reads.
 // * mature: the story gets `mature: true` (never downgraded, as in
 //   moderation.ts), so it's age-gated.
 // * safe: nothing changes.
@@ -147,7 +153,53 @@ export function reportStoryFields(
   const parts = (data!.parts as StoryPart[]).map((p) =>
     p.position === position ? { ...p, text: "", removed: true } : p,
   );
-  return { parts, keywords: [] };
+  return {
+    parts,
+    keywords: [],
+    keywordsPartCount: parts.length,
+    ...(data!.title !== undefined ? { title: FieldValue.delete() } : {}),
+  };
+}
+
+/** The keywords and title computed again after a part was removed. */
+export interface StoryDescription {
+  keywords: string[];
+  /** Absent when not asked for, or when the model gave no usable title. */
+  title?: string;
+}
+
+/**
+ * The story fields that store [description], computed on the story [data]
+ * when it had [partCount] parts, or undefined if it's stale: the story is
+ * gone, has another part by now (whose extraction gives fresher keywords),
+ * or has keywords from a newer extraction. The title is stored only if the
+ * story has none (a completion review may have set one meanwhile).
+ */
+export function describeFields(
+  data: FirebaseFirestore.DocumentData | undefined,
+  partCount: number,
+  description: StoryDescription,
+): Record<string, unknown> | undefined {
+  if (data === undefined || (data.parts ?? []).length !== partCount) return undefined;
+  if (data.keywordsPartCount !== partCount) return undefined;
+  const fields: Record<string, unknown> = { keywords: description.keywords };
+  if (description.title && !data.title) fields.title = description.title;
+  return fields;
+}
+
+/** Stores [description] on the story, see [describeFields]. Transactional. */
+export async function saveDescription(
+  storyId: string,
+  partCount: number,
+  description: StoryDescription,
+): Promise<void> {
+  const db = getFirestore();
+  const ref = db.doc(`stories/${storyId}`);
+  await db.runTransaction(async (tx: Transaction) => {
+    const snapshot = await tx.get(ref);
+    const fields = describeFields(snapshot.exists ? snapshot.data() : undefined, partCount, description);
+    if (fields) tx.update(ref, fields);
+  });
 }
 
 /** What [reviewReport] reads, calls and writes, injected so tests can drive it. */
@@ -164,6 +216,13 @@ export interface ReportReviewDeps {
     review: ReportReview | undefined,
     reported: { text: string; author: unknown } | undefined,
   ): Promise<ReportOutcome | undefined>;
+  /**
+   * The keywords of the story [data] and, if [withTitle], a new title, see
+   * [describeFields].
+   */
+  describe(data: FirebaseFirestore.DocumentData, withTitle: boolean): Promise<StoryDescription>;
+  /** Stores them, see [saveDescription]. */
+  saveDescription(storyId: string, partCount: number, description: StoryDescription): Promise<void>;
   now(): Date;
   logger: Pick<typeof functionsLogger, "info" | "warn" | "error">;
 }
@@ -176,7 +235,9 @@ export interface ReportReviewDeps {
  * "gone" without a review. Same retry and give-up rules as moderatePart:
  * on a read, Gemini or transaction error it throws until the event is past
  * the cap, then logs "Report review gave up", leaving the report for the
- * moderators. Every outcome is logged, a violation as a warning.
+ * moderators. Every outcome is logged, a violation as a warning. After a
+ * violation the story's keywords and title are computed again (see
+ * [refreshDescription]).
  */
 export async function reviewReport(
   job: { reportId: string; eventTime: string },
@@ -205,6 +266,7 @@ export async function reviewReport(
     const details = { reportId, storyId, position, reason, outcome, category: review?.category ?? null };
     if (outcome === "violation") {
       deps.logger.warn("Reported part removed", { ...details, author: part?.author ?? null, text: part?.text ?? null });
+      await refreshDescription(reportId, storyId, typeof story?.title === "string", deps);
     } else {
       deps.logger.info("Report reviewed", details);
     }
@@ -220,6 +282,30 @@ export async function reviewReport(
       eventTime: job.eventTime,
       error,
     });
+  }
+}
+
+/**
+ * Computes the keywords of the story [storyId] again, and its title if it
+ * [hadTitle], now that a part is removed, and stores them (see
+ * [describeFields]). Never throws: the report is already closed, so a retry
+ * wouldn't get here again; a failure is logged and leaves the story
+ * without keywords (and title).
+ */
+async function refreshDescription(
+  reportId: string,
+  storyId: string,
+  hadTitle: boolean,
+  deps: ReportReviewDeps,
+): Promise<void> {
+  try {
+    const story = await deps.readStory(storyId);
+    if (story === undefined) return;
+    const partCount = (story.parts ?? []).length;
+    const description = await deps.describe(story, hadTitle && story.status === "complete");
+    await deps.saveDescription(storyId, partCount, description);
+  } catch (error) {
+    deps.logger.error("Story refresh after removal failed", { reportId, storyId, error });
   }
 }
 

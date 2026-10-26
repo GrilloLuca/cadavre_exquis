@@ -77,6 +77,7 @@ void main() {
     RoomRepository? rooms,
     NotificationRepository? notifications,
     AdsRepository? ads,
+    SafetyRepository? safety,
   }) =>
       MultiProvider(
         providers: [
@@ -85,7 +86,7 @@ void main() {
           ChangeNotifierProvider<NotificationRepository>(
               create: (_) => notifications ?? FakeNotificationRepository()),
           ChangeNotifierProvider<SafetyRepository>(
-              create: (_) => FakeSafetyRepository()),
+              create: (_) => safety ?? FakeSafetyRepository()),
           Provider<UserProfileRepository>.value(value: service),
           ChangeNotifierProvider<AuthRepository>(
               create: (_) => FakeAuthRepository(email: email)),
@@ -671,5 +672,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(ads.calls, ['showPrivacyOptions']);
+  });
+
+  testWidgets('a failed unblock shows the generic error', (tester) async {
+    final safety = FakeSafetyRepository(blocked: ['troll@example.com']);
+    await tester.pumpWidget(buildApp(
+      UserProfileRepositoryFirestore(firestore: firestore),
+      safety: safety,
+    ));
+    await tester.pumpAndSettle();
+
+    safety.failWith = StateError('Not signed in');
+    final unblock = find.widgetWithText(TextButton, 'Sblocca');
+    await tester.ensureVisible(unblock);
+    await tester.tap(unblock);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Si è verificato un errore. Riprova.'), findsOneWidget);
+    expect(safety.blockedKeys, {'troll@example.com'});
   });
 }

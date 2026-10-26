@@ -19,7 +19,12 @@ import {
   StoryReview,
 } from "./moderation";
 import { deleteTokensOf, notifyContinued, notifyStoryCompleted } from "./notifications";
-import { reviewReport as reviewReportBody, reviewReportedText, saveReportReview } from "./reports";
+import {
+  reviewReport as reviewReportBody,
+  reviewReportedText,
+  saveDescription,
+  saveReportReview,
+} from "./reports";
 
 initializeApp();
 
@@ -328,6 +333,8 @@ export const anonymizeDeletedUser = functionsV1
  * one age-gates the story (see reports.ts). Every outcome is logged, a
  * removal as a warning ("Reported part removed"), so a log-based alert can
  * tell the moderators; a report the review gave up on is left for them.
+ * After a removal the story's keywords and title are computed again
+ * without the removed part.
  */
 export const reviewReport = onDocumentCreated(
   { document: "reports/{reportId}", region: "us-central1", retry: true },
@@ -342,6 +349,14 @@ export const reviewReport = onDocumentCreated(
         review: reviewReportedText,
         save: (storyId, position, review, reported) =>
           saveReportReview(reportId, storyId, position, review, reported),
+        describe: async (story, withTitle) => {
+          const [keywords, review] = await Promise.all([
+            extractKeywords(story),
+            withTitle ? reviewStory(story) : Promise.resolve(undefined),
+          ]);
+          return { keywords, title: review?.title };
+        },
+        saveDescription,
         now: () => new Date(),
         logger,
       },

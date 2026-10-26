@@ -2,7 +2,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { FinishReason, BlockedReason } = require("@google/genai");
+const { FieldValue } = require("firebase-admin/firestore");
 const {
+  describeFields,
   reportedPart,
   reportReviewFrom,
   reportStoryFields,
@@ -58,6 +60,35 @@ test("a violation removes only that part and clears the keywords", () => {
     { position: "sviluppo1", text: "", author: "troll@x.com", removed: true },
   ]);
   assert.deepEqual(fields.keywords, []);
+  // An extraction still running on the old text can't store its keywords.
+  assert.equal(fields.keywordsPartCount, 2);
+  assert.equal("title" in fields, false);
+});
+
+test("a violation also clears the title", () => {
+  const fields = reportStoryFields(story({ title: "The awful thing" }), "sviluppo1", "violation");
+  assert.ok(fields.title.isEqual(FieldValue.delete()));
+});
+
+// --- describeFields --------------------------------------------------------
+
+test("describeFields stores the keywords and a missing title", () => {
+  const data = story({ keywords: [], keywordsPartCount: 2 });
+  assert.deepEqual(describeFields(data, 2, { keywords: ["drago"], title: "Il drago" }), {
+    keywords: ["drago"],
+    title: "Il drago",
+  });
+  assert.deepEqual(describeFields(data, 2, { keywords: ["drago"] }), { keywords: ["drago"] });
+  assert.deepEqual(describeFields({ ...data, title: "Newer" }, 2, { keywords: [], title: "Il drago" }), {
+    keywords: [],
+  });
+});
+
+test("describeFields skips a story that changed meanwhile", () => {
+  assert.equal(describeFields(undefined, 2, { keywords: [] }), undefined);
+  const data = story({ keywords: [], keywordsPartCount: 2 });
+  assert.equal(describeFields(data, 1, { keywords: [] }), undefined);
+  assert.equal(describeFields({ ...data, keywordsPartCount: 3 }, 2, { keywords: [] }), undefined);
 });
 
 test("a mature verdict age-gates the story once", () => {
@@ -74,7 +105,7 @@ test("a safe verdict changes nothing", () => {
 const NOW = new Date("2026-10-23T10:00:00Z");
 
 function deps(overrides = {}) {
-  const calls = { reviews: [], saves: [], logs: [] };
+  const calls = { reviews: [], saves: [], describes: [], descriptions: [], logs: [] };
   const log = (level) => (message, data) => calls.logs.push({ level, message, data });
   return {
     calls,
@@ -88,6 +119,13 @@ function deps(overrides = {}) {
       save: async (storyId, position, review, reported) => {
         calls.saves.push({ storyId, position, review, reported });
         return review ? review.verdict : "gone";
+      },
+      describe: async (data, withTitle) => {
+        calls.describes.push({ data, withTitle });
+        return { keywords: ["luna"], title: withTitle ? "La luna" : undefined };
+      },
+      saveDescription: async (storyId, partCount, description) => {
+        calls.descriptions.push({ storyId, partCount, description });
       },
       now: () => NOW,
       logger: { info: log("info"), warn: log("warn"), error: log("error") },
@@ -105,6 +143,33 @@ test("reviews the reported part and warns when it's removed", async () => {
   assert.deepEqual(calls.saves[0].reported, { text: "something awful", author: "troll@x.com" });
   assert.equal(calls.logs[0].level, "warn");
   assert.equal(calls.logs[0].message, "Reported part removed");
+  assert.deepEqual(calls.descriptions, [
+    { storyId: "s1", partCount: 2, description: { keywords: ["luna"], title: undefined } },
+  ]);
+});
+
+test("a removal asks for a new title only on a completed story that had one", async () => {
+  const titled = story({ status: "complete", title: "The awful thing" });
+  const { calls, deps: d } = deps({ readStory: async () => titled });
+  await reviewReport(job, d);
+  assert.equal(calls.describes[0].withTitle, true);
+
+  const untitled = deps({ readStory: async () => story({ status: "complete" }) });
+  await reviewReport(job, untitled.deps);
+  assert.equal(untitled.calls.describes[0].withTitle, false);
+});
+
+test("a failed refresh is logged, not retried", async () => {
+  const { calls, deps: d } = deps({ describe: async () => Promise.reject(new Error("503")) });
+  await reviewReport(job, d);
+  assert.equal(calls.descriptions.length, 0);
+  assert.equal(calls.logs.at(-1).message, "Story refresh after removal failed");
+});
+
+test("only a violation refreshes the story", async () => {
+  const { calls, deps: d } = deps({ review: async () => ({ verdict: "mature", category: "gore" }) });
+  await reviewReport(job, d);
+  assert.equal(calls.describes.length, 0);
 });
 
 test("a report already reviewed isn't reviewed again", async () => {

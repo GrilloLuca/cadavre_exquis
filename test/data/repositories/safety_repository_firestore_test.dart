@@ -35,6 +35,7 @@ void main() {
 
     await repository.block('Troll@Example.com');
     expect(repository.blockedKeys, {'troll@example.com'});
+    await pumpEventQueue();
     var doc = await firestore.doc('userBlocks/me@example.com').get();
     expect(doc.get('blocked'), ['troll@example.com']);
 
@@ -73,9 +74,12 @@ void main() {
       position: 'sviluppo1',
       reason: ReportReason.offensive,
     );
+    await pumpEventQueue();
 
     final reports = await firestore.collection('reports').get();
     expect(reports.docs, hasLength(1));
+    // One per player and part, see firestore.rules.
+    expect(reports.docs.single.id, 's1_sviluppo1_me@example.com');
     final data = reports.docs.single.data();
     expect(data['storyId'], 's1');
     expect(data['position'], 'sviluppo1');

@@ -48,12 +48,14 @@ class _AccountScreenState extends State<AccountScreen> {
     );
     _viewModel.deleteAccount.addListener(_onDeleteChanged);
     _viewModel.signOut.addListener(_onSignOutChanged);
+    _viewModel.unblock.addListener(_onUnblockChanged);
   }
 
   @override
   void dispose() {
     _viewModel.deleteAccount.removeListener(_onDeleteChanged);
     _viewModel.signOut.removeListener(_onSignOutChanged);
+    _viewModel.unblock.removeListener(_onUnblockChanged);
     _viewModel.dispose();
     super.dispose();
   }
@@ -81,6 +83,13 @@ class _AccountScreenState extends State<AccountScreen> {
       return;
     }
     if (signOut.completed) _goToWelcome();
+  }
+
+  void _onUnblockChanged() {
+    final unblock = _viewModel.unblock;
+    if (unblock.running || unblock.error == null) return;
+    unblock.clearResult();
+    _showError(AppLocalizations.of(context)!.genericError);
   }
 
   /// Asks for confirmation (and the password, for email/password users),

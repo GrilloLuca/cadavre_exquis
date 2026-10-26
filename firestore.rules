@@ -106,7 +106,8 @@ service cloud.firestore {
       // part's `partReviews`; extractStoryKeywords, which also runs on the
       // completing part):
       // reviewReport also rewrites `parts` to remove a reported part (empty
-      // `text`, `removed: true`) and clears `keywords`; clients send the
+      // `text`, `removed: true`), clears `keywords` and `title` and then
+      // computes them again (with `keywordsPartCount`); clients send the
       // earlier parts back as read, so the `parts[0:n]` check below keeps
       // passing.
       // clients can't write them because they're missing from the `hasOnly`
@@ -263,6 +264,10 @@ service cloud.firestore {
     // moderateStoryPart also files one (reason "nonsense", already
     // reviewed) on a part that makes no sense, with the Admin SDK: players
     // can't use that reason (`nonsenseReport` in functions/src/moderation.ts).
+    // The id is `<storyId>_<position>_<reporterKey>`, one report per player
+    // and part: as reports can't be updated, reporting a part again is
+    // refused (the app treats that as done), so nobody can file the same
+    // report, and pay for its review, over and over.
     match /reports/{reportId} {
       // Must match ReportReason in lib/domain/models/content_report.dart.
       function reportReasons() {
@@ -277,6 +282,8 @@ service cloud.firestore {
         && request.resource.data.position in ['introduzione', 'sviluppo1', 'sviluppo2', 'epilogo']
         && request.resource.data.reason in reportReasons()
         && request.resource.data.reporterKey == myEmail().lower()
+        && reportId == request.resource.data.storyId + '_'
+          + request.resource.data.position + '_' + myEmail().lower()
         && request.resource.data.createdAt == request.time;
     }
 

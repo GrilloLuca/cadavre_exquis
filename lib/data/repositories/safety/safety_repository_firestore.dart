@@ -8,11 +8,17 @@ import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dar
 import 'package:cadavre_exquisite/domain/models/content_report.dart';
 import 'package:cadavre_exquisite/domain/models/email_key.dart';
 
-/// [SafetyRepository] on Firestore. Reports are added to `reports`, which
-/// only the Cloud Functions read (`reviewReport` has the AI review the
-/// part and removes it if it breaks the terms). The blocked authors' email
-/// keys are kept in `userBlocks/{emailKey}.blocked`, readable by its owner
-/// only; the document is followed while someone is signed in.
+/// [SafetyRepository] on Firestore. Reports are stored in `reports`, one per
+/// player and part (see firestore.rules), which only the Cloud Functions
+/// read (`reviewReport` has the AI review the part and removes it if it
+/// breaks the terms). The blocked authors' email keys are kept in
+/// `userBlocks/{emailKey}.blocked`, readable by its owner only; the document
+/// is followed while someone is signed in.
+///
+/// Writes don't wait for the server, which offline would only answer once
+/// back online: Firestore queues them and sends them later. [blockedKeys]
+/// changes at once, and the followed document restores it if a write is
+/// refused.
 class SafetyRepositoryFirestore extends SafetyRepository {
   SafetyRepositoryFirestore({
     required AuthRepository authRepository,
@@ -76,13 +82,25 @@ class SafetyRepositoryFirestore extends SafetyRepository {
     required String position,
     required ReportReason reason,
   }) async {
-    await _firestore.collection('reports').add({
+    final key = _myKey();
+    // Refused if the user already reported this part: reports can't be
+    // updated. That's what they asked for anyway.
+    _send(_firestore
+        .collection('reports')
+        .doc('${storyId}_${position}_$key')
+        .set({
       'storyId': storyId,
       'position': position,
       'reason': reason.name,
-      'reporterKey': _myKey(),
+      'reporterKey': key,
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    }));
+  }
+
+  /// Fire and forget, see the class comment. A refused write must not
+  /// surface as an uncaught async error.
+  void _send(Future<void> write) {
+    unawaited(write.catchError((Object _) {}));
   }
 
   @override
@@ -90,22 +108,21 @@ class SafetyRepositoryFirestore extends SafetyRepository {
     final key = emailKey(email);
     final mine = _myKey();
     if (key == mine || _blockedKeys.contains(key)) return;
-    // Hidden at once, even before the write (or the snapshot) lands.
     _setBlocked({..._blockedKeys, key});
-    await _blocksOf(mine).set({
+    _send(_blocksOf(mine).set({
       'blocked': FieldValue.arrayUnion([key]),
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    }, SetOptions(merge: true)));
   }
 
   @override
   Future<void> unblock(String key) async {
     final mine = _myKey();
     _setBlocked({..._blockedKeys}..remove(key));
-    await _blocksOf(mine).set({
+    _send(_blocksOf(mine).set({
       'blocked': FieldValue.arrayRemove([key]),
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    }, SetOptions(merge: true)));
   }
 
   @override
