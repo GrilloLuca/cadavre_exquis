@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
@@ -20,6 +21,7 @@ import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
@@ -153,6 +155,8 @@ void main() {
         Provider<StoryRepository>.value(value: stories),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => notifications ?? FakeNotificationRepository()),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) =>
                 profiles ??
@@ -205,13 +209,13 @@ void main() {
     await pumpAndOpen(tester, stories);
 
     expect(find.byType(ChatScreen), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ChatScreen), findsNothing);
-    expect(stories.stories['s1']!.parts.single.text, 'Once upon a time');
+    expect(stories.stories['s1']!.parts.single.text, 'Once upon a time there');
     expect(find.text(l10n.chatSentSnackbar), findsOneWidget);
   });
 
@@ -220,7 +224,7 @@ void main() {
         FakeStoryRepository(stories: [story(parts: parts(3))], now: () => now);
     await pumpAndOpen(tester, stories);
 
-    await tester.enterText(find.byType(TextField), 'The end');
+    await tester.enterText(find.byType(TextField), 'And that was the end');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
@@ -259,14 +263,14 @@ void main() {
       ..submitError = const StoryException(StoryErrorCode.underReview);
     await pumpAndOpen(tester, stories);
 
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ChatScreen), findsOneWidget);
     expect(find.text(l10n.storyUnderReviewError), findsOneWidget);
-    expect(find.text('Once upon a time'), findsOneWidget);
+    expect(find.text('Once upon a time there'), findsOneWidget);
   });
 
   testWidgets('a failed submit keeps the text, editable', (tester) async {
@@ -274,14 +278,14 @@ void main() {
       ..submitError = const StoryException(StoryErrorCode.positionTaken);
     await pumpAndOpen(tester, stories);
 
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ChatScreen), findsOneWidget);
     expect(find.text(l10n.errorStoryPositionTaken), findsOneWidget);
-    expect(find.text('Once upon a time'), findsOneWidget);
+    expect(find.text('Once upon a time there'), findsOneWidget);
     expect(field(tester).enabled, isTrue);
     expect(field(tester).readOnly, isFalse);
     expect(sendEnabled(tester), isTrue);
@@ -303,7 +307,7 @@ void main() {
     testWidgets('asks first, and "Keep writing" stays', (tester) async {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
-      await tester.enterText(find.byType(TextField), 'Once upon a time');
+      await tester.enterText(find.byType(TextField), 'Once upon a time there');
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.close));
@@ -314,14 +318,14 @@ void main() {
       await tester.tap(find.text(l10n.chatLeaveCancel));
       await tester.pumpAndSettle();
       expect(find.byType(ChatScreen), findsOneWidget);
-      expect(find.text('Once upon a time'), findsOneWidget);
+      expect(find.text('Once upon a time there'), findsOneWidget);
       expect(stories.stories['s1']!.lockedBy, 'me@example.com');
     });
 
     testWidgets('"Leave" closes and gives the lock back', (tester) async {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
-      await tester.enterText(find.byType(TextField), 'Once upon a time');
+      await tester.enterText(find.byType(TextField), 'Once upon a time there');
       await tester.pump();
 
       // System back asks too.
@@ -361,7 +365,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(stories.locks, 1);
 
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
@@ -378,7 +382,7 @@ void main() {
     );
     await pumpAndOpen(tester, stories, notifications: notifications);
 
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
@@ -403,7 +407,7 @@ void main() {
     );
     await pumpAndOpen(tester, stories, notifications: notifications);
 
-    await tester.enterText(find.byType(TextField), 'Once upon a time');
+    await tester.enterText(find.byType(TextField), 'Once upon a time there');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
@@ -614,7 +618,7 @@ void main() {
   });
 
   group('composer', () {
-    testWidgets('Send needs the lock and some text', (tester) async {
+    testWidgets('Send needs the lock and five words', (tester) async {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
 
@@ -624,7 +628,28 @@ void main() {
       expect(sendEnabled(tester), isFalse);
       await tester.enterText(find.byType(TextField), 'C\'era una volta');
       await tester.pump();
+      expect(sendEnabled(tester), isFalse);
+      await tester.enterText(
+          find.byType(TextField), 'C\'era una volta un drago');
+      await tester.pump();
       expect(sendEnabled(tester), isTrue);
+    });
+
+    testWidgets('says how many words are missing until there are five',
+        (tester) async {
+      final stories = FakeStoryRepository(stories: [story()], now: () => now);
+      await pumpAndOpen(tester, stories);
+
+      expect(find.text('5 more words to go'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'oh');
+      await tester.pump();
+      expect(find.text('4 more words to go'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'once upon a  time');
+      await tester.pump();
+      expect(find.text('1 more word to go'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'once upon a time there');
+      await tester.pump();
+      expect(find.textContaining('to go'), findsNothing);
     });
 
     testWidgets('the field has its label and isn\'t focused once locked',
@@ -675,7 +700,7 @@ void main() {
     testWidgets('while sending nothing can close the screen', (tester) async {
       final stories = _GatedStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
-      await tester.enterText(find.byType(TextField), 'Once upon a time');
+      await tester.enterText(find.byType(TextField), 'Once upon a time there');
       await tester.pump();
 
       stories.submitGate = Completer<void>();
@@ -690,7 +715,7 @@ void main() {
           findsOneWidget);
       expect(sendEnabled(tester), isFalse);
       expect(field(tester).readOnly, isTrue);
-      expect(find.text('Once upon a time'), findsOneWidget);
+      expect(find.text('Once upon a time there'), findsOneWidget);
       expect(
           tester
               .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.close))
@@ -705,14 +730,15 @@ void main() {
       stories.submitGate!.complete();
       await tester.pumpAndSettle();
       expect(find.byType(ChatScreen), findsNothing);
-      expect(stories.stories['s1']!.parts.single.text, 'Once upon a time');
+      expect(
+          stories.stories['s1']!.parts.single.text, 'Once upon a time there');
     });
 
     testWidgets('the field takes at most 5000 characters', (tester) async {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
 
-      await tester.enterText(find.byType(TextField), 'a' * 5200);
+      await tester.enterText(find.byType(TextField), 'a ' * 2600);
       await tester.pump();
       expect(field(tester).controller!.text, hasLength(kMaxPartLength));
       expect(find.text('5,000/5,000'), findsOneWidget);
@@ -722,11 +748,11 @@ void main() {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories);
 
-      await tester.enterText(find.byType(TextField), 'a' * 4499);
+      await tester.enterText(find.byType(TextField), '${'a ' * 2249}a');
       await tester.pump();
       expect(find.textContaining('/5,000'), findsNothing);
 
-      await tester.enterText(find.byType(TextField), 'a' * 4500);
+      await tester.enterText(find.byType(TextField), 'a ' * 2250);
       await tester.pump();
       expect(find.text('4,500/5,000'), findsOneWidget);
     });
@@ -735,7 +761,7 @@ void main() {
       final stories = FakeStoryRepository(stories: [story()], now: () => now);
       await pumpAndOpen(tester, stories, locale: const Locale('it'));
 
-      await tester.enterText(find.byType(TextField), 'a' * 4500);
+      await tester.enterText(find.byType(TextField), 'a ' * 2250);
       await tester.pump();
       expect(find.text('4.500/5.000'), findsOneWidget);
     });

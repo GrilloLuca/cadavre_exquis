@@ -5,12 +5,15 @@ import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:cadavre_exquisite/domain/models/private_room.dart';
 import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/account/view_models/account_view_model.dart';
+import 'package:cadavre_exquisite/ui/account/widgets/blocked_players_card.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/delete_account_dialog.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/nickname_card.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/notifications_card.dart';
@@ -19,8 +22,8 @@ import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/private_room/widgets/private_room_screen.dart';
 
-/// The profile tab: nickname, room, notifications, ad privacy, sign-out and
-/// account deletion. Creates its [AccountViewModel] once, in `initState`
+/// The profile tab: nickname, room, notifications, blocked players, ad
+/// privacy, the support contact, sign-out and account deletion. Creates its [AccountViewModel] once, in `initState`
 /// (see `ChatScreen`).
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -41,15 +44,18 @@ class _AccountScreenState extends State<AccountScreen> {
       roomRepository: context.read<RoomRepository>(),
       notificationRepository: context.read<NotificationRepository>(),
       adsRepository: context.read<AdsRepository>(),
+      safetyRepository: context.read<SafetyRepository>(),
     );
     _viewModel.deleteAccount.addListener(_onDeleteChanged);
     _viewModel.signOut.addListener(_onSignOutChanged);
+    _viewModel.unblock.addListener(_onUnblockChanged);
   }
 
   @override
   void dispose() {
     _viewModel.deleteAccount.removeListener(_onDeleteChanged);
     _viewModel.signOut.removeListener(_onSignOutChanged);
+    _viewModel.unblock.removeListener(_onUnblockChanged);
     _viewModel.dispose();
     super.dispose();
   }
@@ -77,6 +83,13 @@ class _AccountScreenState extends State<AccountScreen> {
       return;
     }
     if (signOut.completed) _goToWelcome();
+  }
+
+  void _onUnblockChanged() {
+    final unblock = _viewModel.unblock;
+    if (unblock.running || unblock.error == null) return;
+    unblock.clearResult();
+    _showError(AppLocalizations.of(context)!.genericError);
   }
 
   /// Asks for confirmation (and the password, for email/password users),
@@ -142,6 +155,7 @@ class _AccountScreenState extends State<AccountScreen> {
         _viewModel.signOut,
         _viewModel.enableNotifications,
         _viewModel.showAdPrivacyOptions,
+        _viewModel.unblock,
       ]),
       builder: (context, _) => _buildScreen(context),
     );
@@ -209,6 +223,10 @@ class _AccountScreenState extends State<AccountScreen> {
                         const SizedBox(height: 24.0),
                         NotificationsCard(viewModel: _viewModel),
                       ],
+                      if (email != null) ...[
+                        const SizedBox(height: 24.0),
+                        BlockedPlayersCard(viewModel: _viewModel),
+                      ],
                       if (_viewModel.adPrivacyOptionsRequired) ...[
                         const SizedBox(height: 24.0),
                         Center(
@@ -221,6 +239,15 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 24.0),
+                      SelectableText(
+                        l10n.supportContact(kSupportEmail),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14.0,
+                          color: Colors.black54,
+                        ),
+                      ),
                       const SizedBox(height: 32.0),
                       Center(
                         child: ElevatedButton.icon(

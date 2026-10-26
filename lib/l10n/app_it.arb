@@ -246,6 +246,15 @@
       }
     }
   },
+  "chatWordsMissing": "{count, plural, =1{Manca ancora 1 parola} other{Mancano ancora {count} parole}}",
+  "@chatWordsMissing": {
+    "description": "Under the writing field while the part has fewer than the minimum 5 words; Send is disabled until then.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatSentSnackbar": "Parte inviata! Ora tocca a qualcun altro.",
   "@chatSentSnackbar": {
     "description": "Snackbar after a part other than the last one is sent and the writing screen closes."
@@ -524,5 +533,30 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "partSafetyMenuTooltip": "Segnala o blocca",
+  "reportPartMenuItem": "Segnala questa parte",
+  "blockAuthorMenuItem": "Blocca {name}",
+  "reportReasonTitle": "Perché la segnali?",
+  "reportReasonOffensive": "Offensiva o di odio",
+  "reportReasonSexual": "Contenuti sessuali",
+  "reportReasonHarassment": "Molestie o bullismo",
+  "reportReasonSpam": "Spam",
+  "reportReasonOther": "Altro",
+  "reportSentSnackbar": "Grazie della segnalazione. La esamineremo entro 24 ore.",
+  "blockAuthorTitle": "Bloccare {name}?",
+  "blockAuthorMessage": "Non vedrai più le storie con parti scritte da {name}. Puoi annullare il blocco nel Profilo.",
+  "blockAuthorConfirmButton": "Blocca",
+  "authorBlockedSnackbar": "Hai bloccato {name}.",
+  "blockedAuthorsTitle": "Giocatori bloccati",
+  "blockedAuthorsEmpty": "Non hai bloccato nessuno.",
+  "unblockButton": "Sblocca",
+  "supportContact": "Serve aiuto o vuoi segnalare un giocatore o una storia? Scrivi a {email}",
+  "termsNotice": "Continuando accetti le condizioni d'uso. Non sono tollerati contenuti offensivi, d'odio, sessuali o abusivi.",
+  "termsButton": "Condizioni d'uso",
+  "termsTitle": "Condizioni d'uso",
+  "termsBody": "Cadavre Exquisite è un gioco in cui si scrivono storie insieme. Usandolo accetti queste condizioni.\n\n• Non scrivere contenuti offensivi, d'odio, sessuali, violenti o abusivi, non molestare gli altri giocatori e non condividere dati personali. Non c'è tolleranza per i contenuti inappropriati né per chi si comporta in modo abusivo.\n• Ogni parte viene controllata automaticamente, e puoi segnalare qualsiasi parte o bloccarne l'autore dal menu accanto. Esaminiamo le segnalazioni entro 24 ore: rimuoviamo i contenuti che violano queste condizioni e chiudiamo gli account di chi li ha scritti.\n• Sei responsabile di ciò che scrivi. Le parti che scrivi restano nelle loro storie, come Anonimo se elimini l'account.\n\nDomande o segnalazioni: {email}",
+  "closeButton": "Chiudi",
+  "partRemovedByModeration": "Questa parte è stata rimossa dalla moderazione."
 }

@@ -63,6 +63,7 @@ StoryPart storyPartFromMap(Map<String, dynamic> map) {
     text: map['text'] as String,
     author: map['author'] as String,
     timestamp: (map['timestamp'] as Timestamp).toDate(),
+    removed: map['removed'] == true,
   );
 }
 

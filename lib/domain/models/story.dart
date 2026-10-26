@@ -1,3 +1,4 @@
+import 'package:cadavre_exquisite/domain/models/email_key.dart';
 import 'package:cadavre_exquisite/domain/models/story_language.dart';
 
 const List<String> kStoryPositions = [
@@ -10,6 +11,16 @@ const List<String> kStoryPositions = [
 /// Most characters a part may have. Must match `part.text.size() <= 5000`
 /// in firestore.rules.
 const int kMaxPartLength = 5000;
+
+/// Fewest words a part may have: the next player sees the last five, so a
+/// shorter part leaves them less to continue from. Checked by the app only.
+const int kMinPartWords = 5;
+
+/// The number of words in [text], separated by whitespace.
+int wordCount(String text) {
+  final trimmed = text.trim();
+  return trimmed.isEmpty ? 0 : trimmed.split(RegExp(r'\s+')).length;
+}
 
 /// Returns the position that follows [position], or null if [position] is the last one.
 String? nextPosition(String position) {
@@ -48,11 +59,17 @@ class StoryPart {
   final String author;
   final DateTime timestamp;
 
+  /// Whether moderation removed the part after a report: its [text] is
+  /// empty and the app says it was removed instead (see
+  /// functions/src/reports.ts). False on every legacy part.
+  final bool removed;
+
   StoryPart({
     required this.position,
     required this.text,
     required this.author,
     required this.timestamp,
+    this.removed = false,
   });
 }
 
@@ -161,6 +178,12 @@ class Story {
   bool hasPartBy(String? email) =>
       email != null && parts.any((part) => part.author == email);
 
+  /// Whether one of the parts was written by a user whose [emailKey] is in
+  /// [keys], e.g. someone the signed-in user blocked.
+  bool hasPartByAnyOf(Set<String> keys) =>
+      keys.isNotEmpty &&
+      parts.any((part) => keys.contains(emailKey(part.author)));
+
   /// How long a lock holds. A player who leaves the app mid-turn (or whose
   /// unlock fails) blocks the story at most this long. Must match
   /// `lockExpired()` in firestore.rules.
@@ -180,8 +203,13 @@ class Story {
   bool isLockedFor(String? email, {DateTime? now}) =>
       lockedBy != null && lockedBy != email && !isLockExpired(now: now);
 
+  /// Whether the most recently written part was removed by moderation, so
+  /// there are no [lastFiveWords] to show.
+  bool get lastPartRemoved => parts.isNotEmpty && parts.last.removed;
+
   /// Last 5 words of the most recently written part, shown as a preview
-  /// to the next player. Empty if no part has been written yet.
+  /// to the next player. Empty if no part has been written yet, or if it
+  /// was removed ([lastPartRemoved]).
   String get lastFiveWords {
     if (parts.isEmpty) return '';
     final words = parts.last.text.trim().split(RegExp(r'\s+'));

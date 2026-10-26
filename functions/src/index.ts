@@ -19,6 +19,12 @@ import {
   StoryReview,
 } from "./moderation";
 import { deleteTokensOf, notifyContinued, notifyStoryCompleted } from "./notifications";
+import {
+  reviewReport as reviewReportBody,
+  reviewReportedText,
+  saveDescription,
+  saveReportReview,
+} from "./reports";
 
 initializeApp();
 
@@ -155,7 +161,7 @@ export const reviewCompletedStory = onDocumentUpdated(
         read: () => currentStory(storyId),
         reviewStory,
         reviewPart,
-        save: (review, partVerdict) => saveCompletionReview(storyId, review, partVerdict),
+        save: (review, partReview) => saveCompletionReview(storyId, review, partReview),
         notify: () => notifyStoryCompleted(storyId),
         now: () => new Date(),
         logger,
@@ -231,7 +237,7 @@ export const moderateStoryPart = onDocumentUpdated(
       {
         read: () => currentStory(storyId),
         review: reviewPart,
-        save: (verdict) => savePartReview(storyId, position, verdict),
+        save: (review) => savePartReview(storyId, position, review),
         notify: () => notifyContinued(storyId, after),
         now: () => new Date(),
         logger,
@@ -272,8 +278,8 @@ export function anonymizeParts(
 }
 
 /**
- * Removes a deleted account's email from Firestore: its profile and push
- * tokens are deleted, its story parts stay (they belong to stories other people wrote too) but
+ * Removes a deleted account's email from Firestore: its profile, block list
+ * and push tokens are deleted, its story parts stay (they belong to stories other people wrote too) but
  * become anonymous, its story locks are released and it's removed as the
  * creator of its private rooms. There is no 2nd-gen trigger for deleted
  * users, hence the 1st-gen function.
@@ -289,6 +295,7 @@ export const anonymizeDeletedUser = functionsV1
     const writer = db.bulkWriter();
 
     writer.delete(db.doc(`userProfiles/${key}`));
+    writer.delete(db.doc(`userBlocks/${key}`));
     const tokenCount = await deleteTokensOf(email, writer);
 
     // Parts can't be queried by author, so every story is checked.
@@ -319,3 +326,40 @@ export const anonymizeDeletedUser = functionsV1
       tokens: tokenCount,
     });
   });
+
+/**
+ * Reviews each report made in the app (see SafetyRepository) with Gemini
+ * and acts on it: a part that breaks the terms of use is removed, a mature
+ * one age-gates the story (see reports.ts). Every outcome is logged, a
+ * removal as a warning ("Reported part removed"), so a log-based alert can
+ * tell the moderators; a report the review gave up on is left for them.
+ * After a removal the story's keywords and title are computed again
+ * without the removed part.
+ */
+export const reviewReport = onDocumentCreated(
+  { document: "reports/{reportId}", region: "us-central1", retry: true },
+  async (event) => {
+    const reportId = event.params.reportId;
+    const db = getFirestore();
+    await reviewReportBody(
+      { reportId, eventTime: event.time },
+      {
+        readReport: async () => (await db.doc(`reports/${reportId}`).get()).data(),
+        readStory: (storyId) => currentStory(storyId),
+        review: reviewReportedText,
+        save: (storyId, position, review, reported) =>
+          saveReportReview(reportId, storyId, position, review, reported),
+        describe: async (story, withTitle) => {
+          const [keywords, review] = await Promise.all([
+            extractKeywords(story),
+            withTitle ? reviewStory(story) : Promise.resolve(undefined),
+          ]);
+          return { keywords, title: review?.title };
+        },
+        saveDescription,
+        now: () => new Date(),
+        logger,
+      },
+    );
+  },
+);

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 
@@ -17,10 +18,13 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/time_ago.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/message_bubble.dart';
+import 'package:cadavre_exquisite/ui/core/ui/part_safety_menu.dart';
 
 /// Screen used to write the next part of [story]: a turn card (which part,
 /// what to do, the story's keywords) above a composer docked over the
-/// keyboard, which starts from the previous part's last five words.
+/// keyboard, which starts from the previous part's last five words. The
+/// app bar's menu reports the previous part or blocks its author; blocking
+/// closes the screen, giving the turn back.
 ///
 /// Creates its [ChatViewModel] once, in `initState`: a route's builder can
 /// run again (whenever the Navigator's dependencies change), so the
@@ -40,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageTextController = TextEditingController();
 
   late final ChatViewModel _viewModel;
+  late final PartSafetyFeedback _safetyFeedback;
 
   @override
   void initState() {
@@ -50,6 +55,14 @@ class _ChatScreenState extends State<ChatScreen> {
       authRepository: context.read<AuthRepository>(),
       notificationRepository: context.read<NotificationRepository>(),
       profileRepository: context.read<UserProfileRepository>(),
+      safetyRepository: context.read<SafetyRepository>(),
+    );
+    _safetyFeedback = PartSafetyFeedback(
+      actions: _viewModel.safety,
+      context: context,
+      authorName: (_) => _previousAuthorName(),
+      // pop, not maybePop: unsent text is dropped without asking.
+      onBlocked: () => Navigator.pop(context),
     );
     _viewModel.lock.addListener(_onLockChanged);
     _viewModel.submit.addListener(_onSubmitChanged);
@@ -59,6 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _viewModel.lock.removeListener(_onLockChanged);
     _viewModel.submit.removeListener(_onSubmitChanged);
+    _safetyFeedback.dispose();
     _viewModel.dispose();
     _messageTextController.dispose();
     super.dispose();
@@ -139,6 +153,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (leave == true && mounted) Navigator.pop(context);
   }
 
+  String _previousAuthorName() =>
+      _viewModel.previousAuthorName ??
+      AppLocalizations.of(context)!.anonymousAuthor;
+
   String _errorMessage(BuildContext context, Object error) {
     final l10n = AppLocalizations.of(context)!;
     if (error is StoryException) {
@@ -202,6 +220,17 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         title: Text(position),
         backgroundColor: AppColors.primary,
+        actions: [
+          if (previousPart != null &&
+              !sending &&
+              !previousPart.removed &&
+              _viewModel.safety.canActOn(previousPart))
+            PartSafetyMenu(
+              actions: _viewModel.safety,
+              part: previousPart,
+              authorName: _previousAuthorName(),
+            ),
+        ],
       ),
       body: Background(
         opacity: 0.2,
@@ -245,12 +274,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               MergeSemantics(
                                 child: MessageBubble(
                                   sender: l10n.chatPreviousAuthorLabel(
-                                    _viewModel.previousAuthorName ??
-                                        l10n.anonymousAuthor,
+                                    _previousAuthorName(),
                                     timeAgo(l10n, previousPart.timestamp),
                                   ),
-                                  text: l10n.chatLastWords(
-                                      _capLastWords(story.lastFiveWords)),
+                                  text: story.lastPartRemoved
+                                      ? l10n.partRemovedByModeration
+                                      : l10n.chatLastWords(
+                                          _capLastWords(story.lastFiveWords)),
                                   isMe: false,
                                 ),
                               ),

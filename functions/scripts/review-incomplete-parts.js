@@ -51,15 +51,15 @@ async function main() {
     for (const part of pending) {
       parts++;
       try {
-        const verdict = await reviewPart(typeof part.text === "string" ? part.text : "", doc.get("language"));
-        console.log(doc.id, { position: part.position, verdict });
-        if (write && !(await savePartReview(doc.id, part.position, verdict))) {
+        const review = await reviewPart(typeof part.text === "string" ? part.text : "", doc.get("language"));
+        console.log(doc.id, { position: part.position, ...review });
+        if (write && !(await savePartReview(doc.id, part.position, review))) {
           console.log(doc.id, part.position, "changed meanwhile, not saved");
           skipped++;
           continue;
         }
         reviewed++;
-        if (verdict === "mature") mature++;
+        if (review.verdict === "mature") mature++;
       } catch (error) {
         console.error(doc.id, part.position, "part review failed:", error.message);
         failed++;

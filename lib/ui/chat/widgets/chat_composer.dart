@@ -7,7 +7,9 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/themes/constants.dart';
 
 /// The bottom of the writing screen, docked above the keyboard: the field,
-/// the character counter (near the limit only) and Send.
+/// how many words are still missing (below [kMinPartWords]) or the
+/// character counter (near the limit only), and Send, enabled from
+/// [kMinPartWords] words on.
 class ChatComposer extends StatelessWidget {
   const ChatComposer({
     super.key,
@@ -121,13 +123,18 @@ class ChatComposer extends StatelessWidget {
                   const SizedBox(height: 8.0),
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: controller,
-                    builder: (context, value, _) => _Footer(
-                      length: value.text.characters.length,
-                      sending: sending,
-                      onSend: canWrite && value.text.trim().isNotEmpty
-                          ? onSend
-                          : null,
-                    ),
+                    builder: (context, value, _) {
+                      final words = wordCount(value.text);
+                      return _Footer(
+                        length: value.text.characters.length,
+                        missingWords: canWrite && words < kMinPartWords
+                            ? kMinPartWords - words
+                            : 0,
+                        sending: sending,
+                        onSend:
+                            canWrite && words >= kMinPartWords ? onSend : null,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -152,16 +159,21 @@ class ChatComposer extends StatelessWidget {
   }
 }
 
-/// The counter (from [ChatComposer.counterThreshold] characters on) and
-/// Send, disabled when [onSend] is null.
+/// How many words are still missing, or else the counter (from
+/// [ChatComposer.counterThreshold] characters on), and Send, disabled when
+/// [onSend] is null.
 class _Footer extends StatelessWidget {
   const _Footer({
     required this.length,
+    required this.missingWords,
     required this.sending,
     required this.onSend,
   });
 
   final int length;
+
+  /// Words to add before Send is enabled; 0 hides the hint.
+  final int missingWords;
   final bool sending;
   final VoidCallback? onSend;
 
@@ -174,21 +186,29 @@ class _Footer extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: length < ChatComposer.counterThreshold
-                ? const SizedBox.shrink()
-                : Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      l10n.chatCharacterCount(length, kMaxPartLength),
-                      style: TextStyle(
-                        color: atLimit
-                            ? AppColors.primaryDark
-                            : AppColors.ink.withValues(alpha: 0.75),
-                        fontSize: 13.0,
-                        fontWeight: atLimit ? FontWeight.w700 : null,
-                      ),
+            child: missingWords > 0
+                ? Text(
+                    l10n.chatWordsMissing(missingWords),
+                    style: TextStyle(
+                      color: AppColors.ink.withValues(alpha: 0.75),
+                      fontSize: 13.0,
                     ),
-                  ),
+                  )
+                : length < ChatComposer.counterThreshold
+                    ? const SizedBox.shrink()
+                    : Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          l10n.chatCharacterCount(length, kMaxPartLength),
+                          style: TextStyle(
+                            color: atLimit
+                                ? AppColors.primaryDark
+                                : AppColors.ink.withValues(alpha: 0.75),
+                            fontSize: 13.0,
+                            fontWeight: atLimit ? FontWeight.w700 : null,
+                          ),
+                        ),
+                      ),
           ),
           FilledButton.icon(
             onPressed: sending ? null : onSend,

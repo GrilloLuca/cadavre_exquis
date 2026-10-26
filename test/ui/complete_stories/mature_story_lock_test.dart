@@ -22,9 +22,11 @@ import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart'
 import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 
 import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 
 /// An [AgeSignalsSource] answering with [_answer] and counting its calls.
 class _FakeSource implements AgeSignalsSource {
@@ -198,6 +200,8 @@ void main() {
                 authRepository: auth,
               )),
         ),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>.value(
           value: UserProfileRepositoryFirestore(firestore: firestore),
         ),

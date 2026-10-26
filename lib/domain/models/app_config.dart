@@ -11,3 +11,7 @@ class AppConfig {
   /// with `--dart-define=MATURE_VISIBLE_TO_MINORS=false`.
   final bool matureVisibleToMinors;
 }
+
+/// Where players write for help and reports, shown in the profile and the
+/// terms of use. Must match hosting/support.html.
+const String kSupportEmail = 'grillo.luca@gmail.com';

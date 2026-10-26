@@ -10,6 +10,7 @@ import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 const _me = 'luca.grillo@gmail.com';
@@ -20,6 +21,7 @@ void main() {
   late FakeRoomRepository rooms;
   late FakeNotificationRepository notifications;
   late FakeAdsRepository ads;
+  late FakeSafetyRepository safety;
 
   setUp(() {
     profiles = FakeUserProfileRepository();
@@ -27,6 +29,7 @@ void main() {
     rooms = FakeRoomRepository();
     notifications = FakeNotificationRepository();
     ads = FakeAdsRepository();
+    safety = FakeSafetyRepository();
   });
 
   AccountViewModel create() => AccountViewModel(
@@ -35,7 +38,26 @@ void main() {
         roomRepository: rooms,
         notificationRepository: notifications,
         adsRepository: ads,
+        safetyRepository: safety,
       );
+
+  group('blocked players', () {
+    test('lists them by nickname or masked email, and unblocks', () async {
+      safety = FakeSafetyRepository(blocked: ['mario@example.com', 'zed@x.it']);
+      profiles = FakeUserProfileRepository(
+          nicknames: {'mario@example.com': 'Supermario'});
+      final viewModel = create();
+      await pumpEventQueue();
+
+      expect(viewModel.blockedKeys, ['mario@example.com', 'zed@x.it']);
+      expect(viewModel.blockedNameOf('mario@example.com'), 'Supermario');
+      expect(viewModel.blockedNameOf('zed@x.it'), 'ze***');
+
+      await viewModel.unblock.execute('mario@example.com');
+
+      expect(viewModel.blockedKeys, ['zed@x.it']);
+    });
+  });
 
   group('nickname', () {
     test('loads the stored nickname, which makes it read-only', () async {
