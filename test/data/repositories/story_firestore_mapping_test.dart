@@ -22,6 +22,33 @@ void main() {
         ('sviluppo1', 'hello', 'a@b.it'));
   });
 
+  test('a part removed by moderation is flagged, legacy parts are not', () {
+    final legacy = storyPartFromMap({
+      'position': 'introduzione',
+      'text': 'x',
+      'author': 'a@b.it',
+      'timestamp': Timestamp.fromDate(at),
+    });
+    final removed = storyPartFromMap({
+      'position': 'sviluppo1',
+      'text': '',
+      'author': 'a@b.it',
+      'timestamp': Timestamp.fromDate(at),
+      'removed': true,
+    });
+
+    expect(legacy.removed, isFalse);
+    expect(removed.removed, isTrue);
+    expect(
+        Story(
+          id: 's1',
+          status: 'incomplete',
+          currentPosition: 'sviluppo2',
+          parts: [legacy, removed],
+        ).lastPartRemoved,
+        isTrue);
+  });
+
   test('a stored story maps to the domain model with DateTime fields',
       () async {
     final firestore = FakeFirebaseFirestore();

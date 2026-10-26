@@ -4,6 +4,7 @@ import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/nickname.dart';
@@ -13,7 +14,7 @@ import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
 /// The profile tab: the user's nickname, their room, push notifications, ad
-/// privacy, signing out and deleting the account.
+/// privacy, the players they blocked, signing out and deleting the account.
 class AccountViewModel extends ChangeNotifier {
   /// Starts loading the nickname when someone is signed in.
   AccountViewModel({
@@ -22,7 +23,9 @@ class AccountViewModel extends ChangeNotifier {
     required RoomRepository roomRepository,
     required NotificationRepository notificationRepository,
     required AdsRepository adsRepository,
+    required SafetyRepository safetyRepository,
   })  : _profiles = profileRepository,
+        _safety = safetyRepository,
         _auth = authRepository,
         _rooms = roomRepository,
         _notifications = notificationRepository,
@@ -35,7 +38,10 @@ class AccountViewModel extends ChangeNotifier {
     enableNotifications =
         Command0<NotificationPermission>(_notifications.enable);
     showAdPrivacyOptions = Command0<void>(_ads.showPrivacyOptions);
+    unblock = Command1<void, String>(_safety.unblock);
     _rooms.addListener(notifyListeners);
+    _safety.addListener(_onBlockedChanged);
+    _loadBlockedNicknames();
     _notifications.addListener(notifyListeners);
     _ads.addListener(notifyListeners);
     if (email != null) loadNickname.execute();
@@ -46,6 +52,7 @@ class AccountViewModel extends ChangeNotifier {
   final RoomRepository _rooms;
   final NotificationRepository _notifications;
   final AdsRepository _ads;
+  final SafetyRepository _safety;
 
   /// The signed-in user, read once: signing out leaves this screen. Without
   /// one there is no nickname to show and no account to delete.
@@ -150,6 +157,44 @@ class AccountViewModel extends ChangeNotifier {
   /// Shows the ad consent form again.
   late final Command0<void> showAdPrivacyOptions;
 
+  // ---- Blocked players ----
+
+  /// The email keys of the players the user blocked, in a stable order.
+  List<String> get blockedKeys => _safety.blockedKeys.toList()..sort();
+
+  /// Nicknames of the blocked players, by email key, as far as loaded.
+  final Map<String, String> _blockedNicknames = {};
+
+  /// The name to show for the blocked player [key]: their nickname once
+  /// loaded, otherwise the masked email.
+  String blockedNameOf(String key) =>
+      authorDisplayName(nickname: _blockedNicknames[key], email: key) ?? key;
+
+  /// Unblocks the player with the given email key.
+  late final Command1<void, String> unblock;
+
+  bool _disposed = false;
+
+  void _onBlockedChanged() {
+    notifyListeners();
+    _loadBlockedNicknames();
+  }
+
+  /// Looks up the nicknames not loaded yet. Never fails: without one the
+  /// masked email is shown.
+  Future<void> _loadBlockedNicknames() async {
+    final missing = _safety.blockedKeys
+        .where((key) => !_blockedNicknames.containsKey(key))
+        .toList();
+    if (missing.isEmpty) return;
+    try {
+      final found = await _profiles.nicknamesFor(missing);
+      if (_disposed || found.isEmpty) return;
+      _blockedNicknames.addAll(found);
+      notifyListeners();
+    } catch (_) {}
+  }
+
   // ---- Account ----
 
   /// Whether the user signs in with a password, which they must enter again
@@ -186,6 +231,9 @@ class AccountViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _safety.removeListener(_onBlockedChanged);
+    unblock.dispose();
     _rooms.removeListener(notifyListeners);
     _notifications.removeListener(notifyListeners);
     _ads.removeListener(notifyListeners);

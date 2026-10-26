@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/domain/models/author_name.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
+import 'package:cadavre_exquisite/ui/core/view_models/part_safety_actions.dart';
 import 'package:cadavre_exquisite/utils/command.dart';
 
 /// State and actions of the chat screen, where the signed-in user writes the
@@ -22,7 +24,8 @@ import 'package:cadavre_exquisite/utils/command.dart';
 /// knowing someone continued the story is obviously useful.
 ///
 /// Also looks up the nickname of whoever wrote the previous part
-/// ([loadPreviousAuthor]), shown above its last words.
+/// ([loadPreviousAuthor]), shown above its last words, which the user can
+/// report or whose author they can block ([safety]).
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
     required this.story,
@@ -30,10 +33,16 @@ class ChatViewModel extends ChangeNotifier {
     required AuthRepository authRepository,
     required NotificationRepository notificationRepository,
     required UserProfileRepository profileRepository,
+    required SafetyRepository safetyRepository,
   })  : _stories = storyRepository,
         _auth = authRepository,
         _notifications = notificationRepository,
-        _profiles = profileRepository {
+        _profiles = profileRepository,
+        safety = PartSafetyActions(
+          storyId: story.id,
+          safetyRepository: safetyRepository,
+          authRepository: authRepository,
+        ) {
     lock = Command0<void>(_lock)..execute();
     loadPreviousAuthor = Command0<void>(_loadPreviousAuthor)..execute();
     submit = Command1<bool, String>(_submit);
@@ -46,6 +55,9 @@ class ChatViewModel extends ChangeNotifier {
   final NotificationRepository _notifications;
   final UserProfileRepository _profiles;
 
+  /// Reporting the previous part and blocking its author.
+  final PartSafetyActions safety;
+
   /// Takes the story's lock. Started by the constructor; fails with a
   /// [StoryException] if the story can't be written now.
   late final Command0<void> lock;
@@ -55,7 +67,8 @@ class ChatViewModel extends ChangeNotifier {
   late final Command0<void> loadPreviousAuthor;
 
   /// Submits the text as the next part. Its value is true once the part is
-  /// stored, false if there was nothing to send.
+  /// stored, false if there was nothing to send (fewer than
+  /// [kMinPartWords] words, or no lock).
   late final Command1<bool, String> submit;
 
   /// Turns notifications on (true: the system prompt follows) or puts the
@@ -115,7 +128,7 @@ class ChatViewModel extends ChangeNotifier {
   Future<bool> _submit(String text) async {
     final trimmed = text.trim();
     final email = _lockHolder;
-    if (trimmed.isEmpty || email == null) return false;
+    if (wordCount(trimmed) < kMinPartWords || email == null) return false;
 
     await _stories.submitPart(
       storyId: story.id,
@@ -164,6 +177,7 @@ class ChatViewModel extends ChangeNotifier {
     loadPreviousAuthor.dispose();
     submit.dispose();
     answerNotificationOffer.dispose();
+    safety.dispose();
     super.dispose();
   }
 }

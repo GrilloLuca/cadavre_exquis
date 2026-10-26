@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/models/story_search.dart';
@@ -42,12 +43,14 @@ class CompleteStoriesViewModel extends ChangeNotifier {
   CompleteStoriesViewModel({
     required StoryRepository storyRepository,
     required AuthRepository authRepository,
+    required SafetyRepository safetyRepository,
     required AgeGate ageGate,
     required String language,
     String? roomId,
     DateTime Function()? now,
     bool matureVisibleToMinors = true,
   })  : _stories = storyRepository,
+        _safety = safetyRepository,
         _email = authRepository.currentEmail,
         _language = language,
         _roomId = roomId {
@@ -60,11 +63,15 @@ class CompleteStoriesViewModel extends ChangeNotifier {
     );
     unlock = Command1<UnlockResult, Story>(_access.unlock);
     submitBirthYear = Command1<UnlockResult, int>(_access.submitBirthYear);
+    _safety.addListener(notifyListeners);
     _subscribe();
     _access.loadBirthYear();
   }
 
   final StoryRepository _stories;
+
+  /// Stories with a part by an author the user blocked are never listed.
+  final SafetyRepository _safety;
 
   /// The mature-story gate: tile states, the stored-year read and the
   /// unlock flow.
@@ -148,8 +155,10 @@ class CompleteStoriesViewModel extends ChangeNotifier {
     final others = <Story>[];
     // One pass keeps the repository's order inside both groups. The review
     // check comes first: the query must never see unreviewed stories.
+    final blocked = _safety.blockedKeys;
     for (final story in _all ?? const <Story>[]) {
       if (story.awaitingReview) continue;
+      if (story.hasPartByAnyOf(blocked)) continue;
       if (!_access.isListed(story)) continue;
       if (!query.matches(story)) continue;
       (story.hasPartBy(_email) ? mine : others).add(story);
@@ -206,6 +215,7 @@ class CompleteStoriesViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _safety.removeListener(notifyListeners);
     _access.dispose();
     _subscription?.cancel();
     unlock.dispose();

@@ -105,6 +105,10 @@ service cloud.firestore {
       // reviewCompletedStory: `title`, `mature`, `reviewedAt` and the last
       // part's `partReviews`; extractStoryKeywords, which also runs on the
       // completing part):
+      // reviewReport also rewrites `parts` to remove a reported part (empty
+      // `text`, `removed: true`) and clears `keywords`; clients send the
+      // earlier parts back as read, so the `parts[0:n]` check below keeps
+      // passing.
       // clients can't write them because they're missing from the `hasOnly`
       // lists here, in isValidLockChange and in isValidCreate. A client
       // transaction sends back the earlier parts as read and doesn't list
@@ -248,6 +252,55 @@ service cloud.firestore {
       allow read: if false;
       allow create, update: if signedIn() && isValidToken();
       allow delete: if signedIn() && resource.data.emailKey == myEmail().lower();
+    }
+
+    // ---------------------------------------------------------------------
+    // reports/{reportId}  (SafetyRepository)
+    // ---------------------------------------------------------------------
+    // A player reports one part of a story. Only the Cloud Functions read
+    // reports: reviewReport has Gemini review the part and removes it if
+    // it breaks the terms (functions/src/reports.ts).
+    // moderateStoryPart also files one (reason "nonsense", already
+    // reviewed) on a part that makes no sense, with the Admin SDK: players
+    // can't use that reason (`nonsenseReport` in functions/src/moderation.ts).
+    match /reports/{reportId} {
+      // Must match ReportReason in lib/domain/models/content_report.dart.
+      function reportReasons() {
+        return ['offensive', 'sexual', 'harassment', 'spam', 'other'];
+      }
+
+      allow read, update, delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['storyId', 'position', 'reason', 'reporterKey', 'createdAt'])
+        && request.resource.data.storyId is string
+        && exists(/databases/$(database)/documents/stories/$(request.resource.data.storyId))
+        && request.resource.data.position in ['introduzione', 'sviluppo1', 'sviluppo2', 'epilogo']
+        && request.resource.data.reason in reportReasons()
+        && request.resource.data.reporterKey == myEmail().lower()
+        && request.resource.data.createdAt == request.time;
+    }
+
+    // ---------------------------------------------------------------------
+    // userBlocks/{emailKey}  (SafetyRepository)
+    // ---------------------------------------------------------------------
+    // The email keys of the players a user blocked, whose stories the app
+    // hides from them. Private to its owner; deleted with the account by
+    // anonymizeDeletedUser.
+    match /userBlocks/{emailKey} {
+      function isOwner() {
+        return signedIn() && myEmail().lower() == emailKey;
+      }
+
+      function isValidBlocks() {
+        return request.resource.data.keys().hasOnly(['blocked', 'updatedAt'])
+          && request.resource.data.blocked is list
+          && request.resource.data.blocked.size() <= 500
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      allow get: if isOwner();
+      allow list, delete: if false;
+      allow create, update: if isOwner() && isValidBlocks();
     }
 
     // Everything else (including the legacy `chapters` collection) is closed.

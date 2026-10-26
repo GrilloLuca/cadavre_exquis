@@ -10,6 +10,7 @@ import 'package:cadavre_exquisite/ui/core/view_models/mature_story_access.dart';
 
 import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 
 const _me = 'me@example.com';
@@ -57,11 +58,13 @@ void main() {
   late _Source source;
   late FakeAgeCheckRepository ages;
   late AgeGate gate;
+  late FakeSafetyRepository safety;
 
   setUp(() {
     source = _Source(AgeSignal.adult);
     ages = FakeAgeCheckRepository();
     gate = AgeGate(signals: source, storage: ages, clock: () => now);
+    safety = FakeSafetyRepository();
   });
 
   Future<CompleteStoriesViewModel> create(
@@ -71,6 +74,7 @@ void main() {
     final viewModel = CompleteStoriesViewModel(
       storyRepository: FakeStoryRepository(stories: stories),
       authRepository: FakeAuthRepository(email: _me),
+      safetyRepository: safety,
       ageGate: gate,
       language: 'en',
       now: () => now,
@@ -81,6 +85,20 @@ void main() {
   }
 
   List<String> ids(List<Story> stories) => [for (final s in stories) s.id];
+
+  test("hides stories with a blocked author's part, as soon as blocked",
+      () async {
+    final viewModel = await create([
+      story('clean'),
+      story('theirs', author: 'Troll@Example.com'),
+    ]);
+    expect(viewModel.sections.others.map((s) => s.id), ['clean', 'theirs']);
+
+    await safety.block('troll@example.com');
+
+    expect(viewModel.sections.others.map((s) => s.id), ['clean']);
+    expect(viewModel.totalCounts.others, 1);
+  });
 
   group('search', () {
     // Newest completed first: o1, m1, o2, m2, o3.
@@ -184,6 +202,7 @@ void main() {
           story('it2', title: 'La luna', language: 'it'),
         ]),
         authRepository: FakeAuthRepository(email: _me),
+        safetyRepository: safety,
         ageGate: gate,
         language: 'en',
         now: () => now,
@@ -308,8 +327,8 @@ void main() {
         () async {
       ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
       gate = AgeGate(signals: source, storage: ages, clock: () => now);
-      final viewModel = await create([withMature().first],
-          matureVisibleToMinors: false);
+      final viewModel =
+          await create([withMature().first], matureVisibleToMinors: false);
 
       expect(viewModel.isLoaded, isTrue);
       expect(viewModel.totalCounts, (mine: 0, others: 0));
@@ -482,6 +501,7 @@ void main() {
     final failing = CompleteStoriesViewModel(
       storyRepository: FakeStoryRepository(stories: [mature]),
       authRepository: FakeAuthRepository(email: _me),
+      safetyRepository: safety,
       ageGate: gate,
       language: 'en',
     );

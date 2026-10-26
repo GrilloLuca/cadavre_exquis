@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
@@ -15,6 +16,7 @@ import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
 void main() {
@@ -38,6 +40,8 @@ void main() {
             create: (_) => FakeAdsRepository()),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
         ChangeNotifierProvider<AuthRepository>.value(value: auth),

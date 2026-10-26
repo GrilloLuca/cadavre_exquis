@@ -19,7 +19,8 @@ const {
   partReviewFields,
   partsToReview,
   partToModerate,
-  partVerdictFrom,
+  nonsenseReport,
+  partReviewFrom,
   RETRY_CAP_MS,
   reviewCompletion,
   shouldRetry,
@@ -29,34 +30,73 @@ const POSITIONS = ["introduzione", "sviluppo1", "sviluppo2", "epilogo"];
 const part = (i, author = "ada@x.com") => ({ position: POSITIONS[i], text: `parte ${i}`, author });
 const partsUpTo = (n) => POSITIONS.slice(0, n).map((_, i) => part(i));
 
-// --- B1: partVerdictFrom -------------------------------------------------
+// --- B1: partReviewFrom --------------------------------------------------
 
 test("the shared criterion keeps the conservative bar", () => {
   assert.match(MATURE_CRITERION, /^unsuitable for a 10-year-old: /);
   assert.match(MATURE_CRITERION, /When unsure, answer true\.$/);
 });
 
-test("partVerdictFrom treats a blocked prompt as mature", () => {
+const SAFE = { verdict: "safe", nonsense: false };
+const MATURE = { verdict: "mature", nonsense: false };
+const NONSENSE = { verdict: "safe", nonsense: true };
+
+test("partReviewFrom treats a blocked prompt as mature", () => {
   const response = { promptFeedback: { blockReason: BlockedReason.SAFETY }, text: undefined };
-  assert.equal(partVerdictFrom(response), "mature");
+  assert.deepEqual(partReviewFrom(response), MATURE);
 });
 
-test("partVerdictFrom treats a SAFETY finish as mature", () => {
+test("partReviewFrom treats a SAFETY finish as mature", () => {
   const response = { candidates: [{ finishReason: FinishReason.SAFETY }], text: undefined };
-  assert.equal(partVerdictFrom(response), "mature");
+  assert.deepEqual(partReviewFrom(response), MATURE);
 });
 
-test("partVerdictFrom maps the model's verdict", () => {
+test("partReviewFrom maps the model's verdict and nonsense flag", () => {
   const ok = { candidates: [{ finishReason: FinishReason.STOP }] };
-  assert.equal(partVerdictFrom({ ...ok, text: '{"mature":false}' }), "safe");
-  assert.equal(partVerdictFrom({ ...ok, text: '{"mature":true}' }), "mature");
+  assert.deepEqual(partReviewFrom({ ...ok, text: '{"mature":false,"nonsense":false}' }), SAFE);
+  assert.deepEqual(partReviewFrom({ ...ok, text: '{"mature":true,"nonsense":false}' }), MATURE);
+  assert.deepEqual(partReviewFrom({ ...ok, text: '{"mature":false,"nonsense":true}' }), NONSENSE);
 });
 
-test("partVerdictFrom throws on a malformed response", () => {
-  assert.throws(() => partVerdictFrom({ text: "{}" }), /Unexpected part review response/);
-  assert.throws(() => partVerdictFrom({ text: undefined }), /Unexpected part review response/);
-  assert.throws(() => partVerdictFrom({ text: '{"mature":"yes"}' }), /Unexpected part review response/);
-  assert.throws(() => partVerdictFrom({ text: "not json" }));
+test("partReviewFrom reads a missing or malformed nonsense as false", () => {
+  assert.deepEqual(partReviewFrom({ text: '{"mature":false}' }), SAFE);
+  assert.deepEqual(partReviewFrom({ text: '{"mature":false,"nonsense":"yes"}' }), SAFE);
+});
+
+test("partReviewFrom throws on a malformed response", () => {
+  assert.throws(() => partReviewFrom({ text: "{}" }), /Unexpected part review response/);
+  assert.throws(() => partReviewFrom({ text: undefined }), /Unexpected part review response/);
+  assert.throws(() => partReviewFrom({ text: '{"mature":"yes"}' }), /Unexpected part review response/);
+  assert.throws(() => partReviewFrom({ text: "not json" }));
+});
+
+// --- nonsenseReport ------------------------------------------------------
+
+test("nonsenseReport files a reviewed report with the part's text and author", () => {
+  const data = { parts: [{ position: "introduzione", text: "ijhodfaxòklo", author: "ada@x.com" }] };
+  const report = nonsenseReport("s1", "introduzione", data);
+  assert.equal(report.id, "nonsense_s1_introduzione");
+  const { createdAt, review, ...fields } = report.fields;
+  assert.deepEqual(fields, {
+    storyId: "s1",
+    position: "introduzione",
+    reason: "nonsense",
+    reporterKey: "ai",
+    reportedText: "ijhodfaxòklo",
+    reportedAuthor: "ada@x.com",
+  });
+  assert.ok(createdAt.isEqual(FieldValue.serverTimestamp()));
+  assert.equal(review.outcome, "nonsense");
+  assert.ok(review.reviewedAt.isEqual(FieldValue.serverTimestamp()));
+});
+
+test("nonsenseReport files nothing for a missing, empty or removed part", () => {
+  assert.equal(nonsenseReport("s1", "introduzione", undefined), undefined);
+  assert.equal(nonsenseReport("s1", "sviluppo1", { parts: partsUpTo(1) }), undefined);
+  assert.equal(
+    nonsenseReport("s1", "introduzione", { parts: [{ position: "introduzione", text: "", removed: true }] }),
+    undefined,
+  );
 });
 
 // --- B2: canSavePartReview / partReviewFields ----------------------------
@@ -361,10 +401,10 @@ function partDeps(overrides = {}) {
     read: async () => ({ status: "incomplete", parts: partsUpTo(2), partReviews: { introduzione: "safe" } }),
     review: async () => {
       calls.review++;
-      return "safe";
+      return SAFE;
     },
-    save: async (verdict) => {
-      calls.save.push(verdict);
+    save: async (review) => {
+      calls.save.push(review);
       return true;
     },
     notify: async () => {
@@ -382,12 +422,22 @@ const partJob = { storyId: "s1", position: "sviluppo1", text: "parte 1", languag
 test("moderatePart stores the verdict and then notifies", async () => {
   const { deps, calls, lines } = partDeps();
   await moderatePart(partJob, deps);
-  assert.deepEqual(calls, { review: 1, save: ["safe"], notify: 1 });
+  assert.deepEqual(calls, { review: 1, save: [SAFE], notify: 1 });
   assert.deepEqual(lines, []);
 });
 
+test("moderatePart logs a nonsense part the save reported, and still notifies", async () => {
+  const { deps, calls, lines } = partDeps({ review: async () => NONSENSE });
+  await moderatePart(partJob, deps);
+  assert.deepEqual(calls.save, [NONSENSE]);
+  assert.equal(calls.notify, 1);
+  assert.deepEqual(lines.map((l) => [l.severity, l.message, l.details]), [
+    ["warn", "Nonsense part reported", { storyId: "s1", position: "sviluppo1" }],
+  ]);
+});
+
 test("moderatePart notifies for a mature verdict too", async () => {
-  const { deps, calls } = partDeps({ review: async () => "mature" });
+  const { deps, calls } = partDeps({ review: async () => MATURE });
   await moderatePart(partJob, deps);
   assert.equal(calls.notify, 1);
 });
@@ -435,7 +485,7 @@ test("moderatePart gives up quietly once the event is past the cap", async () =>
 test("moderatePart logs a notification error instead of throwing", async () => {
   const { deps, calls, lines } = partDeps({ notify: async () => Promise.reject(new Error("fcm")) });
   await moderatePart(partJob, deps);
-  assert.deepEqual(calls.save, ["safe"]);
+  assert.deepEqual(calls.save, [SAFE]);
   assert.deepEqual(lines.map((l) => l.message), ["Story continued notification failed"]);
 });
 
@@ -453,10 +503,10 @@ function completionDeps(overrides = {}) {
     },
     reviewPart: async (text) => {
       calls.reviewPart.push(text);
-      return "mature";
+      return MATURE;
     },
-    save: async (review, partVerdict) => {
-      calls.save.push([review, partVerdict]);
+    save: async (review, partReview) => {
+      calls.save.push([review, partReview]);
       return true;
     },
     notify: async () => {
@@ -476,9 +526,19 @@ test("reviewCompletion reviews the story and its last part, stores both, then no
   await reviewCompletion(completionJob, deps);
   assert.equal(calls.reviewStory, 1);
   assert.deepEqual(calls.reviewPart, ["parte 3"]);
-  assert.deepEqual(calls.save, [[{ title: "Il drago", mature: false }, "mature"]]);
+  assert.deepEqual(calls.save, [[{ title: "Il drago", mature: false }, MATURE]]);
   assert.equal(calls.notify, 1);
   assert.deepEqual(lines, []);
+});
+
+test("reviewCompletion logs a nonsense last part the save reported", async () => {
+  const { deps, calls, lines } = completionDeps({ reviewPart: async () => NONSENSE });
+  await reviewCompletion(completionJob, deps);
+  assert.deepEqual(calls.save, [[{ title: "Il drago", mature: false }, NONSENSE]]);
+  assert.equal(calls.notify, 1);
+  assert.deepEqual(lines.map((l) => [l.severity, l.message, l.details]), [
+    ["warn", "Nonsense part reported", { storyId: "s1", position: "epilogo" }],
+  ]);
 });
 
 test("reviewCompletion skips the part call when the last part has a verdict", async () => {

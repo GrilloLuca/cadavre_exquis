@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/ui/chat/view_models/chat_view_model.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
@@ -18,6 +19,7 @@ void main() {
   late FakeAuthRepository auth;
   late FakeNotificationRepository notifications;
   late FakeUserProfileRepository profiles;
+  late FakeSafetyRepository safety;
 
   Story newStory({String? lockedBy}) => Story(
         id: 's1',
@@ -35,6 +37,7 @@ void main() {
     auth = FakeAuthRepository(email: _me);
     notifications = FakeNotificationRepository();
     profiles = FakeUserProfileRepository(nicknames: const {_other: 'Lupo'});
+    safety = FakeSafetyRepository();
   });
 
   ChatViewModel create() => ChatViewModel(
@@ -43,6 +46,7 @@ void main() {
         authRepository: auth,
         notificationRepository: notifications,
         profileRepository: profiles,
+        safetyRepository: safety,
       );
 
   test('locks the story on creation, then lets the user write', () async {
@@ -83,11 +87,11 @@ void main() {
     final viewModel = create();
     await pumpEventQueue();
 
-    await viewModel.submit.execute('  Once upon a time  ');
+    await viewModel.submit.execute('  Once upon a time there  ');
 
     expect(viewModel.submit.value, isTrue);
     final stored = stories.stories['s1']!;
-    expect(stored.parts.single.text, 'Once upon a time');
+    expect(stored.parts.single.text, 'Once upon a time there');
     expect(stored.parts.single.author, _me);
     expect(stored.currentPosition, kStoryPositions[1]);
     expect(stored.lockedBy, isNull);
@@ -105,12 +109,24 @@ void main() {
     expect(viewModel.canWrite, isTrue);
   });
 
+  test('fewer than five words send nothing', () async {
+    final viewModel = create();
+    await pumpEventQueue();
+
+    await viewModel.submit.execute('ijhodfaxòklo');
+    await viewModel.submit.execute(' once upon a\ntime ');
+
+    expect(viewModel.submit.value, isFalse);
+    expect(stories.stories['s1']!.parts, isEmpty);
+    expect(viewModel.canWrite, isTrue);
+  });
+
   test('a failed submit keeps the lock so the user can retry', () async {
     final viewModel = create();
     await pumpEventQueue();
     stories.failWith = const StoryException(StoryErrorCode.positionTaken);
 
-    await viewModel.submit.execute('hello');
+    await viewModel.submit.execute('hello there my dear friend');
 
     expect(viewModel.submit.error, isA<StoryException>());
     expect(viewModel.canWrite, isTrue);
@@ -130,7 +146,7 @@ void main() {
   test('dispose after submitting does not touch the story', () async {
     final viewModel = create();
     await pumpEventQueue();
-    await viewModel.submit.execute('hello');
+    await viewModel.submit.execute('hello there my dear friend');
     // Someone else takes the next turn, once reviewed, before the screen
     // closes.
     stories.review('s1');
@@ -212,7 +228,7 @@ void main() {
       await pumpEventQueue();
       expect(viewModel.offerNotifications, isFalse);
 
-      await viewModel.submit.execute('hello');
+      await viewModel.submit.execute('hello there my dear friend');
 
       expect(viewModel.offerNotifications, isTrue);
       await viewModel.answerNotificationOffer.execute(true);
@@ -228,7 +244,7 @@ void main() {
       );
       final viewModel = create();
       await pumpEventQueue();
-      await viewModel.submit.execute('hello');
+      await viewModel.submit.execute('hello there my dear friend');
 
       await viewModel.answerNotificationOffer.execute(false);
 
@@ -244,7 +260,7 @@ void main() {
       final viewModel = create();
       await pumpEventQueue();
 
-      await viewModel.submit.execute('hello');
+      await viewModel.submit.execute('hello there my dear friend');
 
       expect(viewModel.submit.value, isTrue);
       expect(viewModel.offerNotifications, isFalse);

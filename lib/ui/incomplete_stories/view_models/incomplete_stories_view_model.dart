@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
@@ -44,6 +45,7 @@ enum IncompleteStoryStatus {
 /// list, via [MatureStoryAccess]: locked for unknown age ([unlock], then
 /// [submitBirthYear] or [cancelBirthYear]), unavailable to known minors,
 /// or not listed for them at all when [matureVisibleToMinors] is false.
+/// Stories with a part by an author the user blocked are never listed.
 class IncompleteStoriesViewModel extends ChangeNotifier {
   /// [now] decides whether a lock has expired and adulthood from a stored
   /// birth year; tests pass a fixed clock. [matureVisibleToMinors]: see
@@ -51,6 +53,7 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
   IncompleteStoriesViewModel({
     required StoryRepository storyRepository,
     required AuthRepository authRepository,
+    required SafetyRepository safetyRepository,
     required AgeGate ageGate,
     required String language,
     String? roomId,
@@ -58,6 +61,7 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
     bool matureVisibleToMinors = true,
   })  : _stories = storyRepository,
         _auth = authRepository,
+        _safety = safetyRepository,
         _now = now ?? DateTime.now,
         _language = language,
         _roomId = roomId {
@@ -73,12 +77,14 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
         (story) async => _latest(await _access.unlock(story)));
     submitBirthYear = Command1<UnlockResult, int>(
         (year) async => _latest(await _access.submitBirthYear(year)));
+    _safety.addListener(notifyListeners);
     _subscribe();
     _access.loadBirthYear();
   }
 
   final StoryRepository _stories;
   final AuthRepository _auth;
+  final SafetyRepository _safety;
   final DateTime Function() _now;
 
   /// The mature-story gate: tile states, the stored-year read and the
@@ -109,9 +115,15 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
 
   /// The room's incomplete stories, least written first. Null until the
   /// first list arrives. Leaves out the mature stories hidden from a known
-  /// minor ([MatureTileState.hidden]), so an empty result shows the empty
-  /// state.
-  List<Story>? get stories => _list?.where(_access.isListed).toList();
+  /// minor ([MatureTileState.hidden]) and those with a part by a blocked
+  /// author, so an empty result shows the empty state.
+  List<Story>? get stories {
+    final blocked = _safety.blockedKeys;
+    return _list
+        ?.where((story) =>
+            _access.isListed(story) && !story.hasPartByAnyOf(blocked))
+        .toList();
+  }
 
   /// Switches to the room identified by [language]/[roomId]: the private
   /// room [roomId] when given, otherwise the public [language] room.
@@ -213,6 +225,7 @@ class IncompleteStoriesViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _safety.removeListener(notifyListeners);
     _access.dispose();
     _subscription?.cancel();
     createStory.dispose();

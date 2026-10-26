@@ -18,11 +18,13 @@ import 'package:cadavre_exquisite/domain/models/story_notification.dart';
 import 'package:cadavre_exquisite/ui/account/widgets/account_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 
 import '../../../testing/fakes/repositories/fake_ads_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 
 const _email = 'Luca.Grillo@Gmail.com';
 const _docId = 'luca.grillo@gmail.com';
@@ -82,6 +84,8 @@ void main() {
               create: (_) => ads ?? FakeAdsRepository()),
           ChangeNotifierProvider<NotificationRepository>(
               create: (_) => notifications ?? FakeNotificationRepository()),
+          ChangeNotifierProvider<SafetyRepository>(
+              create: (_) => FakeSafetyRepository()),
           Provider<UserProfileRepository>.value(value: service),
           ChangeNotifierProvider<AuthRepository>(
               create: (_) => FakeAuthRepository(email: email)),

@@ -476,6 +476,12 @@ abstract class AppLocalizations {
   /// **'{count}/{max}'**
   String chatCharacterCount(int count, int max);
 
+  /// Under the writing field while the part has fewer than the minimum 5 words; Send is disabled until then.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =1{Manca ancora 1 parola} other{Mancano ancora {count} parole}}'**
+  String chatWordsMissing(int count);
+
   /// Snackbar after a part other than the last one is sent and the writing screen closes.
   ///
   /// In it, this message translates to:
@@ -1003,6 +1009,150 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Argomenti: {keywords}'**
   String storyKeywordsSemantics(String keywords);
+
+  /// No description provided for @partSafetyMenuTooltip.
+  ///
+  /// In it, this message translates to:
+  /// **'Segnala o blocca'**
+  String get partSafetyMenuTooltip;
+
+  /// No description provided for @reportPartMenuItem.
+  ///
+  /// In it, this message translates to:
+  /// **'Segnala questa parte'**
+  String get reportPartMenuItem;
+
+  /// No description provided for @blockAuthorMenuItem.
+  ///
+  /// In it, this message translates to:
+  /// **'Blocca {name}'**
+  String blockAuthorMenuItem(Object name);
+
+  /// No description provided for @reportReasonTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Perché la segnali?'**
+  String get reportReasonTitle;
+
+  /// No description provided for @reportReasonOffensive.
+  ///
+  /// In it, this message translates to:
+  /// **'Offensiva o di odio'**
+  String get reportReasonOffensive;
+
+  /// No description provided for @reportReasonSexual.
+  ///
+  /// In it, this message translates to:
+  /// **'Contenuti sessuali'**
+  String get reportReasonSexual;
+
+  /// No description provided for @reportReasonHarassment.
+  ///
+  /// In it, this message translates to:
+  /// **'Molestie o bullismo'**
+  String get reportReasonHarassment;
+
+  /// No description provided for @reportReasonSpam.
+  ///
+  /// In it, this message translates to:
+  /// **'Spam'**
+  String get reportReasonSpam;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In it, this message translates to:
+  /// **'Altro'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportSentSnackbar.
+  ///
+  /// In it, this message translates to:
+  /// **'Grazie della segnalazione. La esamineremo entro 24 ore.'**
+  String get reportSentSnackbar;
+
+  /// No description provided for @blockAuthorTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Bloccare {name}?'**
+  String blockAuthorTitle(Object name);
+
+  /// No description provided for @blockAuthorMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'Non vedrai più le storie con parti scritte da {name}. Puoi annullare il blocco nel Profilo.'**
+  String blockAuthorMessage(Object name);
+
+  /// No description provided for @blockAuthorConfirmButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Blocca'**
+  String get blockAuthorConfirmButton;
+
+  /// No description provided for @authorBlockedSnackbar.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai bloccato {name}.'**
+  String authorBlockedSnackbar(Object name);
+
+  /// No description provided for @blockedAuthorsTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Giocatori bloccati'**
+  String get blockedAuthorsTitle;
+
+  /// No description provided for @blockedAuthorsEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Non hai bloccato nessuno.'**
+  String get blockedAuthorsEmpty;
+
+  /// No description provided for @unblockButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca'**
+  String get unblockButton;
+
+  /// No description provided for @supportContact.
+  ///
+  /// In it, this message translates to:
+  /// **'Serve aiuto o vuoi segnalare un giocatore o una storia? Scrivi a {email}'**
+  String supportContact(Object email);
+
+  /// No description provided for @termsNotice.
+  ///
+  /// In it, this message translates to:
+  /// **'Continuando accetti le condizioni d\'uso. Non sono tollerati contenuti offensivi, d\'odio, sessuali o abusivi.'**
+  String get termsNotice;
+
+  /// No description provided for @termsButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Condizioni d\'uso'**
+  String get termsButton;
+
+  /// No description provided for @termsTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Condizioni d\'uso'**
+  String get termsTitle;
+
+  /// No description provided for @termsBody.
+  ///
+  /// In it, this message translates to:
+  /// **'Cadavre Exquisite è un gioco in cui si scrivono storie insieme. Usandolo accetti queste condizioni.\n\n• Non scrivere contenuti offensivi, d\'odio, sessuali, violenti o abusivi, non molestare gli altri giocatori e non condividere dati personali. Non c\'è tolleranza per i contenuti inappropriati né per chi si comporta in modo abusivo.\n• Ogni parte viene controllata automaticamente, e puoi segnalare qualsiasi parte o bloccarne l\'autore dal menu accanto. Esaminiamo le segnalazioni entro 24 ore: rimuoviamo i contenuti che violano queste condizioni e chiudiamo gli account di chi li ha scritti.\n• Sei responsabile di ciò che scrivi. Le parti che scrivi restano nelle loro storie, come Anonimo se elimini l\'account.\n\nDomande o segnalazioni: {email}'**
+  String termsBody(Object email);
+
+  /// No description provided for @closeButton.
+  ///
+  /// In it, this message translates to:
+  /// **'Chiudi'**
+  String get closeButton;
+
+  /// No description provided for @partRemovedByModeration.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa parte è stata rimossa dalla moderazione.'**
+  String get partRemovedByModeration;
 }
 
 class _AppLocalizationsDelegate

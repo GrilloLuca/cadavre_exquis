@@ -5,8 +5,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
@@ -19,9 +20,10 @@ import 'package:cadavre_exquisite/ui/complete_stories/widgets/complete_stories_s
 import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/story_read/widgets/story_read_screen.dart';
 
-import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_ads_repository.dart';
+import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
@@ -150,9 +152,10 @@ void main() {
             create: (_) => FakeAdsRepository()),
         Provider<StoryRepository>.value(value: stories),
         Provider<AppConfig>.value(
-            value:
-                AppConfig(matureVisibleToMinors: matureVisibleToMinors)),
+            value: AppConfig(matureVisibleToMinors: matureVisibleToMinors)),
         Provider<AgeGate>.value(value: gate),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
       ],

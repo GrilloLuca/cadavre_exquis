@@ -8,6 +8,7 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
 import 'package:cadavre_exquisite/ui/core/position_label.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 import 'package:cadavre_exquisite/ui/chat/widgets/chat_screen.dart';
@@ -52,6 +53,7 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
     _viewModel = IncompleteStoriesViewModel(
       storyRepository: context.read<StoryRepository>(),
       authRepository: context.read<AuthRepository>(),
+      safetyRepository: context.read<SafetyRepository>(),
       ageGate: context.read<AgeGate>(),
       language: widget.language,
       roomId: widget.roomId,
@@ -253,7 +255,9 @@ class _IncompleteStoriesScreenState extends State<IncompleteStoriesScreen> {
         leading = const Icon(Icons.edit_note);
         subtitle = story.parts.isEmpty
             ? l10n.storyNotStarted
-            : '"...${story.lastFiveWords}"';
+            : story.lastPartRemoved
+                ? l10n.partRemovedByModeration
+                : '"...${story.lastFiveWords}"';
         if (mature == MatureTileState.unlocked) {
           trailing = Icon(
             Icons.lock_open,

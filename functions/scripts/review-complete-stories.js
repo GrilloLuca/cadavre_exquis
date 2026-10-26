@@ -73,7 +73,7 @@ async function main() {
     candidates++;
     try {
       const last = lastPartToReview(data);
-      const [review, partVerdict] = await Promise.all([
+      const [review, partReview] = await Promise.all([
         reviewStory(data),
         last ? reviewPart(last.text, data.language) : Promise.resolve(undefined),
       ]);
@@ -82,9 +82,9 @@ async function main() {
         { mature: data.mature ?? null, title: data.title ?? null },
         "→",
         review,
-        last ? { position: last.position, verdict: partVerdict } : "last part already reviewed",
+        last ? { position: last.position, ...partReview } : "last part already reviewed",
       );
-      if (write && !(await saveCompletionReview(doc.id, review, partVerdict))) {
+      if (write && !(await saveCompletionReview(doc.id, review, partReview))) {
         console.log(doc.id, "reviewed meanwhile, not saved");
         skipped++;
         continue;

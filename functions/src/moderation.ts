@@ -25,6 +25,13 @@ import { keywordsPartCountFor } from "./keywords";
 // older than [RETRY_CAP_MS]. Then they log "Part review gave up" / "Story
 // review gave up" and the backfill scripts are the last resort. See
 // docs/PART_MODERATION_PLAN.md.
+//
+// The part review also tells whether the part makes no sense (keyboard
+// mashing, a lone "oh"): such a part is reported automatically, in the
+// same transaction that stores its verdict, with a report that is already
+// reviewed (outcome "nonsense", see [nonsenseReport]), so reviewReport
+// skips it and the part stays in the story. It's a record for the
+// moderators, logged as "Nonsense part reported".
 
 /**
  * What makes a text unsuitable for children, shared by the story review
@@ -45,6 +52,12 @@ export type PartVerdict = "safe" | "mature";
 
 const PART_VERDICTS: readonly unknown[] = ["safe", "mature"];
 
+/** What the part review decided: [verdict] and whether it makes no sense. */
+export interface PartReview {
+  verdict: PartVerdict;
+  nonsense: boolean;
+}
+
 // The last five words of a part are shown to anyone in the room, so a
 // single part is judged on its own, without the rest of the story.
 const PART_REVIEW_INSTRUCTION = (language: string) =>
@@ -52,44 +65,55 @@ const PART_REVIEW_INSTRUCTION = (language: string) =>
   "players, each continuing the previous part without seeing the whole " +
   "text. Most players are children and teenagers. The part is in " +
   `${language} and may start or end mid-sentence.\n\n` +
-  `mature: true if the text is ${MATURE_CRITERION}`;
+  `mature: true if the text is ${MATURE_CRITERION}\n\n` +
+  "nonsense: true if the text is not a real attempt at writing the story: " +
+  "random letters or keyboard mashing, a lone interjection or a few " +
+  "monosyllables, words piled up with no meaning, or something unrelated " +
+  'to the story (e.g. "test", "ciao", "boh"). The game is surreal by ' +
+  "design: absurd or silly but readable sentences, sudden changes of " +
+  "topic, invented names, wordplay, typos and a start or end mid-sentence " +
+  "are fine. When unsure, answer false.";
 
 const PART_REVIEW_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     mature: { type: Type.BOOLEAN },
+    nonsense: { type: Type.BOOLEAN },
   },
-  required: ["mature"],
+  required: ["mature", "nonsense"],
 };
 
 /**
- * The verdict in a part review [response]. A part the model refuses to
- * read is mature by definition. Throws on a malformed response, leaving
- * the part without a verdict.
+ * The review in a part review [response]. A part the model refuses to
+ * read is mature by definition (and not nonsense: it was readable enough
+ * to refuse). Throws on a malformed `mature`, leaving the part without a
+ * verdict; a missing `nonsense` counts as false, so it never blocks the
+ * story.
  */
-export function partVerdictFrom(
+export function partReviewFrom(
   response: Pick<GenerateContentResponse, "promptFeedback" | "candidates" | "text">,
-): PartVerdict {
+): PartReview {
   if (
     response.promptFeedback?.blockReason ||
     BLOCKED_FINISH_REASONS.has(response.candidates?.[0]?.finishReason)
   ) {
-    return "mature";
+    return { verdict: "mature", nonsense: false };
   }
-  const parsed = JSON.parse(response.text ?? "{}") as { mature?: unknown };
+  const parsed = JSON.parse(response.text ?? "{}") as { mature?: unknown; nonsense?: unknown };
   if (typeof parsed.mature !== "boolean") {
     throw new Error(`Unexpected part review response: ${response.text}`);
   }
-  return parsed.mature ? "mature" : "safe";
+  return { verdict: parsed.mature ? "mature" : "safe", nonsense: parsed.nonsense === true };
 }
 
 /**
  * Asks Gemini whether the part [text], written in the story language
- * [languageCode], is unsuitable for children. Throws on network or API
- * errors and on malformed responses: the part then stays pending (no
- * verdict) until a retry or the backfill script reviews it.
+ * [languageCode], is unsuitable for children and whether it makes no
+ * sense. Throws on network or API errors and on malformed responses: the
+ * part then stays pending (no verdict) until a retry or the backfill
+ * script reviews it.
  */
-export async function reviewPart(text: string, languageCode: string | undefined): Promise<PartVerdict> {
+export async function reviewPart(text: string, languageCode: string | undefined): Promise<PartReview> {
   const language = LANGUAGE_NAMES[languageCode ?? DEFAULT_LANGUAGE] ?? "Italian";
   const response = await client().models.generateContent({
     model: MODEL,
@@ -101,7 +125,7 @@ export async function reviewPart(text: string, languageCode: string | undefined)
       temperature: 0.2,
     },
   });
-  return partVerdictFrom(response);
+  return partReviewFrom(response);
 }
 
 /** A story part as stored in `parts[]`. */
@@ -109,6 +133,8 @@ export interface StoryPart {
   position?: unknown;
   text?: unknown;
   author?: unknown;
+  /** Set with an empty `text` when a report review removed it (reports.ts). */
+  removed?: unknown;
 }
 
 /**
@@ -182,18 +208,68 @@ export function partReviewFields(
 }
 
 /**
- * Stores [verdict] on the part at [position] of the story, see
- * [partReviewFields]. Transactional and idempotent. Returns whether it was
+ * The report filed on its author when the part at [position] of the story
+ * [storyId], whose current document is [data], makes no sense: its id
+ * (one per part, so a re-run overwrites rather than duplicates) and its
+ * fields. It's created already reviewed, with the text and author the
+ * moderators need, like a report reviewReport has closed (reports.ts), and
+ * `reporterKey: "ai"`, which no player's email key can be. Undefined if
+ * the part is gone or has no text.
+ */
+export function nonsenseReport(
+  storyId: string,
+  position: string,
+  data: FirebaseFirestore.DocumentData | undefined,
+): { id: string; fields: Record<string, unknown> } | undefined {
+  const part = ((data?.parts ?? []) as StoryPart[]).find((p) => p.position === position);
+  if (!part || typeof part.text !== "string" || part.text === "") return undefined;
+  return {
+    id: `nonsense_${storyId}_${position}`,
+    fields: {
+      storyId,
+      position,
+      reason: "nonsense",
+      reporterKey: "ai",
+      createdAt: FieldValue.serverTimestamp(),
+      reportedText: part.text,
+      reportedAuthor: part.author ?? null,
+      review: {
+        outcome: "nonsense",
+        category: "nonsense",
+        model: MODEL,
+        reviewedAt: FieldValue.serverTimestamp(),
+      },
+    },
+  };
+}
+
+/** Adds the [nonsenseReport] on the part at [position] to [tx], if any. */
+function fileNonsenseReport(
+  tx: Transaction,
+  storyId: string,
+  position: string,
+  data: FirebaseFirestore.DocumentData | undefined,
+): void {
+  const report = nonsenseReport(storyId, position, data);
+  if (report) tx.set(getFirestore().doc(`reports/${report.id}`), report.fields);
+}
+
+/**
+ * Stores [review]'s verdict on the part at [position] of the story, see
+ * [partReviewFields], and reports the part if it makes no sense (see
+ * [nonsenseReport]). Transactional and idempotent. Returns whether it was
  * stored.
  */
-export async function savePartReview(storyId: string, position: string, verdict: PartVerdict): Promise<boolean> {
+export async function savePartReview(storyId: string, position: string, review: PartReview): Promise<boolean> {
   const db = getFirestore();
   const ref = db.doc(`stories/${storyId}`);
   return db.runTransaction(async (tx: Transaction) => {
     const snapshot = await tx.get(ref);
-    const fields = partReviewFields(snapshot.exists ? snapshot.data() : undefined, position, verdict);
+    const data = snapshot.exists ? snapshot.data() : undefined;
+    const fields = partReviewFields(data, position, review.verdict);
     if (!fields) return false;
     tx.update(ref, fields);
+    if (review.nonsense) fileNonsenseReport(tx, storyId, position, data);
     return true;
   });
 }
@@ -318,22 +394,27 @@ export function completionFields(
 }
 
 /**
- * Stores the completion review once, see [completionFields]. Transactional
- * and idempotent: clients can't write these fields (see `isValidSubmit` in
- * firestore.rules), so a duplicate event changes nothing. Returns whether
- * this call set `reviewedAt`, i.e. the story has just become readable.
+ * Stores the completion review once, see [completionFields], with
+ * [partReview]'s verdict on the last part, which is reported if it makes no
+ * sense (see [nonsenseReport]). Transactional and idempotent: clients
+ * can't write these fields (see `isValidSubmit` in firestore.rules), so a
+ * duplicate event changes nothing. Returns whether this call set
+ * `reviewedAt`, i.e. the story has just become readable.
  */
 export async function saveCompletionReview(
   storyId: string,
   review: StoryReview,
-  partVerdict: PartVerdict | undefined,
+  partReview: PartReview | undefined,
 ): Promise<boolean> {
   const db = getFirestore();
   const ref = db.doc(`stories/${storyId}`);
   return db.runTransaction(async (tx: Transaction) => {
     const snapshot = await tx.get(ref);
-    const { fields, setsReviewedAt } = completionFields(snapshot.exists ? snapshot.data() : undefined, review, partVerdict);
+    const data = snapshot.exists ? snapshot.data() : undefined;
+    const last = data === undefined ? undefined : lastPartToReview(data);
+    const { fields, setsReviewedAt } = completionFields(data, review, partReview?.verdict);
     if (Object.keys(fields).length > 0) tx.update(ref, fields);
+    if (setsReviewedAt && last && partReview?.nonsense) fileNonsenseReport(tx, storyId, last.position, data);
     return setsReviewedAt;
   });
 }
@@ -390,9 +471,9 @@ export type ReviewLogger = Pick<typeof functionsLogger, "warn" | "error">;
 export interface PartModerationDeps {
   /** The story as it is now (undefined if deleted). */
   read(): Promise<FirebaseFirestore.DocumentData | undefined>;
-  review(text: string, language: string | undefined): Promise<PartVerdict>;
-  /** Stores the verdict, see [savePartReview]. */
-  save(verdict: PartVerdict): Promise<boolean>;
+  review(text: string, language: string | undefined): Promise<PartReview>;
+  /** Stores the review, see [savePartReview]. */
+  save(review: PartReview): Promise<boolean>;
   /** Sends the story_continued push. */
   notify(): Promise<void>;
   now(): Date;
@@ -408,7 +489,8 @@ export interface PartModerationDeps {
  * the run that stored it sends the story_continued push, mature verdicts
  * included (the text is neutral and the app gates the tap). The push is
  * sent only now, not on submit, because nobody can open the story before
- * the verdict. On a read, Gemini or transaction error it throws, so the
+ * the verdict. A part that makes no sense is reported by the save (see
+ * [savePartReview]) and logged. On a read, Gemini or transaction error it throws, so the
  * event is retried, unless it's past the cap (see [shouldRetry]): then it
  * logs "Part review gave up" and returns. Notification errors are logged,
  * never thrown: a retry would find the verdict stored and not notify.
@@ -420,8 +502,9 @@ export async function moderatePart(
   const { storyId, position } = job;
   try {
     if (!canSavePartReview(await deps.read(), position)) return;
-    const verdict = await deps.review(job.text, job.language);
-    if (!(await deps.save(verdict))) return;
+    const review = await deps.review(job.text, job.language);
+    if (!(await deps.save(review))) return;
+    if (review.nonsense) deps.logger.warn("Nonsense part reported", { storyId, position });
   } catch (error) {
     if (shouldRetry(job.eventTime, deps.now())) {
       deps.logger.error("Part review failed, retrying", { storyId, position, error });
@@ -442,9 +525,9 @@ export interface CompletionReviewDeps {
   /** The story as it is now (undefined if deleted). */
   read(): Promise<FirebaseFirestore.DocumentData | undefined>;
   reviewStory(data: FirebaseFirestore.DocumentData): Promise<StoryReview>;
-  reviewPart(text: string, language: string | undefined): Promise<PartVerdict>;
+  reviewPart(text: string, language: string | undefined): Promise<PartReview>;
   /** Stores the review, see [saveCompletionReview]. */
-  save(review: StoryReview, partVerdict: PartVerdict | undefined): Promise<boolean>;
+  save(review: StoryReview, partReview: PartReview | undefined): Promise<boolean>;
   /** Sends the story_completed push. */
   notify(): Promise<void>;
   now(): Date;
@@ -458,7 +541,8 @@ export interface CompletionReviewDeps {
  * reviews the whole story and, in parallel, its last part if that has no
  * verdict yet (see [lastPartToReview]), and stores both in one transaction
  * (see [completionFields]): if either call fails nothing is written and the
- * story stays unreadable. Only the run that set `reviewedAt` notifies. Same
+ * story stays unreadable. A last part that makes no sense is reported by
+ * the save (see [saveCompletionReview]) and logged. Only the run that set `reviewedAt` notifies. Same
  * retry and give-up rules as [moderatePart], logging "Story review gave
  * up".
  */
@@ -471,12 +555,13 @@ export async function reviewCompletion(
     const data = await deps.read();
     if (data === undefined || isReviewed(data)) return;
     const last = lastPartToReview(data);
-    const [review, partVerdict] = await Promise.all([
+    const [review, partReview] = await Promise.all([
       deps.reviewStory(data),
       last ? deps.reviewPart(last.text, data.language) : Promise.resolve(undefined),
     ]);
     if (!review.title) deps.logger.warn("Model returned no usable title", { storyId });
-    if (!(await deps.save(review, partVerdict))) return;
+    if (!(await deps.save(review, partReview))) return;
+    if (last && partReview?.nonsense) deps.logger.warn("Nonsense part reported", { storyId, position: last.position });
   } catch (error) {
     if (shouldRetry(job.eventTime, deps.now())) {
       deps.logger.error("Story review failed, retrying", { storyId, error });

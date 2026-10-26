@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/models/story.dart';
@@ -83,6 +84,7 @@ class _CompleteStoriesScreenState extends State<CompleteStoriesScreen>
     _viewModel = CompleteStoriesViewModel(
       storyRepository: context.read<StoryRepository>(),
       authRepository: context.read<AuthRepository>(),
+      safetyRepository: context.read<SafetyRepository>(),
       ageGate: context.read<AgeGate>(),
       language: widget.language,
       roomId: widget.roomId,

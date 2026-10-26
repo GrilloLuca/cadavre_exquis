@@ -9,10 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
+import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// First screen for signed-out users: Google sign-in (and email login in
-/// debug builds). Creates its [WelcomeViewModel] once, in `initState` (see
+/// debug builds), and the terms of use that signing in accepts. Creates its [WelcomeViewModel] once, in `initState` (see
 /// `ChatScreen`).
 class WelcomeScreen extends StatefulWidget {
   static String id = "welcome_screen";
@@ -124,11 +125,44 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           onPressed: _viewModel.signInWithGoogle.execute,
                         ),
                 ),
+                const SizedBox(height: 16.0),
+                Text(
+                  AppLocalizations.of(context)!.termsNotice,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13.0, color: AppColors.ink),
+                ),
+                Center(
+                  child: TextButton(
+                    onPressed: _showTerms,
+                    child: Text(AppLocalizations.of(context)!.termsButton),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showTerms() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.termsTitle),
+          content: SingleChildScrollView(
+            child: SelectableText(l10n.termsBody(kSupportEmail)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.closeButton),
+            ),
+          ],
+        );
+      },
     );
   }
 

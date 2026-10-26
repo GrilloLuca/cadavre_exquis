@@ -17,6 +17,8 @@ import 'package:cadavre_exquisite/data/repositories/private_room/private_room_re
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository_local.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
@@ -50,6 +52,13 @@ List<SingleChildWidget> providers({
       ChangeNotifierProvider<RoomRepository>(
         create: (context) => RoomRepositoryLocal(
           preference: LanguageRoomPreference(),
+          authRepository: context.read<AuthRepository>(),
+        ),
+      ),
+      // Below AuthRepository, which it follows to load the signed-in
+      // user's blocked authors.
+      ChangeNotifierProvider<SafetyRepository>(
+        create: (context) => SafetyRepositoryFirestore(
           authRepository: context.read<AuthRepository>(),
         ),
       ),

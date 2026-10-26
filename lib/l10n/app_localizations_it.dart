@@ -269,6 +269,17 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String chatWordsMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mancano ancora $count parole',
+      one: 'Manca ancora 1 parola',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get chatSentSnackbar => 'Parte inviata! Ora tocca a qualcun altro.';
 
   @override
@@ -579,4 +590,91 @@ class AppLocalizationsIt extends AppLocalizations {
   String storyKeywordsSemantics(String keywords) {
     return 'Argomenti: $keywords';
   }
+
+  @override
+  String get partSafetyMenuTooltip => 'Segnala o blocca';
+
+  @override
+  String get reportPartMenuItem => 'Segnala questa parte';
+
+  @override
+  String blockAuthorMenuItem(Object name) {
+    return 'Blocca $name';
+  }
+
+  @override
+  String get reportReasonTitle => 'Perché la segnali?';
+
+  @override
+  String get reportReasonOffensive => 'Offensiva o di odio';
+
+  @override
+  String get reportReasonSexual => 'Contenuti sessuali';
+
+  @override
+  String get reportReasonHarassment => 'Molestie o bullismo';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonOther => 'Altro';
+
+  @override
+  String get reportSentSnackbar =>
+      'Grazie della segnalazione. La esamineremo entro 24 ore.';
+
+  @override
+  String blockAuthorTitle(Object name) {
+    return 'Bloccare $name?';
+  }
+
+  @override
+  String blockAuthorMessage(Object name) {
+    return 'Non vedrai più le storie con parti scritte da $name. Puoi annullare il blocco nel Profilo.';
+  }
+
+  @override
+  String get blockAuthorConfirmButton => 'Blocca';
+
+  @override
+  String authorBlockedSnackbar(Object name) {
+    return 'Hai bloccato $name.';
+  }
+
+  @override
+  String get blockedAuthorsTitle => 'Giocatori bloccati';
+
+  @override
+  String get blockedAuthorsEmpty => 'Non hai bloccato nessuno.';
+
+  @override
+  String get unblockButton => 'Sblocca';
+
+  @override
+  String supportContact(Object email) {
+    return 'Serve aiuto o vuoi segnalare un giocatore o una storia? Scrivi a $email';
+  }
+
+  @override
+  String get termsNotice =>
+      'Continuando accetti le condizioni d\'uso. Non sono tollerati contenuti offensivi, d\'odio, sessuali o abusivi.';
+
+  @override
+  String get termsButton => 'Condizioni d\'uso';
+
+  @override
+  String get termsTitle => 'Condizioni d\'uso';
+
+  @override
+  String termsBody(Object email) {
+    return 'Cadavre Exquisite è un gioco in cui si scrivono storie insieme. Usandolo accetti queste condizioni.\n\n• Non scrivere contenuti offensivi, d\'odio, sessuali, violenti o abusivi, non molestare gli altri giocatori e non condividere dati personali. Non c\'è tolleranza per i contenuti inappropriati né per chi si comporta in modo abusivo.\n• Ogni parte viene controllata automaticamente, e puoi segnalare qualsiasi parte o bloccarne l\'autore dal menu accanto. Esaminiamo le segnalazioni entro 24 ore: rimuoviamo i contenuti che violano queste condizioni e chiudiamo gli account di chi li ha scritti.\n• Sei responsabile di ciò che scrivi. Le parti che scrivi restano nelle loro storie, come Anonimo se elimini l\'account.\n\nDomande o segnalazioni: $email';
+  }
+
+  @override
+  String get closeButton => 'Chiudi';
+
+  @override
+  String get partRemovedByModeration =>
+      'Questa parte è stata rimossa dalla moderazione.';
 }

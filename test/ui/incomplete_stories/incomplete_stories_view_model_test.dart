@@ -10,6 +10,7 @@ import 'package:cadavre_exquisite/ui/incomplete_stories/view_models/incomplete_s
 
 import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 
 const _me = 'me@example.com';
@@ -99,11 +100,13 @@ void main() {
   late _Source source;
   late FakeAgeCheckRepository ages;
   late _CountingGate gate;
+  late FakeSafetyRepository safety;
 
   setUp(() {
     source = _Source(AgeSignal.adult);
     ages = FakeAgeCheckRepository();
     gate = _CountingGate(signals: source, storage: ages, clock: () => now);
+    safety = FakeSafetyRepository();
   });
 
   IncompleteStoriesViewModel create({
@@ -114,6 +117,7 @@ void main() {
       IncompleteStoriesViewModel(
         storyRepository: stories,
         authRepository: FakeAuthRepository(email: _me),
+        safetyRepository: safety,
         ageGate: gate,
         language: language,
         roomId: roomId,
@@ -138,6 +142,21 @@ void main() {
   IncompleteStoryStatus statusOf(
           IncompleteStoriesViewModel viewModel, String id) =>
       viewModel.statusOf(viewModel.stories!.firstWhere((s) => s.id == id));
+
+  test("hides stories with a blocked author's part, as soon as blocked",
+      () async {
+    stories = FakeStoryRepository(stories: [
+      story('clean', authors: [_me]),
+      story('theirs', authors: [_me, 'Other@Example.com']),
+    ]);
+    safety = FakeSafetyRepository();
+    final viewModel = await loaded();
+    expect(viewModel.stories!.map((s) => s.id), ['clean', 'theirs']);
+
+    await safety.block(_other);
+
+    expect(viewModel.stories!.map((s) => s.id), ['clean']);
+  });
 
   test('loads the room stories, least written first', () async {
     stories = FakeStoryRepository(stories: [

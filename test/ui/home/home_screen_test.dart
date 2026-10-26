@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/safety/safety_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/story/story_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository.dart';
 import 'package:cadavre_exquisite/data/services/age_signals_source.dart';
@@ -26,6 +27,7 @@ import '../../../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
 import '../../../testing/fakes/repositories/fake_notification_repository.dart';
 import '../../../testing/fakes/repositories/fake_room_repository.dart';
+import '../../../testing/fakes/repositories/fake_safety_repository.dart';
 import '../../../testing/fakes/repositories/fake_story_repository.dart';
 import '../../../testing/fakes/repositories/fake_user_profile_repository.dart';
 
@@ -87,6 +89,8 @@ void main() {
             create: (_) => FakeAdsRepository()),
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
         Provider<AppConfig>.value(value: const AppConfig()),
@@ -157,6 +161,8 @@ void main() {
           Provider<StoryRepository>(
               create: (_) =>
                   FakeStoryRepository(stories: stories ?? [continued])),
+          ChangeNotifierProvider<SafetyRepository>(
+              create: (_) => FakeSafetyRepository()),
           Provider<UserProfileRepository>(
               create: (_) => FakeUserProfileRepository()),
           Provider<AppConfig>.value(value: const AppConfig()),
@@ -281,6 +287,8 @@ void main() {
         ChangeNotifierProvider<NotificationRepository>(
             create: (_) => FakeNotificationRepository()),
         ChangeNotifierProvider<AdsRepository>.value(value: ads),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
         Provider<AppConfig>.value(value: const AppConfig()),
@@ -343,6 +351,8 @@ void main() {
             create: (_) => FakeNotificationRepository()),
         ChangeNotifierProvider<AdsRepository>(
             create: (_) => FakeAdsRepository()),
+        ChangeNotifierProvider<SafetyRepository>(
+            create: (_) => FakeSafetyRepository()),
         Provider<UserProfileRepository>(
             create: (_) => FakeUserProfileRepository()),
         Provider<AppConfig>.value(value: const AppConfig()),
