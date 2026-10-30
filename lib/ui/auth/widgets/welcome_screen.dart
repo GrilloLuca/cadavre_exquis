@@ -2,6 +2,7 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
+import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:flutter/foundation.dart';
@@ -126,17 +127,28 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                 ),
                 const SizedBox(height: 16.0),
-                Text(
-                  AppLocalizations.of(context)!.termsNotice,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13.0, color: AppColors.ink),
-                ),
-                Center(
-                  child: TextButton(
-                    onPressed: _showTerms,
-                    child: Text(AppLocalizations.of(context)!.termsButton),
-                  ),
-                ),
+
+                CreamCard(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          AppLocalizations.of(context)!.termsNotice,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 13.0, color: AppColors.ink),
+                        ),
+                        Center(
+                          child: TextButton(
+                            onPressed: _showTerms,
+                            child:
+                                Text(AppLocalizations.of(context)!.termsButton),
+                          ),
+                        )
+                      ]),
+                )
               ],
             ),
           ),
