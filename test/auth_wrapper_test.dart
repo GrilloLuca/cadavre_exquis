@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cadavre_exquisite/data/repositories/ads/ads_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/age_check/age_check_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -22,6 +23,7 @@ import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import '../testing/fakes/repositories/fake_ads_repository.dart';
 import '../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../testing/fakes/repositories/fake_auth_repository.dart';
+import '../testing/fakes/repositories/fake_feature_flags_repository.dart';
 import '../testing/fakes/repositories/fake_notification_repository.dart';
 import '../testing/fakes/repositories/fake_private_room_repository.dart';
 import '../testing/fakes/repositories/fake_room_repository.dart';
@@ -35,6 +37,8 @@ void main() {
   Widget buildApp(FakeAuthRepository auth) => MultiProvider(
         providers: [
           ChangeNotifierProvider<AuthRepository>.value(value: auth),
+          Provider<FeatureFlagsRepository>(
+              create: (_) => FakeFeatureFlagsRepository()),
           ChangeNotifierProvider<RoomRepository>(
               create: (_) => FakeRoomRepository()),
           Provider<StoryRepository>(create: (_) => FakeStoryRepository()),

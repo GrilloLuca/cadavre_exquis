@@ -259,8 +259,7 @@ void main() {
       expect(gate.resolves, 0);
     });
 
-    test('while the stored-year read runs, a stored minor is locked',
-        () async {
+    test('while the stored-year read runs, a stored minor is locked', () async {
       ages = FakeAgeCheckRepository(birthYears: {_me: 2015});
       final read = Completer<int?>();
       final access = create(visibleToMinors: false);

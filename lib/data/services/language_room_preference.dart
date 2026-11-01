@@ -52,8 +52,7 @@ class LanguageRoomPreference {
 
   /// Like [resolve], also telling whether the room was chosen, detected or
   /// is the fallback.
-  Future<({String code, RoomLanguageSource source})>
-      resolveWithSource() async {
+  Future<({String code, RoomLanguageSource source})> resolveWithSource() async {
     final prefs = await _instance();
     final stored = prefs.getString(prefsKey);
     if (stored != null &&

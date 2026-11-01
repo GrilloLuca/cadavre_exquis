@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_repository.dart';
 import 'package:cadavre_exquisite/domain/models/auth_error.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
@@ -11,21 +12,29 @@ import 'package:cadavre_exquisite/ui/auth/widgets/registration_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_feature_flags_repository.dart';
 
 void main() {
   late AppLocalizations l10n;
   late FakeAuthRepository auth;
+  late FakeFeatureFlagsRepository flags;
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
   });
 
-  setUp(() => auth = FakeAuthRepository());
+  setUp(() {
+    auth = FakeAuthRepository();
+    flags = FakeFeatureFlagsRepository();
+  });
 
   /// Pumps [home]; reaching the home route shows a "home" placeholder.
   Future<void> pump(WidgetTester tester, Widget home) async {
-    await tester.pumpWidget(ChangeNotifierProvider<AuthRepository>.value(
-      value: auth,
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>.value(value: auth),
+        Provider<FeatureFlagsRepository>.value(value: flags),
+      ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

@@ -310,6 +310,16 @@ service cloud.firestore {
       allow create, update: if isOwner() && isValidBlocks();
     }
 
+    // ---------------------------------------------------------------------
+    // appConfig/{doc}  (FeatureFlagsRepository)
+    // ---------------------------------------------------------------------
+    // Switches set from the console, read before sign-in (the welcome
+    // screen), so public. `flags.iosEmailLogin` shows the email login on iOS.
+    match /appConfig/{doc} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
     // Everything else (including the legacy `chapters` collection) is closed.
   }
 }

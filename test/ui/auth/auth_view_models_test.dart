@@ -6,6 +6,7 @@ import 'package:cadavre_exquisite/ui/auth/view_models/registration_view_model.da
 import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 
 import '../../../testing/fakes/repositories/fake_auth_repository.dart';
+import '../../../testing/fakes/repositories/fake_feature_flags_repository.dart';
 
 Matcher _authError(AuthErrorCode code) =>
     isA<AuthException>().having((e) => e.code, 'code', code);
@@ -39,7 +40,8 @@ void main() {
   });
 
   test('Google sign-in: true when signed in, false when dismissed', () async {
-    final viewModel = WelcomeViewModel(authRepository: auth);
+    final viewModel = WelcomeViewModel(
+        authRepository: auth, featureFlags: FakeFeatureFlagsRepository());
 
     auth.googlePickerConfirms = false;
     await viewModel.signInWithGoogle.execute();
@@ -50,5 +52,47 @@ void main() {
     await viewModel.signInWithGoogle.execute();
     expect(viewModel.signInWithGoogle.value, isTrue);
     expect(auth.isAuthenticated, isTrue);
+  });
+
+  group('email login button', () {
+    WelcomeViewModel build(FakeFeatureFlagsRepository flags,
+            {required bool isIos, bool debugBuild = false}) =>
+        WelcomeViewModel(
+          authRepository: auth,
+          featureFlags: flags,
+          isIos: isIos,
+          debugBuild: debugBuild,
+        );
+
+    test('on iOS it follows the flag', () async {
+      final flags = FakeFeatureFlagsRepository();
+      final viewModel = build(flags, isIos: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(viewModel.showEmailLogin, isFalse);
+
+      flags.setEmailLoginOnIos(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(viewModel.showEmailLogin, isTrue);
+
+      flags.setEmailLoginOnIos(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(viewModel.showEmailLogin, isFalse);
+      viewModel.dispose();
+    });
+
+    test('elsewhere the flag is ignored', () async {
+      final flags = FakeFeatureFlagsRepository(emailLoginOnIos: true);
+      final viewModel = build(flags, isIos: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(viewModel.showEmailLogin, isFalse);
+      viewModel.dispose();
+    });
+
+    test('debug builds always show it', () async {
+      final viewModel =
+          build(FakeFeatureFlagsRepository(), isIos: false, debugBuild: true);
+      expect(viewModel.showEmailLogin, isTrue);
+      viewModel.dispose();
+    });
   });
 }
