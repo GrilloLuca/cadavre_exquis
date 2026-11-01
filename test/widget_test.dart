@@ -22,10 +22,12 @@ import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_repository.dart';
 
 import '../testing/fakes/repositories/fake_ads_repository.dart';
 import '../testing/fakes/repositories/fake_age_check_repository.dart';
 import '../testing/fakes/repositories/fake_auth_repository.dart';
+import '../testing/fakes/repositories/fake_feature_flags_repository.dart';
 import '../testing/fakes/repositories/fake_notification_repository.dart';
 import '../testing/fakes/repositories/fake_room_repository.dart';
 import '../testing/fakes/repositories/fake_story_repository.dart';
@@ -33,8 +35,13 @@ import '../testing/fakes/repositories/fake_story_repository.dart';
 void main() {
   testWidgets('Welcome screen shows the Google sign-in button',
       (WidgetTester tester) async {
-    await tester.pumpWidget(ChangeNotifierProvider<AuthRepository>(
-      create: (_) => FakeAuthRepository(),
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthRepository>(
+            create: (_) => FakeAuthRepository()),
+        Provider<FeatureFlagsRepository>(
+            create: (_) => FakeFeatureFlagsRepository()),
+      ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

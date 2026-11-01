@@ -4,16 +4,16 @@ import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_repository.dart';
 import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// First screen for signed-out users: Google sign-in (and email login in
-/// debug builds), and the terms of use that signing in accepts. Creates its [WelcomeViewModel] once, in `initState` (see
+/// debug builds, or on iOS when the Firestore flag is on), and the terms of use that signing in accepts. Creates its [WelcomeViewModel] once, in `initState` (see
 /// `ChatScreen`).
 class WelcomeScreen extends StatefulWidget {
   static String id = "welcome_screen";
@@ -33,8 +33,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void initState() {
     super.initState();
-    _viewModel =
-        WelcomeViewModel(authRepository: context.read<AuthRepository>());
+    _viewModel = WelcomeViewModel(
+      authRepository: context.read<AuthRepository>(),
+      featureFlags: context.read<FeatureFlagsRepository>(),
+    );
     _viewModel.signInWithGoogle.addListener(_onSignInChanged);
     controller = AnimationController(
       duration: Duration(seconds: 1),
@@ -90,15 +92,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 //     ),
                 //   ],
                 // ),
-                // Email/password login is only offered in debug builds.
-                if (kDebugMode)
-                  ChatButton(
-                    text: AppLocalizations.of(context)!.loginButton,
-                    color: AppColors.primary,
-                    onPressed: () {
-                      Navigator.pushNamed(context, LoginScreen.id);
-                    },
-                  ),
+                // Email/password login: debug builds, and iOS while the
+                // `appConfig/flags.iosEmailLogin` flag is on.
+                ListenableBuilder(
+                  listenable: _viewModel,
+                  builder: (context, _) => _viewModel.showEmailLogin
+                      ? ChatButton(
+                          text: AppLocalizations.of(context)!.loginButton,
+                          color: AppColors.primary,
+                          onPressed: () {
+                            Navigator.pushNamed(context, LoginScreen.id);
+                          },
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 // ChatButton(
                 //   text: AppLocalizations.of(context)!.registerButton,
                 //   color: AppColors.primaryDark,
