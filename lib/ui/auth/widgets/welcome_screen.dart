@@ -12,6 +12,8 @@ import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/ui/cream_card.dart';
+
 /// First screen for signed-out users: Google sign-in (and email login in
 /// debug builds, or on iOS when the Firestore flag is on), and the terms of use that signing in accepts. Creates its [WelcomeViewModel] once, in `initState` (see
 /// `ChatScreen`).
@@ -133,17 +135,27 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                 ),
                 const SizedBox(height: 16.0),
-                Text(
-                  AppLocalizations.of(context)!.termsNotice,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13.0, color: AppColors.ink),
-                ),
-                Center(
-                  child: TextButton(
-                    onPressed: _showTerms,
-                    child: Text(AppLocalizations.of(context)!.termsButton),
-                  ),
-                ),
+                CreamCard(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          AppLocalizations.of(context)!.termsNotice,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 13.0, color: AppColors.ink),
+                        ),
+                        Center(
+                          child: TextButton(
+                            onPressed: _showTerms,
+                            child:
+                                Text(AppLocalizations.of(context)!.termsButton),
+                          ),
+                        )
+                      ]),
+                )
               ],
             ),
           ),
