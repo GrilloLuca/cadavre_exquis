@@ -78,7 +78,9 @@ class PushMessagingService {
         AuthorizationStatus.authorized ||
         AuthorizationStatus.provisional =>
           NotificationPermission.granted,
-        AuthorizationStatus.denied => NotificationPermission.denied,
+        AuthorizationStatus.denied ||
+        AuthorizationStatus.deniedPermanently =>
+          NotificationPermission.denied,
         AuthorizationStatus.notDetermined =>
           NotificationPermission.notDetermined,
       };
