@@ -15,6 +15,8 @@ import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_
 import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/notification/notification_repository_firebase.dart';
+import 'package:cadavre_exquisite/data/repositories/onboarding/onboarding_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/onboarding/onboarding_repository_local.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository.dart';
 import 'package:cadavre_exquisite/data/repositories/private_room/private_room_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/repositories/room/room_repository.dart';
@@ -27,6 +29,7 @@ import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_re
 import 'package:cadavre_exquisite/data/repositories/user_profile/user_profile_repository_firestore.dart';
 import 'package:cadavre_exquisite/data/services/google_sign_in_service.dart';
 import 'package:cadavre_exquisite/data/services/language_room_preference.dart';
+import 'package:cadavre_exquisite/data/services/onboarding_preference.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:cadavre_exquisite/domain/use_cases/age_gate.dart';
 
@@ -46,6 +49,11 @@ List<SingleChildWidget> providers({
 }) =>
     [
       Provider<AppConfig>.value(value: appConfig),
+      // Read by AuthWrapper on the first frame, so it starts loading at once.
+      ChangeNotifierProvider<OnboardingRepository>(
+        create: (_) =>
+            OnboardingRepositoryLocal(preference: OnboardingPreference()),
+      ),
       ChangeNotifierProvider<AuthRepository>(
         create: (_) => AuthRepositoryFirebase(googleSignIn: googleSignIn),
       ),

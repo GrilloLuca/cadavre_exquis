@@ -1153,6 +1153,90 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Questa parte è stata rimossa dalla moderazione.'**
   String get partRemovedByModeration;
+
+  /// Title of the first onboarding slide. Keep it very short: the animated illustration does the explaining.
+  ///
+  /// In it, this message translates to:
+  /// **'Quattro autori.\nUna storia.'**
+  String get onboardingTitle1;
+
+  /// No description provided for @onboardingBody1.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni giocatore ne scrive una parte, a turno.'**
+  String get onboardingBody1;
+
+  /// No description provided for @onboardingTitle2.
+  ///
+  /// In it, this message translates to:
+  /// **'Vedi solo cinque parole'**
+  String get onboardingTitle2;
+
+  /// No description provided for @onboardingBody2.
+  ///
+  /// In it, this message translates to:
+  /// **'Le ultime della parte prima della tua. Riparti da lì.'**
+  String get onboardingBody2;
+
+  /// No description provided for @onboardingTitle3.
+  ///
+  /// In it, this message translates to:
+  /// **'Poi, la sorpresa'**
+  String get onboardingTitle3;
+
+  /// No description provided for @onboardingBody3.
+  ///
+  /// In it, this message translates to:
+  /// **'Le quattro parti diventano una storia che nessuno si aspettava.'**
+  String get onboardingBody3;
+
+  /// Onboarding demo story: the start of part 1, hidden from the next author. Hidden + Visible + Part2 + Part3 + Part4 must read as one funny sentence.
+  ///
+  /// In it, this message translates to:
+  /// **'Il detective trovò'**
+  String get onboardingDemoHidden;
+
+  /// Onboarding demo story: the end of part 1. Must be exactly five words, the ones the next author sees.
+  ///
+  /// In it, this message translates to:
+  /// **'un pinguino piccolo e furioso'**
+  String get onboardingDemoVisible;
+
+  /// No description provided for @onboardingDemoPart2.
+  ///
+  /// In it, this message translates to:
+  /// **'che si candidò a sindaco promettendo ghiaccio gratis'**
+  String get onboardingDemoPart2;
+
+  /// No description provided for @onboardingDemoPart3.
+  ///
+  /// In it, this message translates to:
+  /// **'a tutti i draghi che odiavano l\'estate,'**
+  String get onboardingDemoPart3;
+
+  /// No description provided for @onboardingDemoPart4.
+  ///
+  /// In it, this message translates to:
+  /// **'così aprirono insieme una pasticceria.'**
+  String get onboardingDemoPart4;
+
+  /// Button on the onboarding slides that closes them at once.
+  ///
+  /// In it, this message translates to:
+  /// **'Salta'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In it, this message translates to:
+  /// **'Avanti'**
+  String get onboardingNext;
+
+  /// Button on the last onboarding slide that closes them.
+  ///
+  /// In it, this message translates to:
+  /// **'Inizia'**
+  String get onboardingStart;
 }
 
 class _AppLocalizationsDelegate

@@ -677,4 +677,49 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get partRemovedByModeration =>
       'Questa parte è stata rimossa dalla moderazione.';
+
+  @override
+  String get onboardingTitle1 => 'Quattro autori.\nUna storia.';
+
+  @override
+  String get onboardingBody1 => 'Ogni giocatore ne scrive una parte, a turno.';
+
+  @override
+  String get onboardingTitle2 => 'Vedi solo cinque parole';
+
+  @override
+  String get onboardingBody2 =>
+      'Le ultime della parte prima della tua. Riparti da lì.';
+
+  @override
+  String get onboardingTitle3 => 'Poi, la sorpresa';
+
+  @override
+  String get onboardingBody3 =>
+      'Le quattro parti diventano una storia che nessuno si aspettava.';
+
+  @override
+  String get onboardingDemoHidden => 'Il detective trovò';
+
+  @override
+  String get onboardingDemoVisible => 'un pinguino piccolo e furioso';
+
+  @override
+  String get onboardingDemoPart2 =>
+      'che si candidò a sindaco promettendo ghiaccio gratis';
+
+  @override
+  String get onboardingDemoPart3 => 'a tutti i draghi che odiavano l\'estate,';
+
+  @override
+  String get onboardingDemoPart4 => 'così aprirono insieme una pasticceria.';
+
+  @override
+  String get onboardingSkip => 'Salta';
+
+  @override
+  String get onboardingNext => 'Avanti';
+
+  @override
+  String get onboardingStart => 'Inizia';
 }

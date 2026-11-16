@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 
 import 'package:cadavre_exquisite/config/dependencies.dart';
 import 'package:cadavre_exquisite/data/repositories/auth/auth_repository.dart';
+import 'package:cadavre_exquisite/data/repositories/onboarding/onboarding_repository.dart';
 import 'package:cadavre_exquisite/data/services/google_sign_in_service.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/registration_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/welcome_screen.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
+import 'package:cadavre_exquisite/ui/onboarding/widgets/onboarding_screen.dart';
 import 'package:cadavre_exquisite/ui/core/themes/theme.dart';
 
 void main() async {
@@ -50,10 +52,16 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthRepository>();
-    if (!auth.isReady) {
+    final onboarding = context.watch<OnboardingRepository>();
+    if (!auth.isReady || !onboarding.isReady) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
+    }
+    // Once per device, before anything else; marking it seen rebuilds
+    // this widget into the welcome or home screen.
+    if (!onboarding.hasSeen) {
+      return const OnboardingScreen();
     }
     if (auth.isAuthenticated) {
       return const HomeScreen();
