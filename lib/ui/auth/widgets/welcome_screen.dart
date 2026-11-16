@@ -2,7 +2,6 @@ import 'package:cadavre_exquisite/ui/core/themes/app_colors.dart';
 import 'package:cadavre_exquisite/ui/core/ui/background.dart';
 import 'package:cadavre_exquisite/ui/core/ui/button.dart';
 import 'package:cadavre_exquisite/l10n/app_localizations.dart';
-import 'package:cadavre_exquisite/ui/core/ui/cream_card.dart';
 import 'package:cadavre_exquisite/ui/home/widgets/home_screen.dart';
 import 'package:cadavre_exquisite/ui/auth/widgets/login_screen.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +11,8 @@ import 'package:cadavre_exquisite/data/repositories/feature_flags/feature_flags_
 import 'package:cadavre_exquisite/ui/auth/view_models/welcome_view_model.dart';
 import 'package:cadavre_exquisite/domain/models/app_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../core/ui/cream_card.dart';
 
 /// First screen for signed-out users: Google sign-in (and email login in
 /// debug builds, or on iOS when the Firestore flag is on), and the terms of use that signing in accepts. Creates its [WelcomeViewModel] once, in `initState` (see
@@ -135,25 +136,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 ),
                 const SizedBox(height: 16.0),
                 CreamCard(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 16.0,
-                  ),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.termsNotice,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13.0, color: AppColors.ink),
-                      ),
-                      Center(
-                        child: TextButton(
-                          onPressed: _showTerms,
-                          child: Text(AppLocalizations.of(context)!.termsButton),
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          AppLocalizations.of(context)!.termsNotice,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 13.0, color: AppColors.ink),
                         ),
-                      ),
-                    ],
-                  ),
+                        Center(
+                          child: TextButton(
+                            onPressed: _showTerms,
+                            child:
+                                Text(AppLocalizations.of(context)!.termsButton),
+                          ),
+                        )
+                      ]),
                 )
               ],
             ),
