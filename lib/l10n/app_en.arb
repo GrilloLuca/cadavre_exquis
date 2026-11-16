@@ -187,5 +187,19 @@
   "termsTitle": "Terms of use",
   "termsBody": "Cadavre Exquisite is a game where players write stories together. By using it you agree to these terms.\n\n• Don't write offensive, hateful, sexual, violent or abusive content, don't harass other players, and don't share personal information. There's no tolerance for objectionable content or abusive players.\n• Every part is checked automatically, and you can report any part or block its author from the menu next to it. We review reports within 24 hours: we remove content that breaks these terms and close the accounts of the players who wrote it.\n• You're responsible for what you write. Parts you write stay in their stories, shown as Anonymous if you delete your account.\n\nQuestions or reports: {email}",
   "closeButton": "Close",
-  "partRemovedByModeration": "This part was removed by moderation."
+  "partRemovedByModeration": "This part was removed by moderation.",
+  "onboardingTitle1": "Four authors.\nOne story.",
+  "onboardingBody1": "Each player writes one part, in turn.",
+  "onboardingTitle2": "You only see five words",
+  "onboardingBody2": "The last five of the part before yours. Carry on from there.",
+  "onboardingTitle3": "Then comes the reveal",
+  "onboardingBody3": "The four parts become one story nobody saw coming.",
+  "onboardingDemoHidden": "The detective found",
+  "onboardingDemoVisible": "a tiny, very angry penguin",
+  "onboardingDemoPart2": "who ran for mayor and promised free ice",
+  "onboardingDemoPart3": "to every dragon that hated summer,",
+  "onboardingDemoPart4": "so they all opened a bakery.",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingStart": "Start"
 }
