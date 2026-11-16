@@ -558,5 +558,34 @@
   "termsTitle": "Condizioni d'uso",
   "termsBody": "Cadavre Exquisite è un gioco in cui si scrivono storie insieme. Usandolo accetti queste condizioni.\n\n• Non scrivere contenuti offensivi, d'odio, sessuali, violenti o abusivi, non molestare gli altri giocatori e non condividere dati personali. Non c'è tolleranza per i contenuti inappropriati né per chi si comporta in modo abusivo.\n• Ogni parte viene controllata automaticamente, e puoi segnalare qualsiasi parte o bloccarne l'autore dal menu accanto. Esaminiamo le segnalazioni entro 24 ore: rimuoviamo i contenuti che violano queste condizioni e chiudiamo gli account di chi li ha scritti.\n• Sei responsabile di ciò che scrivi. Le parti che scrivi restano nelle loro storie, come Anonimo se elimini l'account.\n\nDomande o segnalazioni: {email}",
   "closeButton": "Chiudi",
-  "partRemovedByModeration": "Questa parte è stata rimossa dalla moderazione."
+  "partRemovedByModeration": "Questa parte è stata rimossa dalla moderazione.",
+  "onboardingTitle1": "Quattro autori.\nUna storia.",
+  "@onboardingTitle1": {
+    "description": "Title of the first onboarding slide. Keep it very short: the animated illustration does the explaining."
+  },
+  "onboardingBody1": "Ogni giocatore ne scrive una parte, a turno.",
+  "onboardingTitle2": "Vedi solo cinque parole",
+  "onboardingBody2": "Le ultime della parte prima della tua. Riparti da lì.",
+  "onboardingTitle3": "Poi, la sorpresa",
+  "onboardingBody3": "Le quattro parti diventano una storia che nessuno si aspettava.",
+  "onboardingDemoHidden": "Il detective trovò",
+  "@onboardingDemoHidden": {
+    "description": "Onboarding demo story: the start of part 1, hidden from the next author. Hidden + Visible + Part2 + Part3 + Part4 must read as one funny sentence."
+  },
+  "onboardingDemoVisible": "un pinguino piccolo e furioso",
+  "@onboardingDemoVisible": {
+    "description": "Onboarding demo story: the end of part 1. Must be exactly five words, the ones the next author sees."
+  },
+  "onboardingDemoPart2": "che si candidò a sindaco promettendo ghiaccio gratis",
+  "onboardingDemoPart3": "a tutti i draghi che odiavano l'estate,",
+  "onboardingDemoPart4": "così aprirono insieme una pasticceria.",
+  "onboardingSkip": "Salta",
+  "@onboardingSkip": {
+    "description": "Button on the onboarding slides that closes them at once."
+  },
+  "onboardingNext": "Avanti",
+  "onboardingStart": "Inizia",
+  "@onboardingStart": {
+    "description": "Button on the last onboarding slide that closes them."
+  }
 }
