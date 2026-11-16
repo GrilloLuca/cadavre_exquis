@@ -63,7 +63,7 @@ cd ios     && bundle exec fastlane ios beta              # or: release, certs
 ## Notes
 - Run **Release** for iOS after the TestFlight build has finished processing (usually 10–30 min).
 - Cost: free for public repos. Private repos get 2,000 free minutes/month, and macOS minutes count 10×, so an iOS build (~15–20 min) uses ~150–200 of them.
-- Pin Flutter: replace `channel: stable` with `flutter-version: <your version>` in the workflows for reproducible builds.
+- Flutter is pinned with `flutter-version` in `ci.yml` and `deploy.yml` (both jobs). Raise it in all three places together; Flutter 3.50 and later need Gradle 9.3.1+ in `android/gradle/wrapper/gradle-wrapper.properties` first.
 
 ## Releasing a new version
 1. Bump the version name in `pubspec.yaml` in your PR: `patch` (1.0.0 → 1.0.1), `minor` (→ 1.1.0) or `major` (→ 2.0.0).

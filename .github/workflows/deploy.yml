@@ -30,6 +30,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.44.1   # pinned: 3.50 needs Gradle 9.3.1+, the project is on 8.14.1
           cache: true
       - uses: ruby/setup-ruby@v1
         with:
@@ -81,6 +82,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.44.1   # pinned: 3.50 needs Gradle 9.3.1+, the project is on 8.14.1
           cache: true
       - uses: ruby/setup-ruby@v1
         with:
